@@ -1,0 +1,21 @@
+# Dependencias (cada paquete tiene su propio .gitignore con detalle)
+node_modules/
+vendor/
+
+# Entornos
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores
+.idea/
+.vscode/
+*.swp
