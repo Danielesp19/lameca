@@ -12,6 +12,8 @@ class MenuItem extends Model
         'description',
         'price',
         'image',
+        'gif',
+        'youtube_url',
         'is_available',
         'is_featured',
         'sort_order',

@@ -10,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\DeleteAction;
@@ -35,48 +36,68 @@ class MenuItemResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Select::make('menu_category_id')
-                ->label('Categoría')
-                ->options(MenuCategory::where('is_active', true)->orderBy('sort_order')->pluck('name', 'id'))
-                ->required()
-                ->searchable(),
+            Section::make('Información básica')->schema([
+                Select::make('menu_category_id')
+                    ->label('Categoría')
+                    ->options(MenuCategory::where('is_active', true)->orderBy('sort_order')->pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
 
-            TextInput::make('name')
-                ->label('Nombre')
-                ->required()
-                ->maxLength(255),
+                TextInput::make('name')
+                    ->label('Nombre')
+                    ->required()
+                    ->maxLength(255),
 
-            Textarea::make('description')
-                ->label('Descripción')
-                ->nullable()
-                ->rows(3),
+                Textarea::make('description')
+                    ->label('Descripción')
+                    ->nullable()
+                    ->rows(3),
 
-            TextInput::make('price')
-                ->label('Precio')
-                ->required()
-                ->numeric()
-                ->prefix('$')
-                ->minValue(0),
+                TextInput::make('price')
+                    ->label('Precio')
+                    ->required()
+                    ->numeric()
+                    ->prefix('$')
+                    ->minValue(0),
+            ]),
 
-            FileUpload::make('image')
-                ->label('Imagen')
-                ->image()
-                ->directory('menu-items')
-                ->imageEditor()
-                ->nullable(),
+            Section::make('Media')->schema([
+                FileUpload::make('image')
+                    ->label('Foto principal')
+                    ->image()
+                    ->directory('menu-items/images')
+                    ->imageEditor()
+                    ->nullable(),
 
-            TextInput::make('sort_order')
-                ->label('Orden')
-                ->numeric()
-                ->default(0),
+                FileUpload::make('gif')
+                    ->label('GIF animado')
+                    ->acceptedFileTypes(['image/gif'])
+                    ->directory('menu-items/gifs')
+                    ->nullable()
+                    ->helperText('Sube un .gif para mostrarlo al hacer hover o en el detalle del ítem.'),
 
-            Toggle::make('is_available')
-                ->label('Disponible')
-                ->default(true),
+                TextInput::make('youtube_url')
+                    ->label('URL de YouTube')
+                    ->url()
+                    ->nullable()
+                    ->placeholder('https://www.youtube.com/watch?v=...')
+                    ->helperText('El video se mostrará en el detalle del ítem.'),
+            ]),
 
-            Toggle::make('is_featured')
-                ->label('Destacado')
-                ->default(false),
+            Section::make('Opciones')->schema([
+                TextInput::make('sort_order')
+                    ->label('Orden')
+                    ->numeric()
+                    ->default(0),
+
+                Toggle::make('is_available')
+                    ->label('Disponible')
+                    ->default(true),
+
+                Toggle::make('is_featured')
+                    ->label('Destacado')
+                    ->default(false),
+            ]),
         ]);
     }
 
@@ -88,9 +109,10 @@ class MenuItemResource extends Resource
                 TextColumn::make('name')->label('Nombre')->searchable(),
                 TextColumn::make('category.name')->label('Categoría')->sortable(),
                 TextColumn::make('price')->label('Precio')->money('cop')->sortable(),
+                IconColumn::make('gif')->label('GIF')->boolean()->trueIcon('heroicon-o-film'),
+                IconColumn::make('youtube_url')->label('Video')->boolean()->trueIcon('heroicon-o-play'),
                 IconColumn::make('is_available')->label('Disponible')->boolean(),
                 IconColumn::make('is_featured')->label('Destacado')->boolean(),
-                TextColumn::make('sort_order')->label('Orden')->sortable(),
             ])
             ->defaultSort('menu_category_id')
             ->filters([
