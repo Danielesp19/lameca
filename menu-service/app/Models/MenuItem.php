@@ -13,21 +13,26 @@ class MenuItem extends Model
         'price',
         'image',
         'gif',
-        'youtube_url',
+        'video',
         'is_available',
         'is_featured',
         'sort_order',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price'        => 'decimal:2',
         'is_available' => 'boolean',
-        'is_featured' => 'boolean',
-        'sort_order' => 'integer',
+        'is_featured'  => 'boolean',
+        'sort_order'   => 'integer',
     ];
 
     public function category()
     {
         return $this->belongsTo(MenuCategory::class, 'menu_category_id');
+    }
+
+    public function extraImages()
+    {
+        return $this->hasMany(MenuItemImage::class)->orderBy('sort_order');
     }
 }

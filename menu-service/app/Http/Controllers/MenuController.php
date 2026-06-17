@@ -11,7 +11,7 @@ class MenuController extends Controller
     public function index()
     {
         $menu = MenuCategory::where('is_active', true)
-            ->with(['availableItems'])
+            ->with(['availableItems.extraImages'])
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($cat) => [
@@ -27,7 +27,7 @@ class MenuController extends Controller
 
     public function show(MenuItem $menuItem)
     {
-        $menuItem->load('category');
+        $menuItem->load(['category', 'extraImages']);
 
         return response()->json($this->formatItem($menuItem, detailed: true));
     }
@@ -54,14 +54,18 @@ class MenuController extends Controller
     private function formatItem(MenuItem $item, bool $detailed = false): array
     {
         $data = [
-            'id'          => $item->id,
-            'name'        => $item->name,
-            'description' => $item->description,
-            'price'       => (float) $item->price,
-            'image_url'   => $item->image       ? asset('storage/' . $item->image) : null,
-            'gif_url'     => $item->gif         ? asset('storage/' . $item->gif)   : null,
-            'youtube_url' => $item->youtube_url ?? null,
-            'is_featured' => $item->is_featured,
+            'id'               => $item->id,
+            'name'             => $item->name,
+            'description'      => $item->description,
+            'price'            => (float) $item->price,
+            'image_url'        => $item->image ? asset('storage/' . $item->image) : null,
+            'gif_url'          => $item->gif   ? asset('storage/' . $item->gif)   : null,
+            'video_url'        => $item->video ? asset('storage/' . $item->video) : null,
+            'extra_image_urls' => ($item->relationLoaded('extraImages') ? $item->extraImages : $item->extraImages()->get())
+                                    ->map(fn ($img) => asset('storage/' . $img->path))
+                                    ->values()
+                                    ->all(),
+            'is_featured'      => $item->is_featured,
         ];
 
         if ($detailed) {
