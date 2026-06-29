@@ -39,7 +39,6 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
     ...(item.extra_image_urls ?? []),
   ];
 
-  const hasGif   = Boolean(item.gif_url);
   const hasVideo = Boolean(item.video_url);
 
   const [activeIdx, setActiveIdx] = useState(0);
@@ -94,13 +93,6 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
             sizes="100vw"
             style={{ transition: "opacity 300ms ease" }}
           />
-        ) : hasGif ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.gif_url!}
-            alt={item.name}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
         ) : (
           <div
             className="absolute inset-0 flex items-center justify-center"
@@ -150,8 +142,7 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
             </button>
           ))}
 
-          {/* GIF/video badge — indicates hover animation exists */}
-          {(hasGif || hasVideo) && (
+          {hasVideo && (
             <div
               style={{
                 flexShrink: 0,
@@ -167,7 +158,7 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
                 whiteSpace: "nowrap",
               }}
             >
-              ✨ {hasVideo ? "Video en carta" : "GIF en carta"}
+              ▶ Video en carta
             </div>
           )}
         </div>

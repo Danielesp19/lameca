@@ -114,13 +114,10 @@ export default function ItemsPage() {
                           +{item.extra_images.length}
                         </span>
                       )}
-                      {item.gif_url && (
-                        <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "#F0FDF4", color: "#16A34A" }}>GIF</span>
-                      )}
                       {item.video_url && (
                         <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: "#FDF4FF", color: "#9333EA" }}>Video</span>
                       )}
-                      {!item.image_url && item.extra_images.length === 0 && !item.gif_url && !item.video_url && (
+                      {!item.image_url && item.extra_images.length === 0 && !item.video_url && (
                         <span style={{ fontSize: 11, color: "#B0A090" }}>Sin media</span>
                       )}
                     </div>

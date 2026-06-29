@@ -6,6 +6,10 @@ import { useHero } from "@/hooks/useHero";
 
 const ACCENT = "#C8A97E";
 
+// Veces que se reproduce el video del hero cada vez que entra en pantalla.
+// Tras alcanzarlo se detiene; vuelve a contar desde 0 cuando el hero reaparece.
+const MAX_LOOPS = 2;
+
 const rise = (delay: number) => ({
   initial: { opacity: 0, y: 28 },
   animate: { opacity: 1, y: 0 },
@@ -16,10 +20,11 @@ export default function HeroSection() {
   const { hero } = useHero();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef  = useRef<HTMLVideoElement>(null);
+  const outerRef  = useRef<HTMLDivElement>(null);
 
-  // Media from admin: gif or image. Fallback to local video.
-  const bgGifOrImg = hero?.gif_url ?? hero?.image_url ?? null;
+  // Admin image takes priority; fallback to local video.
+  const bgGifOrImg = hero?.image_url ?? null;
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 760px)");
@@ -32,23 +37,51 @@ export default function HeroSection() {
     return () => mq.removeEventListener("change", upd);
   }, []);
 
-  // Ensure video autoplays (mobile browsers block autoplay without user gesture)
+  // Reproduce un nº limitado de veces al entrar/volver al hero, no en bucle infinito.
   useEffect(() => {
     const v = videoRef.current;
-    if (!v) return;
+    const outer = outerRef.current;
+    if (!v || !outer || bgGifOrImg) return; // nothing to control if showing admin image
+
     v.muted = true;
     v.playbackRate = 0.75;
-    const tryPlay = () => { v.muted = true; v.play().catch(() => {}); };
-    if (v.readyState >= 2) tryPlay();
-    else v.addEventListener("loadeddata", tryPlay, { once: true });
-    // Fallback on first user gesture
-    const kick = () => { v.play().catch(() => {}); };
-    ["pointerdown", "touchstart"].forEach(e => window.addEventListener(e, kick, { once: true, passive: true }));
-    return () => ["pointerdown", "touchstart"].forEach(e => window.removeEventListener(e, kick));
-  }, [bgGifOrImg]); // re-run if source changes
+
+    let plays = 0; // reproducciones completadas en la visita actual al hero
+
+    // Al terminar cada pasada: si no llegó al máximo, repite; si llegó, se queda quieto.
+    const onEnded = () => {
+      plays += 1;
+      if (plays < MAX_LOOPS) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      }
+    };
+    v.addEventListener("ended", onEnded);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // Cada vez que el hero reaparece (entrar a la página o subir mucho)
+          // reinicia el contador y reproduce desde el principio.
+          plays = 0;
+          v.currentTime = 0;
+          v.play().catch(() => {});
+        } else {
+          v.pause(); // fuera de pantalla: detener
+        }
+      },
+      { threshold: 0.05 }, // reactiva cuando ~5% del hero vuelve a verse
+    );
+
+    observer.observe(outer);
+    return () => {
+      observer.disconnect();
+      v.removeEventListener("ended", onEnded);
+    };
+  }, [bgGifOrImg]);
 
   return (
-    <div style={{ position: "relative", width: "100%", background: "#120c08", fontFamily: "var(--font-sans)", color: "#F4EEE3" }}>
+    <div ref={outerRef} style={{ position: "relative", width: "100%", background: "#120c08", fontFamily: "var(--font-sans)", color: "#F4EEE3" }}>
       <section style={{ position: "sticky", top: 0, width: "100%", height: "100dvh", minHeight: 540, overflow: "hidden", background: "#120c08", zIndex: 1 }}>
 
         {/* ── Background media ── */}
@@ -60,9 +93,7 @@ export default function HeroSection() {
           // Default: local hero video with slowZoom animation
           <video
             ref={videoRef}
-            autoPlay
             muted
-            loop
             playsInline
             preload="auto"
             aria-hidden="true"

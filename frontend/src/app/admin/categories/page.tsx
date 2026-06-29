@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, FormEvent } from "react";
 import {
   adminGetCategories, adminCreateCategory,
-  adminUpdateCategory, adminDeleteCategory, AdminCategory,
+  adminUpdateCategory, adminDeleteCategory, adminReorderCategories, AdminCategory,
 } from "@/lib/admin-api";
 
 const input: React.CSSProperties = {
@@ -23,6 +23,7 @@ export default function CategoriesPage() {
   const [formDesc, setFormDesc] = useState("");
   const [saving,   setSaving]   = useState(false);
   const [formErr,  setFormErr]  = useState("");
+  const [reordering, setReordering] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +54,26 @@ export default function CategoriesPage() {
     finally { setSaving(false); }
   }
 
+  // Mueve una categoría hacia arriba/abajo y persiste el nuevo orden.
+  async function move(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= cats.length || reordering) return;
+
+    const next = [...cats];
+    [next[index], next[target]] = [next[target], next[index]];
+    setCats(next);                 // optimista
+    setReordering(true);
+    try {
+      const fresh = await adminReorderCategories(next.map(c => c.id));
+      setCats(fresh);
+    } catch (e) {
+      alert((e as Error).message);
+      load();                      // revertir desde el servidor
+    } finally {
+      setReordering(false);
+    }
+  }
+
   async function del(cat: AdminCategory) {
     if (!confirm(`¿Eliminar "${cat.name}"? Se borrarán todos sus productos.`)) return;
     try { await adminDeleteCategory(cat.id); setCats(p => p.filter(c => c.id !== cat.id)); }
@@ -64,7 +85,9 @@ export default function CategoriesPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1C0F05", fontFamily: "var(--font-serif)", margin: 0 }}>Categorías</h2>
-          <p style={{ fontSize: 13, color: "#9A7055", marginTop: 4 }}>{cats.length} categoría{cats.length !== 1 ? "s" : ""}</p>
+          <p style={{ fontSize: 13, color: "#9A7055", marginTop: 4 }}>
+            {cats.length} categoría{cats.length !== 1 ? "s" : ""} · usa ↑↓ para cambiar el orden en la carta
+          </p>
         </div>
         {!creating && !editing && (
           <button onClick={startCreate} style={{ padding: "10px 20px", borderRadius: 10, background: "#6F4E37", color: "#FFF", fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer" }}>
@@ -109,7 +132,7 @@ export default function CategoriesPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #F0EBE5" }}>
-                {["Nombre", "Descripción", "Productos", ""].map(h => (
+                {["Orden", "Nombre", "Descripción", "Productos", ""].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0A090" }}>{h}</th>
                 ))}
               </tr>
@@ -117,6 +140,32 @@ export default function CategoriesPage() {
             <tbody>
               {cats.map((cat, i) => (
                 <tr key={cat.id} style={{ borderTop: i === 0 ? "none" : "1px solid #F9F5F2" }}>
+                  <td style={{ padding: "14px 20px" }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button
+                        onClick={() => move(i, -1)}
+                        disabled={i === 0 || reordering}
+                        title="Subir"
+                        style={{
+                          width: 28, height: 28, borderRadius: 6, border: "1px solid #E8E0D8",
+                          background: "none", cursor: i === 0 || reordering ? "default" : "pointer",
+                          fontSize: 13, color: i === 0 ? "#D4C4B4" : "#6B5744",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >↑</button>
+                      <button
+                        onClick={() => move(i, 1)}
+                        disabled={i === cats.length - 1 || reordering}
+                        title="Bajar"
+                        style={{
+                          width: 28, height: 28, borderRadius: 6, border: "1px solid #E8E0D8",
+                          background: "none", cursor: i === cats.length - 1 || reordering ? "default" : "pointer",
+                          fontSize: 13, color: i === cats.length - 1 ? "#D4C4B4" : "#6B5744",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >↓</button>
+                    </div>
+                  </td>
                   <td style={{ padding: "14px 20px", fontWeight: 600, color: "#1C0F05" }}>{cat.name}</td>
                   <td style={{ padding: "14px 20px", color: "#6B5744" }}>{cat.description ?? "—"}</td>
                   <td style={{ padding: "14px 20px", color: "#9A7055" }}>{cat.items_count ?? 0}</td>
@@ -129,7 +178,7 @@ export default function CategoriesPage() {
                 </tr>
               ))}
               {cats.length === 0 && (
-                <tr><td colSpan={4} style={{ padding: "48px 20px", textAlign: "center", color: "#B0A090", fontSize: 14 }}>No hay categorías.</td></tr>
+                <tr><td colSpan={5} style={{ padding: "48px 20px", textAlign: "center", color: "#B0A090", fontSize: 14 }}>No hay categorías.</td></tr>
               )}
             </tbody>
           </table>

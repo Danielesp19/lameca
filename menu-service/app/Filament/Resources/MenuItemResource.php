@@ -59,6 +59,17 @@ class MenuItemResource extends Resource
                     ->numeric()
                     ->prefix('$')
                     ->minValue(0),
+
+                Select::make('caffeine_level')
+                    ->label('Nivel de cafeína')
+                    ->options([
+                        0 => '🌿 Sin cafeína',
+                        1 => '☕ Baja',
+                        2 => '☕☕ Media',
+                        3 => '☕☕☕ Alta',
+                    ])
+                    ->nullable()
+                    ->helperText('Se muestra con emojis en la carta. Déjalo vacío para no mostrarlo.'),
             ]),
 
             Section::make('Media')->schema([
@@ -97,6 +108,11 @@ class MenuItemResource extends Resource
                 Toggle::make('is_featured')
                     ->label('Destacado')
                     ->default(false),
+
+                Toggle::make('has_sugar_option')
+                    ->label('Permitir elegir nivel de azúcar')
+                    ->default(true)
+                    ->helperText('El cliente podrá escoger el nivel de azúcar al pedir este producto.'),
             ]),
         ]);
     }

@@ -3,10 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { AdminSedeProvider } from "@/context/AdminSedeContext";
+import SedeSwitcher from "@/components/admin/SedeSwitcher";
 
 const NAV = [
+  { href: "/admin/orders",     label: "Pedidos",     icon: "🧾" },
   { href: "/admin/items",      label: "Productos",   icon: "🍽" },
   { href: "/admin/categories", label: "Categorías",  icon: "📂" },
+  { href: "/admin/tables",     label: "Mesas",       icon: "🪑" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!ready)  return null;
 
   return (
+    <AdminSedeProvider>
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0EB", fontFamily: "var(--font-sans)" }}>
       {/* Sidebar */}
       <aside style={{
@@ -90,8 +95,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Content */}
       <main style={{ marginLeft: 220, flex: 1, padding: "40px 48px" }}>
+        <SedeSwitcher />
         {children}
       </main>
     </div>
+    </AdminSedeProvider>
   );
 }

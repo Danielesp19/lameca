@@ -4,12 +4,40 @@ export interface MenuItem {
   description: string | null;
   price: number;
   image_url: string | null;
-  gif_url: string | null;
   video_url: string | null;
   extra_image_urls: string[];
   is_featured: boolean;
   is_available?: boolean;
   category?: string;
+  caffeine_level: number | null;   // 0–3, null = no mostrar
+  has_sugar_option: boolean;       // el cliente puede elegir nivel de azúcar
+}
+
+// ── Nivel de azúcar (lo elige el cliente al pedir) ───────────────────────────
+export const SUGAR_OPTIONS = [
+  { value: "Sin azúcar", emoji: "🚫" },
+  { value: "Poca",       emoji: "🤏" },
+  { value: "Normal",     emoji: "🥄" },
+  { value: "Extra",      emoji: "🍯" },
+] as const;
+
+export const DEFAULT_SUGAR = "Normal";
+
+// ── Nivel de cafeína (lo configura el admin, se muestra con emojis) ───────────
+export interface CaffeineInfo {
+  emoji: string;
+  label: string;
+  beans: number;
+}
+
+export function caffeineInfo(level: number | null | undefined): CaffeineInfo | null {
+  switch (level) {
+    case 0:  return { emoji: "🌿",     label: "Sin cafeína",   beans: 0 };
+    case 1:  return { emoji: "☕",      label: "Cafeína baja",  beans: 1 };
+    case 2:  return { emoji: "☕☕",    label: "Cafeína media", beans: 2 };
+    case 3:  return { emoji: "☕☕☕",  label: "Cafeína alta",  beans: 3 };
+    default: return null;
+  }
 }
 
 export interface MenuCategory {
@@ -26,7 +54,6 @@ export interface HeroSection {
   subtitle: string | null;
   youtube_url: string | null;
   image_url: string | null;
-  gif_url: string | null;
   cta_label: string | null;
   cta_url: string | null;
 }
@@ -76,18 +103,13 @@ function normalizeItem(item: MenuItem): MenuItem {
   return {
     ...item,
     image_url:        storageUrl(item.image_url),
-    gif_url:          storageUrl(item.gif_url),
     video_url:        storageUrl(item.video_url),
     extra_image_urls: item.extra_image_urls.map(u => storageUrl(u)!),
   };
 }
 
 function normalizeHero(h: HeroSection): HeroSection {
-  return {
-    ...h,
-    image_url: storageUrl(h.image_url),
-    gif_url:   storageUrl(h.gif_url),
-  };
+  return { ...h, image_url: storageUrl(h.image_url) };
 }
 
 export function getYouTubeEmbedUrl(url: string): string {

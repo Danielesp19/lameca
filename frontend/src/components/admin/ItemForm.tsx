@@ -201,6 +201,8 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
   const [categoryId,  setCategoryId]  = useState(String(item?.menu_category_id ?? ""));
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true);
   const [isFeatured,  setIsFeatured]  = useState(item?.is_featured  ?? false);
+  const [caffeine,    setCaffeine]    = useState<string>(item?.caffeine_level != null ? String(item.caffeine_level) : "");
+  const [hasSugar,    setHasSugar]    = useState(item?.has_sugar_option ?? true);
 
   // Image list state
   const [imgList, setImgList] = useState<ImgSlot[]>(() => {
@@ -284,6 +286,8 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
       fd.append("menu_category_id", categoryId);
       fd.append("is_available",     isAvailable ? "1" : "0");
       fd.append("is_featured",      isFeatured  ? "1" : "0");
+      fd.append("has_sugar_option", hasSugar    ? "1" : "0");
+      if (caffeine !== "") fd.append("caffeine_level", caffeine);
 
       // ── Images ─────────────────────────────────────────────────────────────
       if (isEdit) {
@@ -310,12 +314,9 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
         newFiles.forEach(f => fd.append("new_images[]", f));
       }
 
-      // ── Animation ──────────────────────────────────────────────────────────
+      // ── Video ──────────────────────────────────────────────────────────────
       if (deleteAnim) fd.append("delete_anim", "1");
-      if (animFile) {
-        if (animFile.type === "image/gif") fd.append("gif",   animFile);
-        else                               fd.append("video", animFile);
-      }
+      if (animFile)   fd.append("video", animFile);
 
       isEdit ? await adminUpdateItem(item!.id, fd) : await adminCreateItem(fd);
       router.push("/admin/items");
@@ -327,8 +328,8 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
     }
   }
 
-  const hasAnim     = Boolean(item?.gif_url || item?.video_url);
-  const animLabel   = item?.gif_url ? "GIF animado" : "Video corto (MP4)";
+  const hasAnim   = Boolean(item?.video_url);
+  const animLabel = "Video corto (MP4/WebM)";
   const canAddMore  = imgList.length < 4;
 
   return (
@@ -358,6 +359,19 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
                 {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
+          </div>
+          <div>
+            <label style={lbl}>Nivel de cafeína</label>
+            <select style={{ ...inp, cursor: "pointer" }} value={caffeine} onChange={e => setCaffeine(e.target.value)}>
+              <option value="">— No mostrar —</option>
+              <option value="0">🌿 Sin cafeína</option>
+              <option value="1">☕ Baja</option>
+              <option value="2">☕☕ Media</option>
+              <option value="3">☕☕☕ Alta</option>
+            </select>
+            <p style={{ fontSize: 12, color: "#9A7055", marginTop: 6 }}>
+              Se muestra con emojis en la carta y en el detalle del producto.
+            </p>
           </div>
         </div>
       </div>
@@ -454,7 +468,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
         <input
           ref={animInputRef}
           type="file"
-          accept="image/gif,video/mp4,video/webm"
+          accept="video/mp4,video/webm"
           style={{ display: "none" }}
           onChange={e => {
             const f = e.target.files?.[0] ?? null;
@@ -464,9 +478,9 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
           }}
         />
 
-        <div style={cardTitle}>Animación al pasar el cursor</div>
+        <div style={cardTitle}>Video del producto</div>
         <p style={{ fontSize: 13, color: "#9A7055", marginBottom: 16, lineHeight: 1.6 }}>
-          Se reproduce cuando el usuario pasa el cursor en la carta. Sube un <strong>GIF animado</strong> o un <strong>video corto MP4</strong> (3–5 segundos recomendado, en loop).
+          Se reproduce automáticamente al hacer scroll. Sube un <strong>video corto MP4 o WebM</strong> (3–8 segundos en loop).
         </p>
 
         {/* Current animation */}
@@ -480,7 +494,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
             <div style={{ flex: 1 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#9333EA" }}>{animLabel} actual</span>
               <a
-                href={item?.gif_url ?? item?.video_url ?? "#"}
+                href={item?.video_url ?? "#"}
                 target="_blank"
                 rel="noopener"
                 style={{ display: "block", fontSize: 11, color: "#9333EA", opacity: 0.7, marginTop: 2 }}
@@ -551,7 +565,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
             }}
           >
             <span style={{ fontSize: 24 }}>✨</span>
-            <span>Seleccionar GIF o video MP4/WebM</span>
+            <span>Seleccionar video MP4 o WebM</span>
           </button>
         ) : null}
       </div>
@@ -559,10 +573,11 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
       {/* ── Opciones ── */}
       <div style={card}>
         <div style={cardTitle}>Opciones</div>
-        <div style={{ display: "flex", gap: 32 }}>
+        <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
           {([
             ["Disponible en carta", isAvailable, setIsAvailable],
             ["Marcar como destacado ★", isFeatured, setIsFeatured],
+            ["Permitir elegir azúcar 🍬", hasSugar, setHasSugar],
           ] as [string, boolean, (v: boolean) => void][]).map(([l, val, set]) => (
             <label key={l} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 14, color: "#1C0F05" }}>
               <input

@@ -10,9 +10,10 @@ class MenuItem extends Model
         'menu_category_id',
         'name',
         'description',
+        'caffeine_level',
+        'has_sugar_option',
         'price',
         'image',
-        'gif',
         'video',
         'is_available',
         'is_featured',
@@ -20,10 +21,12 @@ class MenuItem extends Model
     ];
 
     protected $casts = [
-        'price'        => 'decimal:2',
-        'is_available' => 'boolean',
-        'is_featured'  => 'boolean',
-        'sort_order'   => 'integer',
+        'price'            => 'decimal:2',
+        'caffeine_level'   => 'integer',
+        'has_sugar_option' => 'boolean',
+        'is_available'     => 'boolean',
+        'is_featured'      => 'boolean',
+        'sort_order'       => 'integer',
     ];
 
     public function category()

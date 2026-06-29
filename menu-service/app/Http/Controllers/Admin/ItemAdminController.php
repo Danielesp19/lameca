@@ -23,10 +23,11 @@ class ItemAdminController extends Controller
         $data = $request->validate([
             'name'             => 'required|string|max:255',
             'description'      => 'nullable|string',
+            'caffeine_level'   => 'nullable|integer|min:0|max:3',
+            'has_sugar_option' => 'nullable|boolean',
             'price'            => 'required|numeric|min:0',
             'menu_category_id' => 'required|exists:menu_categories,id',
-            'gif'              => 'nullable|file|mimes:gif|max:102400',
-            'video'            => 'nullable|file|mimes:mp4,webm|max:512000',
+            'video'            => 'nullable|file|max:512000',
             'new_images'       => 'nullable|array|max:4',
             'new_images.*'     => 'nullable|file|image|max:10240',
             'is_available'     => 'nullable|boolean',
@@ -34,7 +35,6 @@ class ItemAdminController extends Controller
             'sort_order'       => 'nullable|integer',
         ]);
 
-        if ($request->hasFile('gif'))   $data['gif']   = $request->file('gif')->store('menu-items/gifs', 'public');
         if ($request->hasFile('video')) $data['video'] = $request->file('video')->store('menu-items/videos', 'public');
 
         $item = MenuItem::create($data);
@@ -60,10 +60,11 @@ class ItemAdminController extends Controller
         $data = $request->validate([
             'name'             => 'sometimes|string|max:255',
             'description'      => 'nullable|string',
+            'caffeine_level'   => 'nullable|integer|min:0|max:3',
+            'has_sugar_option' => 'nullable|boolean',
             'price'            => 'sometimes|numeric|min:0',
             'menu_category_id' => 'sometimes|exists:menu_categories,id',
-            'gif'              => 'nullable|file|mimes:gif|max:102400',
-            'video'            => 'nullable|file|mimes:mp4,webm|max:512000',
+            'video'            => 'nullable|file|max:512000',
             'new_images'       => 'nullable|array|max:4',
             'new_images.*'     => 'nullable|file|image|max:10240',
             'is_available'     => 'nullable|boolean',
@@ -71,19 +72,12 @@ class ItemAdminController extends Controller
             'sort_order'       => 'nullable|integer',
         ]);
 
-        // ── Hover animation (gif / video) ─────────────────────────────────────
+        // ── Video ─────────────────────────────────────────────────────────────
         if ($request->input('delete_anim') === '1') {
-            if ($item->gif)   { Storage::disk('public')->delete($item->gif);   $data['gif']   = null; }
             if ($item->video) { Storage::disk('public')->delete($item->video); $data['video'] = null; }
-        }
-        if ($request->hasFile('gif')) {
-            if ($item->gif) Storage::disk('public')->delete($item->gif);
-            if ($item->video) { Storage::disk('public')->delete($item->video); $data['video'] = null; }
-            $data['gif'] = $request->file('gif')->store('menu-items/gifs', 'public');
         }
         if ($request->hasFile('video')) {
             if ($item->video) Storage::disk('public')->delete($item->video);
-            if ($item->gif)   { Storage::disk('public')->delete($item->gif);   $data['gif']   = null; }
             $data['video'] = $request->file('video')->store('menu-items/videos', 'public');
         }
 
@@ -98,7 +92,7 @@ class ItemAdminController extends Controller
 
     public function destroy(MenuItem $item)
     {
-        foreach (['image', 'gif', 'video'] as $field) {
+        foreach (['image', 'video'] as $field) {
             if ($item->$field) Storage::disk('public')->delete($item->$field);
         }
         foreach ($item->extraImages as $img) {
@@ -193,11 +187,12 @@ class ItemAdminController extends Controller
             'id'               => $item->id,
             'name'             => $item->name,
             'description'      => $item->description,
+            'caffeine_level'   => $item->caffeine_level,
+            'has_sugar_option' => (bool) $item->has_sugar_option,
             'price'            => (float) $item->price,
             'menu_category_id' => $item->menu_category_id,
             'category_name'    => $item->category?->name,
             'image_url'        => $item->image ? asset('storage/'.$item->image) : null,
-            'gif_url'          => $item->gif   ? asset('storage/'.$item->gif)   : null,
             'video_url'        => $item->video ? asset('storage/'.$item->video) : null,
             // Admin gets IDs so the UI can manage individual images
             'extra_images'     => $item->extraImages->map(fn($img) => [

@@ -77,6 +77,13 @@ body {
   animation: shimmer 1.6s infinite;
 }
 
+/* Dark skeleton (carta sobre fondo oscuro) */
+.skeleton-dark {
+  background: linear-gradient(90deg, #241f1b 25%, #2E2723 50%, #241f1b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
 /* ─── Keyframes ──────────────────────────────────────────────────────── */
 @keyframes grain {
   0%,100% { transform: translate(0,0); }

@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(\App\Http\Middleware\CorsMiddleware::class);
         $middleware->alias([
             'admin.token' => \App\Http\Middleware\AdminToken::class,
         ]);

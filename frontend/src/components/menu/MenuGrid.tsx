@@ -64,8 +64,8 @@ export default function MenuGrid({ categories }: { categories: MenuCategory[] })
             id={`panel-${active.slug}`}
             aria-label={active.name}
           >
-            {active.items.map((item, i) => (
-              <MenuCard key={item.id} item={item} index={i} />
+            {active.items.map((item) => (
+              <MenuCard key={item.id} item={item} isActive={false} />
             ))}
 
             {active.items.length === 0 && (

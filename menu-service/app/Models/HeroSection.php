@@ -11,7 +11,6 @@ class HeroSection extends Model
         'subtitle',
         'youtube_url',
         'image',
-        'gif',
         'cta_label',
         'cta_url',
         'sort_order',
