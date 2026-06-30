@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMenu } from "@/hooks/useMenu";
 import { MenuItem, MenuCategory } from "@/lib/menu-api";
-import { prefetchVideo } from "@/lib/video-prefetch";
 import MenuCard from "./MenuCard";
 import ProductModal from "./ProductModal";
 
@@ -87,23 +86,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     if (selected) setActiveItemId(null);
     else updateActive();
   }, [selected, updateActive]);
-
-  // Prefetch de videos hacia adelante: cuando una tarjeta se vuelve activa, calienta
-  // la caché de los próximos 2 videos en orden de scroll para que al llegar ya estén
-  // listos (sin esperar la descarga). Los previos ya quedaron en la caché HTTP.
-  useEffect(() => {
-    if (activeItemId == null) return;
-    const flat = groups.flatMap(c => c.items);
-    const idx = flat.findIndex(i => i.id === activeItemId);
-    if (idx === -1) return;
-    if (flat[idx]?.video_url) prefetchVideo(flat[idx].video_url);     // el actual
-    for (let k = 1; k <= 2; k++) {
-      const next = flat[idx + k];
-      if (next?.video_url) prefetchVideo(next.video_url);             // los siguientes
-    }
-  // groups se recalcula cada render; basta con reaccionar al cambio de tarjeta activa.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeItemId]);
 
   function handleCategoryChange(id: number | "todos") {
     setActiveItemId(null);

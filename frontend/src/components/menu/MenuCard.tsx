@@ -5,6 +5,10 @@ import { MenuItem, caffeineInfo } from "@/lib/menu-api";
 
 const ACCENT = "#E8A33D";
 
+// Veces que se reproduce el video en la tarjeta antes de congelarse en el último
+// frame. Evita bucle infinito (ahorra ancho de banda del backend single-thread).
+const MAX_LOOPS = 2;
+
 interface Props {
   item: MenuItem;
   isActive: boolean;
@@ -15,34 +19,78 @@ interface Props {
 export default function MenuCard({ item, isActive, onSelect, highlight = false }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const angles = [
-    ...(item.image_url ? [item.image_url] : []),
-    ...(item.extra_image_urls ?? []),
-  ].filter(Boolean) as string[];
+  const [nearView, setNearView] = useState(false);
+  const videoRef   = useRef<HTMLVideoElement>(null);
+  const articleRef = useRef<HTMLElement>(null);
+  const loopsRef   = useRef(0);
 
   const hasVideo = Boolean(item.video_url);
+  // Si el producto tiene video, la tarjeta muestra SOLO el video (no las fotos).
+  const angles = (hasVideo
+    ? []
+    : [...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])]
+  ).filter(Boolean) as string[];
+
   const isAngles = !hasVideo && angles.length > 1;
   const badge = hasVideo ? "▶ Video" : isAngles ? "360°" : null;
   const caffeine = caffeineInfo(item.caffeine_level);
 
-  // Video: lazy-load src, play/pause on isActive
+  // Empieza a precargar el video cuando la tarjeta se ACERCA al viewport (no cuando
+  // ya está centrada). Así al llegar ya está bufferado, y al cargar solo el video
+  // cercano no se saturan varias descargas a la vez (clave en backend single-thread).
+  useEffect(() => {
+    if (!hasVideo) return;
+    const el = articleRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setNearView(entry.isIntersecting),
+      { rootMargin: "200px 0px 400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasVideo]);
+
+  // Asigna el src y arranca el buffering en cuanto se acerca (streaming progresivo).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !hasVideo || !nearView || !item.video_url) return;
+    if (!v.getAttribute("src")) {
+      v.src = item.video_url;
+      v.load();
+    }
+  }, [nearView, hasVideo, item.video_url]);
+
+  // Reproduce cuando la tarjeta está activa; pausa al salir.
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !hasVideo) return;
     if (isActive) {
-      if (item.video_url && !v.src) v.src = item.video_url;
+      loopsRef.current = 0;
+      if (item.video_url && !v.getAttribute("src")) { v.src = item.video_url; v.load(); }
       v.muted = true;
       v.playbackRate = 0.85;
-      const p = v.play();
-      if (p) p.then(() => setVideoVisible(true)).catch(() => {});
-      else setVideoVisible(true);
+      v.play().then(() => setVideoVisible(true)).catch(() => {});
     } else {
       v.pause();
       setVideoVisible(false);
     }
   }, [isActive, hasVideo, item.video_url]);
+
+  // Reproduce solo MAX_LOOPS veces y se congela en el último frame. Cuenta desde 0
+  // cada vez que la tarjeta se reactiva.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !hasVideo) return;
+    const onEnded = () => {
+      loopsRef.current += 1;
+      if (loopsRef.current < MAX_LOOPS) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      }
+    };
+    v.addEventListener("ended", onEnded);
+    return () => v.removeEventListener("ended", onEnded);
+  }, [hasVideo]);
 
   // Angles: loop interval while active
   useEffect(() => {
@@ -60,6 +108,7 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
 
   return (
     <article
+      ref={articleRef}
       data-card=""
       data-id={item.id}
       style={{
@@ -88,6 +137,9 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
               }}
             />
           ))
+        ) : hasVideo ? (
+          /* Fondo oscuro mientras el video bufferea (lo tapa al reproducirse) */
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#1C1714 0%,#0F0B09 100%)" }} />
         ) : (
           /* Placeholder for products without image */
           <div style={{
@@ -111,7 +163,7 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
         {hasVideo && (
           <video
             ref={videoRef}
-            muted playsInline loop preload="none" aria-hidden="true"
+            muted playsInline preload="auto" aria-hidden="true"
             style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover",

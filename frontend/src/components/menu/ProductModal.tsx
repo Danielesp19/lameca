@@ -62,16 +62,14 @@ export default function ProductModal({ item, onClose }: Props) {
     v.play().catch(() => {});
   });
 
-  // Build gallery
+  // Galería: al abrir el producto se muestran SOLO las fotos (no el video). El video
+  // es exclusivo de la tarjeta del menú; aquí el cliente ve las imágenes en detalle.
   const gallery: GalleryItem[] = item
-    ? [
-        ...(item.video_url ? [{ type: "video" as const, src: item.video_url, thumb: item.image_url ?? "" }] : []),
-        ...[...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])].map(src => ({
-          type: "image" as const,
-          src,
-          thumb: src,
-        })),
-      ]
+    ? [...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])].map(src => ({
+        type: "image" as const,
+        src,
+        thumb: src,
+      }))
     : [];
 
   const safeIdx = Math.min(activeIdx, Math.max(0, gallery.length - 1));
