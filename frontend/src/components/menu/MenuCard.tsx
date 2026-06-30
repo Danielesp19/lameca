@@ -6,8 +6,9 @@ import { MenuItem, caffeineInfo } from "@/lib/menu-api";
 const ACCENT = "#E8A33D";
 
 // Veces que se reproduce el video en la tarjeta antes de congelarse en el último
-// frame. Evita bucle infinito (ahorra ancho de banda del backend single-thread).
-const MAX_LOOPS = 2;
+// frame. 1 = una pasada y se detiene (ahorra ancho de banda del backend
+// single-thread). Vuelve a reproducirse si el usuario interactúa con la tarjeta.
+const MAX_LOOPS = 1;
 
 interface Props {
   item: MenuItem;
@@ -106,9 +107,24 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
     return () => clearInterval(t);
   }, [isActive, isAngles, angles.length]);
 
+  // Si el usuario interactúa con la tarjeta (mueve el puntero/hover) y el video ya
+  // terminó su pasada, lo reproduce de nuevo. En móvil el re-scroll ya lo reactiva.
+  function replayVideo() {
+    const v = videoRef.current;
+    if (!v || !hasVideo) return;
+    if (v.paused || v.ended) {
+      loopsRef.current = 0;
+      v.currentTime = 0;
+      v.muted = true;
+      v.play().then(() => setVideoVisible(true)).catch(() => {});
+    }
+  }
+
   return (
     <article
       ref={articleRef}
+      onPointerEnter={replayVideo}
+      onPointerMove={replayVideo}
       data-card=""
       data-id={item.id}
       style={{
