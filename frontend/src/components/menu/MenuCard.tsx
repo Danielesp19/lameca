@@ -20,10 +20,8 @@ interface Props {
 export default function MenuCard({ item, isActive, onSelect, highlight = false }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
-  const [nearView, setNearView] = useState(false);
-  const videoRef   = useRef<HTMLVideoElement>(null);
-  const articleRef = useRef<HTMLElement>(null);
-  const loopsRef   = useRef(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const loopsRef = useRef(0);
 
   const hasVideo = Boolean(item.video_url);
   // Si el producto tiene video, la tarjeta muestra SOLO el video (no las fotos).
@@ -36,32 +34,9 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
   const badge = hasVideo ? "▶ Video" : isAngles ? "360°" : null;
   const caffeine = caffeineInfo(item.caffeine_level);
 
-  // Empieza a precargar el video cuando la tarjeta se ACERCA al viewport (no cuando
-  // ya está centrada). Así al llegar ya está bufferado, y al cargar solo el video
-  // cercano no se saturan varias descargas a la vez (clave en backend single-thread).
-  useEffect(() => {
-    if (!hasVideo) return;
-    const el = articleRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => setNearView(entry.isIntersecting),
-      { rootMargin: "200px 0px 400px 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [hasVideo]);
-
-  // Asigna el src y arranca el buffering en cuanto se acerca (streaming progresivo).
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || !hasVideo || !nearView || !item.video_url) return;
-    if (!v.getAttribute("src")) {
-      v.src = item.video_url;
-      v.load();
-    }
-  }, [nearView, hasVideo, item.video_url]);
-
-  // Reproduce cuando la tarjeta está activa; pausa al salir.
+  // El video se carga SOLO cuando la tarjeta llega al centro (isActive): así nunca
+  // hay varias descargas compitiendo a la vez (clave con el backend single-thread).
+  // Sin precarga: el src se asigna recién al activarse y se reproduce.
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !hasVideo) return;
@@ -122,7 +97,6 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
 
   return (
     <article
-      ref={articleRef}
       onPointerEnter={replayVideo}
       onPointerMove={replayVideo}
       data-card=""
@@ -179,7 +153,7 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
         {hasVideo && (
           <video
             ref={videoRef}
-            muted playsInline preload="auto" aria-hidden="true"
+            muted playsInline preload="none" aria-hidden="true"
             style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover",
