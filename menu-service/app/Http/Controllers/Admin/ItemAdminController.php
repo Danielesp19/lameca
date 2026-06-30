@@ -27,13 +27,13 @@ class ItemAdminController extends Controller
             'has_sugar_option' => 'nullable|boolean',
             'price'            => 'required|numeric|min:0',
             'menu_category_id' => 'required|exists:menu_categories,id',
-            'video'            => 'nullable|file|max:512000',
+            'video'            => 'nullable|file|mimetypes:video/mp4,video/webm,video/quicktime|max:15360',
             'new_images'       => 'nullable|array|max:4',
             'new_images.*'     => 'nullable|file|image|max:10240',
             'is_available'     => 'nullable|boolean',
             'is_featured'      => 'nullable|boolean',
             'sort_order'       => 'nullable|integer',
-        ]);
+        ], $this->validationMessages());
 
         if ($request->hasFile('video')) $data['video'] = $request->file('video')->store('menu-items/videos', 'public');
 
@@ -64,13 +64,13 @@ class ItemAdminController extends Controller
             'has_sugar_option' => 'nullable|boolean',
             'price'            => 'sometimes|numeric|min:0',
             'menu_category_id' => 'sometimes|exists:menu_categories,id',
-            'video'            => 'nullable|file|max:512000',
+            'video'            => 'nullable|file|mimetypes:video/mp4,video/webm,video/quicktime|max:15360',
             'new_images'       => 'nullable|array|max:4',
             'new_images.*'     => 'nullable|file|image|max:10240',
             'is_available'     => 'nullable|boolean',
             'is_featured'      => 'nullable|boolean',
             'sort_order'       => 'nullable|integer',
-        ]);
+        ], $this->validationMessages());
 
         // ── Video ─────────────────────────────────────────────────────────────
         if ($request->input('delete_anim') === '1') {
@@ -179,6 +179,16 @@ class ItemAdminController extends Controller
             Storage::disk('public')->delete($item->image);
             $data['image'] = null;
         }
+    }
+
+    /** Mensajes de validación en español para los archivos subidos. */
+    private function validationMessages(): array
+    {
+        return [
+            'video.max'        => 'El video supera el límite de 15 MB. Comprímelo antes de subirlo (480–720p, sin audio).',
+            'video.mimetypes'  => 'El video debe ser MP4, WebM o MOV.',
+            'new_images.*.max' => 'Cada imagen no puede superar los 10 MB.',
+        ];
     }
 
     private function fmt(MenuItem $item): array

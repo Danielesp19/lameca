@@ -7,6 +7,11 @@ import {
   adminGetCategories, adminCreateItem, adminUpdateItem,
 } from "@/lib/admin-api";
 
+// Tope de peso para el video del producto. Un clip de menú comprimido (480–720p,
+// sin audio) pesa unos cientos de KB; 15 MB deja margen de sobra y evita subir
+// videos crudos del celular que saturan el backend.
+const MAX_VIDEO_MB = 15;
+
 // ─── Client-side image compression (Canvas API, no library needed) ────────────
 // Resizes to max 1200px wide, converts to JPEG @85% → typically 80–350 KB
 async function compressImage(file: File): Promise<File> {
@@ -472,15 +477,19 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
           style={{ display: "none" }}
           onChange={e => {
             const f = e.target.files?.[0] ?? null;
+            e.target.value = "";
+            if (f && f.size > MAX_VIDEO_MB * 1024 * 1024) {
+              alert(`El video pesa ${(f.size / 1024 / 1024).toFixed(1)} MB y supera el límite de ${MAX_VIDEO_MB} MB.\n\nComprímelo antes de subirlo (480–720p, sin audio).`);
+              return;
+            }
             setAnimFile(f);
             if (f) setDeleteAnim(false);
-            e.target.value = "";
           }}
         />
 
         <div style={cardTitle}>Video del producto</div>
         <p style={{ fontSize: 13, color: "#9A7055", marginBottom: 16, lineHeight: 1.6 }}>
-          Se reproduce automáticamente al hacer scroll. Sube un <strong>video corto MP4 o WebM</strong> (3–8 segundos en loop).
+          Se reproduce automáticamente al hacer scroll. Sube un <strong>video corto MP4 o WebM</strong> (3–8 segundos en loop), <strong>máx {MAX_VIDEO_MB} MB</strong>.
         </p>
 
         {/* Current animation */}

@@ -157,7 +157,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         </div>
 
         {/* ── Single-column product list ── */}
-        <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 20px 80px" }}>
+        <div style={{ maxWidth: 440, margin: "0 auto", padding: "24px 20px 80px" }}>
           {loading ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {Array.from({ length: 3 }).map((_, i) => (
