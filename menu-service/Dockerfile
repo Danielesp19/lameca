@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j"$(nproc)" pdo_pgsql pgsql gd zip bcmath exif intl \
     && rm -rf /var/lib/apt/lists/*
 
+# Límites de subida (default PHP 2M/8M → 422 al subir videos). Sube a 128M.
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Composer (binario oficial).
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
