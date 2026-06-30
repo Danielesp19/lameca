@@ -10,12 +10,13 @@ php artisan storage:link || true
 echo "→ Migrando base de datos (Postgres)…"
 php artisan migrate --force
 
-# NOTA: el disco del backend en Render es efímero. Las imágenes subidas en vivo
-# desde el panel admin se pierden al reiniciar/redeploy. Para cargar el menú de
-# demo, ejecuta una vez en el Shell de Render:
-#   php artisan db:seed --class=MenuSeeder --force
-# (usa --class=MenuSeeder, NO el db:seed normal: ese crea un usuario con faker,
-#  ausente en producción --no-dev, y falla.)
+# Siembra el menú de demo de forma automática. MenuSeeder es idempotente (no hace
+# nada si ya hay categorías), así que es seguro ejecutarlo en cada arranque.
+# Usamos --class=MenuSeeder (NO db:seed normal: ese crea un usuario con faker,
+# ausente en producción --no-dev, y fallaría). El disco es efímero, pero los datos
+# del menú viven en Postgres (persistente), así que solo se siembra una vez.
+echo "→ Sembrando menú de demo (si está vacío)…"
+php artisan db:seed --class=MenuSeeder --force || true
 
 echo "→ Iniciando servidor en 0.0.0.0:${PORT}"
 exec php artisan serve --host 0.0.0.0 --port "${PORT}"

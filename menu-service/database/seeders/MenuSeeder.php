@@ -10,6 +10,12 @@ class MenuSeeder extends Seeder
 {
     public function run(): void
     {
+        // Idempotente: si ya hay menú cargado, no volver a sembrar (evita duplicados
+        // cuando el seeder corre en cada arranque del contenedor).
+        if (MenuCategory::query()->exists()) {
+            return;
+        }
+
         $categories = [
             [
                 'name' => 'Bebidas Calientes',
