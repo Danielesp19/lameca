@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMenu } from "@/hooks/useMenu";
-import { MenuItem } from "@/lib/menu-api";
+import { MenuItem, MenuCategory } from "@/lib/menu-api";
 import MenuCard from "./MenuCard";
 import ProductModal from "./ProductModal";
 
 const ACCENT = "#C8442A";
 const GOLD = "#E8A33D";
 
-export default function MenuSection() {
-  const { categories, loading, error, retry } = useMenu();
+export default function MenuSection({ initialCategories }: { initialCategories?: MenuCategory[] }) {
+  const { categories, loading, error, retry } = useMenu(initialCategories);
   const [activeCategory, setActiveCategory] = useState<number | "todos">("todos");
   const [activeItemId, setActiveItemId]     = useState<number | null>(null);
   const [selected, setSelected]             = useState<MenuItem | null>(null);

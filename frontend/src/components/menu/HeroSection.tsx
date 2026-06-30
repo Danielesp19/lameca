@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHero } from "@/hooks/useHero";
+import type { HeroSection as HeroData } from "@/lib/menu-api";
 
 const ACCENT = "#C8A97E";
 
@@ -16,8 +17,8 @@ const rise = (delay: number) => ({
   transition: { duration: 0.9, delay, ease: [0.2, 0.7, 0.2, 1] as const },
 });
 
-export default function HeroSection() {
-  const { hero } = useHero();
+export default function HeroSection({ initialHero }: { initialHero?: HeroData | null }) {
+  const { hero } = useHero(initialHero);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const videoRef  = useRef<HTMLVideoElement>(null);

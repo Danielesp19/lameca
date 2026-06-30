@@ -19,6 +19,23 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async headers() {
+    return [
+      // Imágenes/videos del menú: Laravel los guarda con nombre hasheado (una subida
+      // nueva = URL nueva), por lo que es seguro cachearlos por mucho tiempo. Esto
+      // hace que el CDN de Vercel y el navegador sirvan los archivos sin pegar al
+      // PHP single-thread del backend en cada escaneo.
+      {
+        source: "/menu-storage/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     // Images are proxied through Next.js rewrites → no external hostname needed
     remotePatterns: [],

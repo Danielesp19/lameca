@@ -41,7 +41,11 @@ class MenuController extends Controller
             ]);
         }
 
-        return response()->json($menu);
+        // Caché HTTP: el menú cambia poco. Permite que el CDN de Vercel (s-maxage)
+        // y el navegador (max-age) sirvan la respuesta sin pegar al backend en cada
+        // escaneo de QR. stale-while-revalidate evita esperas en la revalidación.
+        return response()->json($menu)
+            ->header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
     }
 
     public function show(MenuItem $menuItem)
@@ -66,7 +70,8 @@ class MenuController extends Controller
                 'cta_url'     => $h->cta_url,
             ]);
 
-        return response()->json($heroes);
+        return response()->json($heroes)
+            ->header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=120');
     }
 
     private function formatItem(MenuItem $item, bool $detailed = false): array

@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { getMenu, MenuCategory } from "@/lib/menu-api";
 
-export function useMenu() {
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [loading, setLoading]       = useState(true);
+// `initial` viene del render en servidor (ISR). Si llega con datos, el hook arranca
+// ya poblado y NO hace fetch en el cliente → el backend no recibe la petición por
+// cada visita. Solo se hace fetch en el cliente al reintentar, o si el servidor no
+// pudo traer datos (array vacío) como fallback de resiliencia.
+export function useMenu(initial?: MenuCategory[]) {
+  const hasInitial = initial != null && initial.length > 0;
+  const [categories, setCategories] = useState<MenuCategory[]>(initial ?? []);
+  const [loading, setLoading]       = useState(!hasInitial);
   const [error, setError]           = useState<string | null>(null);
   const [tick, setTick]             = useState(0);
 
@@ -14,6 +19,8 @@ export function useMenu() {
   }, []);
 
   useEffect(() => {
+    // Salta el primer fetch cuando el servidor ya entregó datos (tick === 0).
+    if (hasInitial && tick === 0) return;
     let cancelled = false;
     setLoading(true);
     getMenu()
