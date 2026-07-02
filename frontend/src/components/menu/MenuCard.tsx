@@ -142,7 +142,7 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       }}
     >
       {/* ── Media ── */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.95", overflow: "hidden", background: "#EFE4D2" }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.82", overflow: "hidden", background: "#EFE4D2" }}>
         {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse */}
         {angles.length > 0 ? (
           angles.map((src, i) => (

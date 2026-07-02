@@ -283,7 +283,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                     </div>
                   )}
 
-                  {/* Carrusel horizontal con snap: 1 fila (pocos productos) o 2 filas.
+                  {/* Carrusel horizontal con snap, una sola fila por categoría.
                       Sangra hasta los bordes de la pantalla para invitar al swipe. */}
                   {cat.items.length > 0 ? (
                     <div
@@ -291,7 +291,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                       style={{
                         display: "grid",
                         gridAutoFlow: "column",
-                        gridTemplateRows: cat.items.length > 4 ? "auto auto" : "auto",
+                        gridTemplateRows: "auto",
                         gridAutoColumns: "min(46%, 200px)",
                         gap: 12,
                         overflowX: "auto",
