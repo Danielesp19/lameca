@@ -6,9 +6,10 @@ import { useCart } from "@/context/CartContext";
 import { createOrder, SessionExpiredError } from "@/lib/orders-api";
 import Turnstile, { turnstileEnabled } from "./Turnstile";
 
-const DARK = "#241a12";
-const CREAM = "#F2ECE1";
-const ACCENT = "#C8A97E";
+// Paleta rediseño v2
+const DARK = "#3E2A1C";
+const CREAM = "#F7F1E5";
+const OLIVE = "#6E8B4E";
 
 function money(n: number) {
   return `$${n.toLocaleString("es-CO")}`;
@@ -151,7 +152,8 @@ export default function FloatingCart() {
                     <p style={{ fontSize: 14 }}>Tu carrito está vacío.</p>
                     <p style={{ fontSize: 13, marginTop: 18 }}>¿Solo necesitas atención?</p>
                     <button onClick={() => submit("call")} disabled={sending || !hasSession}
-                      style={{ marginTop: 8, padding: "12px 22px", borderRadius: 999, border: `1px solid ${DARK}`, background: "transparent", color: DARK, cursor: hasSession ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600 }}>
+                      style={{ position: "relative", marginTop: 8, padding: "13px 26px", borderRadius: 999, border: "none", background: OLIVE, color: "#FBF7EC", cursor: hasSession ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", boxShadow: "0 16px 34px -12px rgba(110,139,78,0.65)" }}>
+                      <span aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: 999, border: "2px solid rgba(110,139,78,0.55)", animation: "pulseRing 2.2s ease-out infinite", pointerEvents: "none" }} />
                       🔔 Llamar al mesero
                     </button>
                   </div>
@@ -159,7 +161,7 @@ export default function FloatingCart() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {lines.map(l => (
                       <div key={l.key} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                        <div style={{ width: 54, height: 54, borderRadius: 12, background: "#E8DFCF", flexShrink: 0, overflow: "hidden", backgroundImage: l.image_url ? `url('${l.image_url}')` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
+                        <div style={{ width: 54, height: 54, borderRadius: 12, background: "#EFE4D2", flexShrink: 0, overflow: "hidden", backgroundImage: l.image_url ? `url('${l.image_url}')` : undefined, backgroundSize: "cover", backgroundPosition: "center" }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 600, fontSize: 14.5 }}>{l.name}</div>
                           <div style={{ fontSize: 13, opacity: 0.7 }}>{money(l.price)}</div>
@@ -176,7 +178,7 @@ export default function FloatingCart() {
                             value={l.notes ?? ""}
                             onChange={e => setNotes(l.key, e.target.value)}
                             placeholder="Nota (ej. sin lactosa)"
-                            style={{ marginTop: 6, width: "100%", fontSize: 12.5, padding: "6px 9px", borderRadius: 8, border: "1px solid rgba(36,26,18,0.18)", background: "#FFFDF9", color: DARK }}
+                            style={{ marginTop: 6, width: "100%", fontSize: 12.5, padding: "6px 9px", borderRadius: 8, border: "1px solid rgba(62,42,28,0.18)", background: "#FFFCF5", color: DARK }}
                           />
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
@@ -210,7 +212,7 @@ export default function FloatingCart() {
                     {sending ? "Enviando…" : hasSession ? "Enviar pedido" : "Re-escanea el QR"}
                   </button>
                   <button onClick={() => submit("call")} disabled={sending || !hasSession}
-                    style={{ width: "100%", marginTop: 10, padding: "12px", borderRadius: 999, border: `1px solid ${ACCENT}`, background: "transparent", color: DARK, fontSize: 13, fontWeight: 600, cursor: hasSession ? "pointer" : "not-allowed" }}>
+                    style={{ width: "100%", marginTop: 10, padding: "12px", borderRadius: 999, border: `1px solid ${OLIVE}`, background: "transparent", color: OLIVE, fontSize: 13, fontWeight: 600, cursor: hasSession ? "pointer" : "not-allowed" }}>
                     🔔 Llamar al mesero
                   </button>
                 </div>
@@ -225,6 +227,6 @@ export default function FloatingCart() {
 
 const qtyBtn: React.CSSProperties = {
   width: 28, height: 28, borderRadius: 8, border: "1px solid rgba(36,26,18,0.2)",
-  background: "#FFFDF9", color: DARK, fontSize: 16, cursor: "pointer", lineHeight: 1,
+  background: "#FFFCF5", color: DARK, fontSize: 16, cursor: "pointer", lineHeight: 1,
   display: "flex", alignItems: "center", justifyContent: "center",
 };

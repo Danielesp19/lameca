@@ -7,8 +7,8 @@ import { getSedes } from "@/lib/orders-api";
 import type { SedeInfo } from "@/lib/table-session";
 
 const GREEN = "#25D366";
-const DARK = "#241a12";
-const CREAM = "#F2ECE1";
+const DARK = "#3E2A1C";
+const CREAM = "#F7F1E5";
 
 const MESSAGE = "¡Hola! Vi la carta de La Meca y quisiera hacer un pedido 🧉";
 
@@ -91,7 +91,7 @@ export default function WhatsAppButton() {
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                       padding: "14px 16px", borderRadius: 14, cursor: "pointer",
-                      border: "1px solid rgba(36,26,18,0.14)", background: "#FFFDF9", color: DARK,
+                      border: "1px solid rgba(62,42,28,0.14)", background: "#FFFCF5", color: DARK,
                       fontSize: 14.5, fontWeight: 600, textAlign: "left",
                     }}
                   >

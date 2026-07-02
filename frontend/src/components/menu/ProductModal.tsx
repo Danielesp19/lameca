@@ -5,7 +5,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MenuItem, SUGAR_OPTIONS, DEFAULT_SUGAR, caffeineInfo } from "@/lib/menu-api";
 import { useCart } from "@/context/CartContext";
 
-const ACCENT = "#C8442A";
+// Paleta rediseño v2
+const BG    = "#F7F1E5";
+const CHOCO = "#3E2A1C";
+const TERRA = "#BC5A32";
+const OLIVE = "#6E8B4E";
 
 interface GalleryItem {
   type: "video" | "image";
@@ -80,7 +84,7 @@ export default function ProductModal({ item, onClose }: Props) {
     <AnimatePresence>
       {item && (
         <>
-          {/* Backdrop — más oscuro */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -89,8 +93,8 @@ export default function ProductModal({ item, onClose }: Props) {
             onClick={onClose}
             style={{
               position: "fixed", inset: 0, zIndex: 200,
-              background: "rgba(10,6,4,0.82)",
-              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+              background: "rgba(46,30,18,0.6)",
+              backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
             }}
           />
 
@@ -108,18 +112,18 @@ export default function ProductModal({ item, onClose }: Props) {
               maxHeight: "88dvh",
               maxWidth: 460,
               margin: "0 auto",
-              background: "#1C1714",
+              background: BG,
               borderRadius: 26,
               overflow: "hidden",
               fontFamily: "var(--font-sans)",
-              color: "#F2EBE3",
+              color: CHOCO,
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 32px 80px rgba(10,6,4,0.7), 0 0 0 1px rgba(242,235,227,0.08)",
+              boxShadow: "0 32px 80px rgba(46,30,18,0.5), 0 0 0 1px rgba(62,42,28,0.08)",
             }}
           >
             {/* ── Hero media ── */}
-            <div style={{ position: "relative", width: "100%", aspectRatio: "4/3", background: "#E8DFCF", overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ position: "relative", width: "100%", aspectRatio: "4/3", background: "#EFE4D2", overflow: "hidden", flexShrink: 0 }}>
               {isVideoHero ? (
                 <video
                   ref={videoRef}
@@ -140,7 +144,7 @@ export default function ProductModal({ item, onClose }: Props) {
                 />
               ) : (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 64, opacity: 0.1 }}>☕</span>
+                  <span style={{ fontSize: 64, opacity: 0.12 }}>☕</span>
                 </div>
               )}
 
@@ -149,7 +153,7 @@ export default function ProductModal({ item, onClose }: Props) {
                 position: "absolute", top: 10, left: "50%",
                 transform: "translateX(-50%)",
                 width: 42, height: 5, borderRadius: 3,
-                background: "rgba(242,235,227,0.3)",
+                background: "rgba(247,241,229,0.7)",
                 display: "block", pointerEvents: "none",
               }} />
 
@@ -161,9 +165,9 @@ export default function ProductModal({ item, onClose }: Props) {
                   position: "absolute", top: 14, right: 14,
                   width: 40, height: 40, borderRadius: "50%",
                   border: "none",
-                  background: "rgba(20,12,7,0.55)",
+                  background: "rgba(62,42,28,0.55)",
                   backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-                  color: "#F2EBE3", fontSize: 22, lineHeight: 1, cursor: "pointer",
+                  color: "#F7F1E5", fontSize: 22, lineHeight: 1, cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -191,9 +195,9 @@ export default function ProductModal({ item, onClose }: Props) {
                       style={{
                         position: "relative", flexShrink: 0,
                         width: 62, height: 62, borderRadius: 12, overflow: "hidden",
-                        padding: 0, background: "#E8DFCF", cursor: "pointer",
-                        border: `2px solid ${i === safeIdx ? "#F2EBE3" : "transparent"}`,
-                        opacity: i === safeIdx ? 1 : 0.65,
+                        padding: 0, background: "#EFE4D2", cursor: "pointer",
+                        border: `2px solid ${i === safeIdx ? CHOCO : "transparent"}`,
+                        opacity: i === safeIdx ? 1 : 0.6,
                         transition: "all .2s",
                       }}
                     >
@@ -207,7 +211,7 @@ export default function ProductModal({ item, onClose }: Props) {
                         <span style={{
                           position: "absolute", inset: 0,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          background: "rgba(20,12,7,0.35)", color: "#fff", fontSize: 13,
+                          background: "rgba(62,42,28,0.3)", color: "#fff", fontSize: 13,
                         }}>
                           ▶
                         </span>
@@ -221,27 +225,27 @@ export default function ProductModal({ item, onClose }: Props) {
               <div style={{ padding: "18px 22px 26px" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
                   <h2 style={{
-                    fontFamily: "var(--font-serif)", fontWeight: 600,
-                    fontSize: 30, margin: 0, lineHeight: 1, color: "#F2EBE3",
+                    fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
+                    fontSize: 30, margin: 0, lineHeight: 1, color: TERRA,
                   }}>
                     {item.name}
                   </h2>
                   <span style={{
                     fontFamily: "var(--font-serif)", fontWeight: 600,
-                    fontSize: 28, whiteSpace: "nowrap", color: "#F2EBE3",
+                    fontSize: 28, whiteSpace: "nowrap", color: CHOCO,
                   }}>
                     ${item.price.toLocaleString("es-CO")}
                   </span>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 16px" }}>
-                  <span style={{ width: 28, height: 1, background: ACCENT, display: "block" }} />
+                  <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
                   <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.5 }}>
                     Descripción
                   </span>
                 </div>
 
-                <p style={{ fontSize: 14.5, fontWeight: 300, lineHeight: 1.65, opacity: 0.72, margin: 0, color: "#F2EBE3" }}>
+                <p style={{ fontSize: 14.5, fontWeight: 300, lineHeight: 1.65, opacity: 0.78, margin: 0, color: CHOCO }}>
                   {item.description ?? "Sin descripción disponible."}
                 </p>
 
@@ -250,10 +254,10 @@ export default function ProductModal({ item, onClose }: Props) {
                   <div style={{
                     display: "inline-flex", alignItems: "center", gap: 8, marginTop: 18,
                     padding: "8px 14px", borderRadius: 999,
-                    background: "rgba(242,235,227,0.08)", border: `1px solid ${ACCENT}55`,
+                    background: "rgba(62,42,28,0.05)", border: `1px solid ${TERRA}55`,
                   }}>
                     <span style={{ fontSize: 15, letterSpacing: caffeine.beans > 1 ? "-2px" : 0 }}>{caffeine.emoji}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 500, color: "#F2EBE3" }}>{caffeine.label}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 500, color: CHOCO }}>{caffeine.label}</span>
                   </div>
                 )}
 
@@ -261,7 +265,7 @@ export default function ProductModal({ item, onClose }: Props) {
                 {hasSession && item.has_sugar_option && (
                   <div style={{ marginTop: 22 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                      <span style={{ width: 28, height: 1, background: ACCENT, display: "block" }} />
+                      <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
                       <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.5 }}>
                         Nivel de azúcar
                       </span>
@@ -278,9 +282,9 @@ export default function ProductModal({ item, onClose }: Props) {
                               display: "inline-flex", alignItems: "center", gap: 6,
                               padding: "9px 14px", borderRadius: 999, cursor: "pointer",
                               fontFamily: "var(--font-sans)", fontSize: 12.5, fontWeight: 500,
-                              border: `1.5px solid ${active ? "#F2EBE3" : "rgba(242,235,227,0.22)"}`,
-                              background: active ? "#F2EBE3" : "transparent",
-                              color: active ? "#0A0A0A" : "#F2EBE3",
+                              border: `1.5px solid ${active ? CHOCO : "rgba(62,42,28,0.25)"}`,
+                              background: active ? CHOCO : "transparent",
+                              color: active ? BG : CHOCO,
                               transition: "all .18s",
                             }}
                           >
@@ -301,8 +305,8 @@ export default function ProductModal({ item, onClose }: Props) {
                       marginTop: 24, width: "100%",
                       display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9,
                       padding: "15px 22px", borderRadius: 999,
-                      border: "none", background: added ? "#3E7C4F" : "#F2EBE3", color: added ? "#F2EBE3" : "#0A0A0A",
-                      fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500,
+                      border: "none", background: added ? OLIVE : CHOCO, color: BG,
+                      fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600,
                       letterSpacing: "0.12em", textTransform: "uppercase", cursor: added ? "default" : "pointer",
                       transition: "transform .2s, background .2s",
                     }}
@@ -317,8 +321,8 @@ export default function ProductModal({ item, onClose }: Props) {
                   // Modo público (sin QR): no hay carrito; se invita a escanear o a WhatsApp.
                   <div style={{
                     marginTop: 24, padding: "14px 16px", borderRadius: 14,
-                    background: "rgba(242,235,227,0.06)", border: `1px dashed ${ACCENT}88`,
-                    fontSize: 13, lineHeight: 1.55, color: "#F2EBE3", textAlign: "center",
+                    background: `${TERRA}0D`, border: `1px dashed ${TERRA}88`,
+                    fontSize: 13, lineHeight: 1.55, color: CHOCO, textAlign: "center",
                   }}>
                     📷 Escanea el <strong>QR de tu mesa</strong> para pedir desde la app,
                     o usa el botón de <strong>WhatsApp</strong> para coordinar tu pedido.

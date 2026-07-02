@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useHero } from "@/hooks/useHero";
 import type { HeroSection as HeroData } from "@/lib/menu-api";
 
-const ACCENT = "#C8A97E";
+const ACCENT = "#BC5A32";
 
 // Veces que se reproduce el video del hero cada vez que entra en pantalla.
 // Tras alcanzarlo se detiene; vuelve a contar desde 0 cuando el hero reaparece.

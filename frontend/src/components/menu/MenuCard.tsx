@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { MenuItem, caffeineInfo } from "@/lib/menu-api";
 
-const ACCENT = "#E8A33D";
+// Paleta rediseño v2
+const CHOCO = "#3E2A1C";
+const TERRA = "#BC5A32";
+const CARD  = "#FFFCF5";
 
 // Veces que se reproduce el video en la tarjeta antes de congelarse en el último
 // frame. 1 = una pasada y se detiene (ahorra ancho de banda del backend
@@ -15,9 +18,11 @@ interface Props {
   isActive: boolean;
   onSelect?: (item: MenuItem) => void;
   highlight?: boolean;
+  /** Bebida caliente → vapor animado cuando la tarjeta está activa */
+  hot?: boolean;
 }
 
-export default function MenuCard({ item, isActive, onSelect, highlight = false }: Props) {
+export default function MenuCard({ item, isActive, onSelect, highlight = false, hot = false }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -102,17 +107,28 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
       data-card=""
       data-id={item.id}
       style={{
-        background: "#1C1714",
-        border: highlight ? `1.5px solid ${ACCENT}` : "1px solid rgba(242,235,227,0.09)",
-        borderRadius: 20,
+        position: "relative",
+        display: "flex", flexDirection: "column",
+        background: CARD,
+        border: highlight
+          ? `1.5px solid ${TERRA}`
+          : isActive
+            ? "1px solid rgba(188,90,50,0.6)"
+            : "1px solid rgba(188,90,50,0.32)",
+        borderRadius: 16,
         overflow: "hidden",
         boxShadow: highlight
-          ? `0 18px 40px -22px rgba(0,0,0,0.8), 0 0 0 1px ${ACCENT}33, 0 0 30px -6px ${ACCENT}55`
-          : "0 16px 34px -24px rgba(0,0,0,0.8)",
+          ? `0 18px 40px -22px rgba(62,42,28,0.6), 0 0 0 1px ${TERRA}33, 0 0 26px -8px ${TERRA}55`
+          : isActive
+            ? "0 24px 55px -20px rgba(188,90,50,0.5), inset 0 0 0 1px rgba(188,90,50,0.25)"
+            : "0 14px 28px -22px rgba(62,42,28,0.55)",
+        transformOrigin: "center center",
+        willChange: "transform, opacity",
+        transition: "box-shadow .5s ease, border-color .5s ease",
       }}
     >
       {/* ── Media ── */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "4/3", overflow: "hidden", background: "#E8DFCF" }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1.05", overflow: "hidden", background: "#EFE4D2" }}>
         {/* Angle layers (cover is index 0) */}
         {angles.length > 0 ? (
           angles.map((src, i) => (
@@ -128,22 +144,22 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
             />
           ))
         ) : hasVideo ? (
-          /* Fondo oscuro mientras el video bufferea (lo tapa al reproducirse) */
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#1C1714 0%,#0F0B09 100%)" }} />
+          /* Fondo mientras el video bufferea (lo tapa al reproducirse) */
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
         ) : (
           /* Placeholder for products without image */
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(145deg, #E8DFCF 0%, #D9CDB8 100%)",
+            background: "linear-gradient(145deg, #EFE4D2 0%, #E2D3BC 100%)",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: 10,
           }}>
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-              <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke="#B8A898" strokeWidth="1.8" strokeLinecap="round"/>
-              <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke="#B8A898" strokeWidth="1.8" strokeLinecap="round"/>
-              <ellipse cx="24" cy="38" rx="12" ry="2" fill="#B8A898" opacity=".3"/>
+            <svg width="44" height="44" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
+              <ellipse cx="24" cy="38" rx="12" ry="2" fill="#B8A084" opacity=".3"/>
             </svg>
-            <span style={{ fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#A89880", opacity: 0.7 }}>
+            <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "#A08A6E", opacity: 0.8 }}>
               Foto próximamente
             </span>
           </div>
@@ -169,20 +185,38 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
           aria-hidden="true"
           style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(20,12,7,0.5) 100%)",
+            background: "linear-gradient(180deg, rgba(0,0,0,0) 62%, rgba(62,42,28,0.32) 100%)",
             pointerEvents: "none",
           }}
         />
 
+        {/* Vapor de café — solo bebidas calientes, se enciende al centrarse */}
+        {hot && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute", top: 0, left: 0, right: 0, height: "55%",
+              opacity: isActive ? 1 : 0,
+              transition: "opacity .9s ease",
+              pointerEvents: "none",
+              mixBlendMode: "screen",
+            }}
+          >
+            <span className="wisp" style={{ left: "36%", animationDuration: "3.4s" }} />
+            <span className="wisp" style={{ left: "50%", height: 48, animationDuration: "4.2s", animationDelay: "0.7s" }} />
+            <span className="wisp" style={{ left: "64%", animationDuration: "3.8s", animationDelay: "1.4s" }} />
+          </div>
+        )}
+
         {/* Badge */}
         {badge && (
           <span style={{
-            position: "absolute", top: 12, left: 12, zIndex: 2,
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "5px 11px", borderRadius: 999,
-            background: "rgba(20,12,7,0.55)",
+            position: "absolute", top: 10, left: 10, zIndex: 2,
+            display: "inline-flex", alignItems: "center",
+            padding: "4px 9px", borderRadius: 999,
+            background: "rgba(62,42,28,0.55)",
             backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-            color: "#F2EBE3", fontSize: 10, fontWeight: 500,
+            color: "#F7F1E5", fontSize: 9, fontWeight: 500,
             letterSpacing: "0.14em", textTransform: "uppercase",
           }}>
             {badge}
@@ -194,12 +228,12 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
           <span
             title={caffeine.label}
             style={{
-              position: "absolute", top: 12, right: 12, zIndex: 2,
+              position: "absolute", top: 10, right: 10, zIndex: 2,
               display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "5px 10px", borderRadius: 999,
-              background: "rgba(20,12,7,0.55)",
+              padding: "4px 9px", borderRadius: 999,
+              background: "rgba(62,42,28,0.55)",
               backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-              color: "#F2EBE3", fontSize: 11, fontWeight: 500,
+              color: "#F7F1E5", fontSize: 10, fontWeight: 500,
             }}
           >
             <span style={{ letterSpacing: caffeine.beans > 1 ? "-2px" : 0 }}>{caffeine.emoji}</span>
@@ -208,59 +242,60 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false }
       </div>
 
       {/* ── Content ── */}
-      <div style={{ display: "flex", flexDirection: "column", padding: "16px 17px 17px" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "12px 13px 13px" }}>
         {highlight && (
           <span style={{
-            alignSelf: "flex-start", marginBottom: 9,
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "4px 11px", borderRadius: 999,
-            background: `${ACCENT}1F`, border: `1px solid ${ACCENT}66`,
-            color: ACCENT, fontSize: 10, fontWeight: 700,
-            letterSpacing: "0.16em", textTransform: "uppercase",
+            alignSelf: "flex-start", marginBottom: 8,
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "3px 9px", borderRadius: 999,
+            background: `${TERRA}14`, border: `1px solid ${TERRA}66`,
+            color: TERRA, fontSize: 9, fontWeight: 700,
+            letterSpacing: "0.14em", textTransform: "uppercase",
           }}>
             ★ Promo del día
           </span>
         )}
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <h3 style={{
-            fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: 17,
-            margin: 0, letterSpacing: "0.01em", color: "#F2EBE3",
-          }}>
-            {item.name}
-          </h3>
-          <span style={{
-            fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 23,
-            whiteSpace: "nowrap", color: "#F2EBE3",
-          }}>
-            ${item.price.toLocaleString("es-CO")}
-          </span>
-        </div>
+        <h3 style={{
+          fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
+          fontSize: 20, margin: 0, lineHeight: 1.05, color: TERRA,
+        }}>
+          {item.name}
+        </h3>
 
         {item.description && (
           <p style={{
-            fontSize: 13, fontWeight: 300, lineHeight: 1.5,
-            opacity: 0.6, margin: "7px 0 0", color: "#F2EBE3",
+            fontSize: 11.5, fontWeight: 300, lineHeight: 1.45,
+            opacity: 0.62, margin: "6px 0 0", flex: 1, color: CHOCO,
           }}>
             {item.description}
           </p>
         )}
 
+        <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 10 }}>
+          <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.5, color: CHOCO }}>
+            Precio
+          </span>
+          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 21, color: CHOCO }}>
+            ${item.price.toLocaleString("es-CO")}
+          </span>
+        </div>
+
         <button
           onClick={() => onSelect?.(item)}
           style={{
-            marginTop: 15, alignSelf: "flex-start",
-            display: "inline-flex", alignItems: "center", gap: 9,
-            padding: "11px 20px", borderRadius: 999,
-            border: "1px solid rgba(242,235,227,0.5)", background: "transparent",
-            color: "#F2EBE3", fontFamily: "var(--font-sans)",
-            fontSize: 12.5, fontWeight: 500, letterSpacing: "0.1em",
+            marginTop: 11, alignSelf: "flex-start",
+            display: "inline-flex", alignItems: "center", gap: 7,
+            padding: "8px 15px", borderRadius: 999,
+            border: "1px solid rgba(62,42,28,0.35)", background: "transparent",
+            color: CHOCO, fontFamily: "var(--font-sans)",
+            fontSize: 11, fontWeight: 500, letterSpacing: "0.09em",
             textTransform: "uppercase", cursor: "pointer",
-            transition: "all .2s",
+            transition: "all .2s", whiteSpace: "nowrap",
           }}
-          onMouseEnter={e => { const t = e.currentTarget; t.style.background = "#F2EBE3"; t.style.color = "#0A0A0A"; }}
-          onMouseLeave={e => { const t = e.currentTarget; t.style.background = "transparent"; t.style.color = "#F2EBE3"; }}
+          onMouseEnter={e => { const t = e.currentTarget; t.style.background = CHOCO; t.style.color = "#F7F1E5"; t.style.borderColor = CHOCO; }}
+          onMouseLeave={e => { const t = e.currentTarget; t.style.background = "transparent"; t.style.color = CHOCO; t.style.borderColor = "rgba(62,42,28,0.35)"; }}
         >
-          Ver más <span style={{ fontSize: 15 }}>→</span>
+          Ver más →
         </button>
       </div>
     </article>

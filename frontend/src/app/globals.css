@@ -135,6 +135,42 @@ body {
   animation: shimmer 1.6s infinite;
 }
 
+/* ─── Rediseño v2: splash + vapor + subrayado ────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spinWave  { to { transform: rotate(360deg); } }
+@keyframes riseFill  { from { transform: translateY(105%); } to { transform: translateY(34%); } }
+@keyframes splashOut { to { transform: translateY(-102%); } }
+@keyframes trackIn {
+  from { opacity: 0; letter-spacing: 0.62em; }
+  to   { opacity: 1; letter-spacing: 0.3em; }
+}
+@keyframes drawLine  { to { stroke-dashoffset: 0; } }
+@keyframes pulseRing {
+  0%   { transform: scale(0.92); opacity: 0.65; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+/* Vapor de café — solo transform/opacity (GPU), muy ligero */
+@keyframes steamRise {
+  0%   { transform: translateY(8px) scaleX(1);    opacity: 0; }
+  20%  {                                          opacity: 0.5; }
+  55%  {                                          opacity: 0.32; }
+  100% { transform: translateY(-58px) scaleX(1.7); opacity: 0; }
+}
+.wisp {
+  position: absolute;
+  bottom: 0;
+  width: 11px;
+  height: 40px;
+  border-radius: 60% 60% 50% 50%;
+  background: linear-gradient(to top, rgba(255,250,240,0) 0%, rgba(255,250,240,0.85) 100%);
+  filter: blur(6px);
+  will-change: transform, opacity;
+  animation: steamRise 3.6s ease-in-out infinite;
+}
+
 /* ─── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
