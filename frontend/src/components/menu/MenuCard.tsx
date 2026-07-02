@@ -105,7 +105,11 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
     // terminar para no pelear con el :active del CSS ni el tilt del motor 3D.
     <div
       className="menu-card-wrap"
-      style={{ animation: `cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) ${Math.min(index, 8) * 75}ms both` }}
+      style={{
+        animation: `cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) ${Math.min(index, 8) * 75}ms both`,
+        scrollSnapAlign: "start",
+        minWidth: 0,
+      }}
       onAnimationEnd={e => { if (e.animationName === "cardIn") e.currentTarget.style.animation = "none"; }}
     >
     <article
@@ -125,9 +129,9 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
         background: CARD,
         cursor: "pointer",
         border: isActive
-          ? "1px solid rgba(188,90,50,0.6)"
-          : "1px solid rgba(188,90,50,0.32)",
-        borderRadius: 18,
+          ? "1.5px solid rgba(188,90,50,0.65)"
+          : "1.5px solid rgba(188,90,50,0.28)",
+        borderRadius: 20,
         overflow: "hidden",
         boxShadow: isActive
           ? "0 24px 55px -20px rgba(188,90,50,0.5), inset 0 0 0 1px rgba(188,90,50,0.25)"
@@ -138,7 +142,7 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       }}
     >
       {/* ── Media ── */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.82", overflow: "hidden", background: "#EFE4D2" }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.95", overflow: "hidden", background: "#EFE4D2" }}>
         {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse */}
         {angles.length > 0 ? (
           angles.map((src, i) => (
@@ -257,16 +261,17 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       {/* ── Content ── */}
       <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "11px 13px 12px" }}>
         <h3 style={{
-          fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
-          fontSize: 19, margin: 0, lineHeight: 1.05, color: TERRA,
+          fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 700,
+          fontSize: 18, margin: 0, lineHeight: 1.12, color: TERRA,
+          letterSpacing: "-0.01em",
         }}>
           {item.name}
         </h3>
 
         {item.description && (
           <p style={{
-            fontSize: 11.5, fontWeight: 300, lineHeight: 1.45,
-            opacity: 0.62, margin: "5px 0 0", flex: 1, color: CHOCO,
+            fontSize: 12, fontWeight: 300, lineHeight: 1.45,
+            margin: "5px 0 0", flex: 1, color: "rgba(62,42,28,0.68)",
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -276,21 +281,21 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
           </p>
         )}
 
-        {/* Precio + "Ver más →" en una sola fila (estilo del diseño, sin alargar) */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
-          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 20, color: CHOCO }}>
+        {/* Precio + "Ver más →" (estilo del diseño); envuelve si no cabe */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, rowGap: 7, marginTop: 10, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: CHOCO, letterSpacing: "-0.01em" }}>
             ${item.price.toLocaleString("es-CO")}
           </span>
           <span
             aria-hidden="true"
             style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "7px 13px", borderRadius: 999,
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "6px 11px", borderRadius: 999,
               border: `1px solid ${isActive ? CHOCO : "rgba(62,42,28,0.35)"}`,
               background: isActive ? CHOCO : "transparent",
               color: isActive ? "#F7F1E5" : CHOCO,
-              fontFamily: "var(--font-sans)", fontSize: 10.5, fontWeight: 500,
-              letterSpacing: "0.09em", textTransform: "uppercase",
+              fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
+              letterSpacing: "0.08em", textTransform: "uppercase",
               transition: "all .35s ease", whiteSpace: "nowrap",
             }}
           >

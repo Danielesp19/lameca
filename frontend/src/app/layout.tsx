@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Jost, Cormorant_Garamond } from "next/font/google";
+import { Jost, Cormorant_Garamond, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const jost = Jost({
@@ -17,6 +17,15 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
+// Fuente display para nombres de producto y títulos: más contraste y presencia
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "La Meca — Carta",
   description: "Descubre nuestra carta de cafés, bebidas y repostería artesanal.",
@@ -26,7 +35,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${jost.variable} ${cormorant.variable}`}>
+    <html lang="es" className={`${jost.variable} ${cormorant.variable} ${playfair.variable}`}>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );

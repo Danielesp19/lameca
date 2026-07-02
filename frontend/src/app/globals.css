@@ -14,8 +14,9 @@
   --color-coffee-100: #F0E6D8;
   --color-coffee-50:  #FAF7F2;
 
-  --font-serif: var(--font-cormorant), Georgia, serif;
-  --font-sans:  var(--font-jost), system-ui, sans-serif;
+  --font-serif:   var(--font-cormorant), Georgia, serif;
+  --font-sans:    var(--font-jost), system-ui, sans-serif;
+  --font-display: var(--font-playfair), Georgia, serif;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────── */

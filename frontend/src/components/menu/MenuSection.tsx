@@ -34,32 +34,37 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     ? categories
     : categories.filter(c => c.id === activeCategory);
 
-  // Find the card whose center is closest to the viewport midpoint.
-  // Además aplica el tilt 3D por-frame (solo transform/opacity — GPU) a cada card.
+  // Find the card whose center is closest to the viewport midpoint (both axes —
+  // the rows also scroll horizontally). Además aplica el tilt 3D por-frame
+  // (solo transform/opacity — GPU) a cada card.
   const updateActive = useCallback(() => {
     const section = sectionRef.current;
     if (!section || document.hidden || selected !== null) return;
 
-    const vh  = window.innerHeight;
-    const mid = vh / 2;
+    const vh   = window.innerHeight;
+    const vw   = window.innerWidth;
+    const midY = vh / 2;
+    const midX = vw / 2;
     let bestId: number | null = null;
     let bestDist = Infinity;
 
     section.querySelectorAll<HTMLElement>("[data-card]").forEach(card => {
       const r = card.getBoundingClientRect();
-      const center = r.top + r.height / 2;
+      const centerY = r.top + r.height / 2;
+      const centerX = r.left + r.width / 2;
 
       // Carrusel cilíndrico: t = -1 (arriba) · 0 (centro) · 1 (abajo)
       if (!reduceMotion.current) {
-        let t = (center - mid) / mid;
+        let t = (centerY - midY) / midY;
         t = Math.max(-1.3, Math.min(1.3, t));
         const a = Math.min(Math.abs(t), 1);
-        card.style.transform = `perspective(1100px) rotateX(${(-t * 9).toFixed(2)}deg) scale(${(1.015 - a * 0.07).toFixed(3)})`;
-        card.style.opacity = (1 - a * 0.4).toFixed(3);
+        card.style.transform = `perspective(1100px) rotateX(${(-t * 8).toFixed(2)}deg) scale(${(1.01 - a * 0.06).toFixed(3)})`;
+        card.style.opacity = (1 - a * 0.35).toFixed(3);
       }
 
       if (r.bottom <= 0 || r.top >= vh) return;
-      const d = Math.abs(center - mid);
+      if (r.right <= 0 || r.left >= vw) return; // fuera de pantalla en horizontal
+      const d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
       if (d < bestDist) {
         bestDist = d;
         const raw = card.getAttribute("data-id");
@@ -85,7 +90,8 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
       else updateActive();
     };
 
-    window.addEventListener("scroll",  onScroll, { passive: true });
+    // capture: true → también reacciona al scroll horizontal de los carruseles
+    window.addEventListener("scroll",  onScroll, { passive: true, capture: true });
     window.addEventListener("resize",  onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVis);
 
@@ -94,7 +100,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     const t2 = setTimeout(updateActive, 800);
 
     return () => {
-      window.removeEventListener("scroll",  onScroll);
+      window.removeEventListener("scroll",  onScroll, { capture: true });
       window.removeEventListener("resize",  onScroll);
       document.removeEventListener("visibilitychange", onVis);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -125,6 +131,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           background: BG, color: CHOCO,
           fontFamily: "var(--font-sans)",
           boxShadow: "0 -24px 60px rgba(62,42,28,0.35)",
+          overflowX: "clip",
         }}
       >
         {/* ── Banda de header: logo centrado + mesa ── */}
@@ -158,8 +165,9 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         {/* ── Título con subrayado dibujado ── */}
         <div style={{ maxWidth: 480, margin: "0 auto", padding: "26px 22px 6px" }}>
           <h2 style={{
-            fontFamily: "var(--font-serif)", fontWeight: 500, fontStyle: "italic",
+            fontFamily: "var(--font-display)", fontWeight: 600, fontStyle: "italic",
             fontSize: 44, lineHeight: 1, margin: 0, color: CHOCO,
+            letterSpacing: "-0.01em",
             animation: "titleIn 0.8s cubic-bezier(0.2,0.7,0.2,1) both",
           }}>
             Menú
@@ -268,30 +276,48 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 <div key={cat.id} style={{ marginTop: gi > 0 || activeCategory === "todos" ? 26 : 0 }}>
                   {showHeader && (
                     <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
-                      <h2 style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 24, margin: 0, whiteSpace: "nowrap", color: CHOCO }}>
+                      <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 600, fontSize: 23, margin: 0, whiteSpace: "nowrap", color: CHOCO, letterSpacing: "-0.01em" }}>
                         {cat.name}
                       </h2>
                       <span style={{ flex: 1, height: 1, background: isFeatured ? `linear-gradient(90deg, ${TERRA}, transparent)` : "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
                     </div>
                   )}
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    {cat.items.map((item, idx) => (
-                      <MenuCard
-                        key={item.id}
-                        item={item}
-                        isActive={item.id === activeItemId}
-                        onSelect={setSelected}
-                        hot={isHot}
-                        index={idx}
-                      />
-                    ))}
-                    {cat.items.length === 0 && (
-                      <p style={{ gridColumn: "1 / -1", fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
-                        Pronto habrá novedades aquí.
-                      </p>
-                    )}
-                  </div>
+                  {/* Carrusel horizontal con snap: 1 fila (pocos productos) o 2 filas.
+                      Sangra hasta los bordes de la pantalla para invitar al swipe. */}
+                  {cat.items.length > 0 ? (
+                    <div
+                      className="cat-scroll"
+                      style={{
+                        display: "grid",
+                        gridAutoFlow: "column",
+                        gridTemplateRows: cat.items.length > 4 ? "auto auto" : "auto",
+                        gridAutoColumns: "min(46%, 200px)",
+                        gap: 12,
+                        overflowX: "auto",
+                        scrollSnapType: "x proximity",
+                        scrollPaddingLeft: 22,
+                        margin: "0 -22px",
+                        padding: "4px 22px 16px",
+                        WebkitOverflowScrolling: "touch",
+                      }}
+                    >
+                      {cat.items.map((item, idx) => (
+                        <MenuCard
+                          key={item.id}
+                          item={item}
+                          isActive={item.id === activeItemId}
+                          onSelect={setSelected}
+                          hot={isHot}
+                          index={idx}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
+                      Pronto habrá novedades aquí.
+                    </p>
+                  )}
                 </div>
                 );
               })}

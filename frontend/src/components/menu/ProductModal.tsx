@@ -225,14 +225,16 @@ export default function ProductModal({ item, onClose }: Props) {
               <div style={{ padding: "18px 22px 26px" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, animation: "fadeUp 0.5s ease 0.15s both" }}>
                   <h2 style={{
-                    fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
-                    fontSize: 30, margin: 0, lineHeight: 1, color: TERRA,
+                    fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 700,
+                    fontSize: 28, margin: 0, lineHeight: 1.05, color: TERRA,
+                    letterSpacing: "-0.01em",
                   }}>
                     {item.name}
                   </h2>
                   <span style={{
-                    fontFamily: "var(--font-serif)", fontWeight: 600,
-                    fontSize: 28, whiteSpace: "nowrap", color: CHOCO,
+                    fontFamily: "var(--font-display)", fontWeight: 700,
+                    fontSize: 25, whiteSpace: "nowrap", color: CHOCO,
+                    letterSpacing: "-0.01em",
                   }}>
                     ${item.price.toLocaleString("es-CO")}
                   </span>
