@@ -142,7 +142,8 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       }}
     >
       {/* ── Media ── */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.82", overflow: "hidden", background: "#EFE4D2" }}>
+      {/* Imagen protagonista, como el diseño (más alta que ancha) */}
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1.05", overflow: "hidden", background: "#EFE4D2" }}>
         {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse */}
         {angles.length > 0 ? (
           angles.map((src, i) => (
@@ -262,7 +263,7 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "11px 13px 12px" }}>
         <h3 style={{
           fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 700,
-          fontSize: 18, margin: 0, lineHeight: 1.12, color: TERRA,
+          fontSize: 20, margin: 0, lineHeight: 1.1, color: TERRA,
           letterSpacing: "-0.01em",
         }}>
           {item.name}
@@ -281,27 +282,32 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
           </p>
         )}
 
-        {/* Precio + "Ver más →" (estilo del diseño); envuelve si no cabe */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, rowGap: 7, marginTop: 10, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: CHOCO, letterSpacing: "-0.01em" }}>
+        {/* Fila de precio con etiqueta + "Ver más →" abajo, como el diseño */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 10 }}>
+          <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(62,42,28,0.5)" }}>
+            Precio
+          </span>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 19, color: CHOCO, letterSpacing: "-0.01em" }}>
             ${item.price.toLocaleString("es-CO")}
           </span>
-          <span
-            aria-hidden="true"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "6px 11px", borderRadius: 999,
-              border: `1px solid ${isActive ? CHOCO : "rgba(62,42,28,0.35)"}`,
-              background: isActive ? CHOCO : "transparent",
-              color: isActive ? "#F7F1E5" : CHOCO,
-              fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
-              letterSpacing: "0.08em", textTransform: "uppercase",
-              transition: "all .35s ease", whiteSpace: "nowrap",
-            }}
-          >
-            Ver más →
-          </span>
         </div>
+
+        <span
+          aria-hidden="true"
+          style={{
+            marginTop: 11, alignSelf: "flex-start",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "8px 15px", borderRadius: 999,
+            border: `1px solid ${isActive ? CHOCO : "rgba(62,42,28,0.35)"}`,
+            background: isActive ? CHOCO : "transparent",
+            color: isActive ? "#F7F1E5" : CHOCO,
+            fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500,
+            letterSpacing: "0.09em", textTransform: "uppercase",
+            transition: "all .35s ease", whiteSpace: "nowrap",
+          }}
+        >
+          Ver más →
+        </span>
       </div>
     </article>
     </div>

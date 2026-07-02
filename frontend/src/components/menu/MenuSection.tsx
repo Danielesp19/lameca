@@ -292,7 +292,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                         display: "grid",
                         gridAutoFlow: "column",
                         gridTemplateRows: "auto",
-                        gridAutoColumns: "min(46%, 200px)",
+                        gridAutoColumns: "min(62%, 250px)",
                         gap: 12,
                         overflowX: "auto",
                         scrollSnapType: "x proximity",
