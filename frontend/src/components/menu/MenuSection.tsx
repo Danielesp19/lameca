@@ -18,7 +18,9 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   const { categories, loading, error, retry } = useMenu(initialCategories);
   const { table } = useCart();
   const [activeCategory, setActiveCategory] = useState<number | "todos">("todos");
-  const [activeItemId, setActiveItemId]     = useState<number | null>(null);
+  // Clave por INSTANCIA de tarjeta (categoría:producto): un mismo producto puede
+  // aparecer en dos filas (p.ej. Destacados) y solo debe activarse una copia.
+  const [activeCardKey, setActiveCardKey]   = useState<string | null>(null);
   const [selected, setSelected]             = useState<MenuItem | null>(null);
 
   const sectionRef    = useRef<HTMLElement>(null);
@@ -45,7 +47,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     const vw   = window.innerWidth;
     const midY = vh / 2;
     const midX = vw / 2;
-    let bestId: number | null = null;
+    let bestKey: string | null = null;
     let bestDist = Infinity;
 
     section.querySelectorAll<HTMLElement>("[data-card]").forEach(card => {
@@ -67,12 +69,11 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
       const d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
       if (d < bestDist) {
         bestDist = d;
-        const raw = card.getAttribute("data-id");
-        bestId = raw ? parseInt(raw, 10) : null;
+        bestKey = card.getAttribute("data-key");
       }
     });
 
-    setActiveItemId(prev => (prev === bestId ? prev : bestId));
+    setActiveCardKey(prev => (prev === bestKey ? prev : bestKey));
   }, [selected]);
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
       });
     };
     const onVis = () => {
-      if (document.hidden) setActiveItemId(null);
+      if (document.hidden) setActiveCardKey(null);
       else updateActive();
     };
 
@@ -111,12 +112,12 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
   // Pause all cards while modal is open; resume on close
   useEffect(() => {
-    if (selected) setActiveItemId(null);
+    if (selected) setActiveCardKey(null);
     else updateActive();
   }, [selected, updateActive]);
 
   function handleCategoryChange(id: number | "todos") {
-    setActiveItemId(null);
+    setActiveCardKey(null);
     setActiveCategory(id);
     setTimeout(updateActive, 100);
   }
@@ -306,7 +307,8 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                         <MenuCard
                           key={item.id}
                           item={item}
-                          isActive={item.id === activeItemId}
+                          cardKey={`${cat.id}:${item.id}`}
+                          isActive={activeCardKey === `${cat.id}:${item.id}`}
                           onSelect={setSelected}
                           hot={isHot}
                           index={idx}

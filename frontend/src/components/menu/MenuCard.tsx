@@ -17,20 +17,25 @@ interface Props {
   item: MenuItem;
   isActive: boolean;
   onSelect?: (item: MenuItem) => void;
+  /** Clave única por instancia (categoría:producto) — un mismo producto puede
+   *  aparecer en dos filas y solo debe activarse la copia centrada. */
+  cardKey?: string;
   /** Bebida caliente → vapor animado cuando la tarjeta está activa */
   hot?: boolean;
   /** Posición en la lista → retraso de la entrada en cascada */
   index?: number;
 }
 
-export default function MenuCard({ item, isActive, onSelect, hot = false, index = 0 }: Props) {
+export default function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopsRef = useRef(0);
 
   const hasVideo = Boolean(item.video_url);
-  // Si el producto tiene video, la tarjeta muestra SOLO el video (no las fotos).
+  // Si el producto tiene video, la tarjeta muestra SOLO el video (no cicla fotos),
+  // pero usa la foto del producto como miniatura mientras el video no corre.
+  const poster = hasVideo ? item.image_url : null;
   const angles = (hasVideo
     ? []
     : [...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])]
@@ -56,6 +61,20 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       setVideoVisible(false);
     }
   }, [isActive, hasVideo, item.video_url]);
+
+  // Sin foto de producto: carga solo los metadatos del video y muestra su primer
+  // frame pausado como miniatura (descarga mínima, no compite con otros videos).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !hasVideo || poster) return;
+    if (!v.getAttribute("src") && item.video_url) {
+      v.preload = "metadata";
+      v.src = item.video_url;
+      const onMeta = () => { try { v.currentTime = 0.05; } catch { /* noop */ } };
+      v.addEventListener("loadedmetadata", onMeta, { once: true });
+      return () => v.removeEventListener("loadedmetadata", onMeta);
+    }
+  }, [hasVideo, poster, item.video_url]);
 
   // Reproduce solo MAX_LOOPS veces y se congela en el último frame. Cuenta desde 0
   // cada vez que la tarjeta se reactiva.
@@ -121,7 +140,7 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
       tabIndex={0}
       aria-label={`Ver detalles de ${item.name}`}
       data-card=""
-      data-id={item.id}
+      data-key={cardKey ?? String(item.id)}
       style={{
         position: "relative",
         display: "flex", flexDirection: "column",
@@ -160,8 +179,19 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
             />
           ))
         ) : hasVideo ? (
-          /* Fondo mientras el video bufferea (lo tapa al reproducirse) */
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
+          /* Miniatura del video: foto del producto (o el primer frame del video
+             pausado si no hay foto). El video la tapa al reproducirse. */
+          poster ? (
+            <div style={{
+              position: "absolute", inset: 0,
+              backgroundImage: `url('${poster}')`,
+              backgroundSize: "cover", backgroundPosition: "center",
+              transform: isActive ? "scale(1.08)" : "scale(1)",
+              transition: "transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
+            }} />
+          ) : (
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
+          )
         ) : (
           /* Placeholder for products without image */
           <div style={{
@@ -189,7 +219,8 @@ export default function MenuCard({ item, isActive, onSelect, hot = false, index 
             style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover",
-              opacity: videoVisible ? 1 : 0,
+              // Sin póster, el video mismo (primer frame pausado) es la miniatura
+              opacity: videoVisible || !poster ? 1 : 0,
               transition: "opacity 0.6s ease",
               pointerEvents: "none",
             }}
