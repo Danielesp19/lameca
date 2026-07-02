@@ -1,12 +1,17 @@
-// JSON requests go through the Next.js rewrite proxy (/api-menu → localhost:8001/api).
-// File uploads (FormData) go DIRECTLY to PHP to avoid Next.js buffering the body,
-// which causes 413 errors on large files even when PHP limits are high.
+// JSON requests go through the Next.js rewrite proxy (/api-menu → backend/api).
+// File uploads (FormData) can go DIRECTLY to PHP to avoid Next.js buffering the body
+// (which causes 413 on very large files), but eso exige que el backend sea HTTPS
+// (si es HTTP, el navegador bloquea la subida por mixed-content desde el sitio HTTPS).
 
 const BASE        = "/api-menu/admin";
-// Las subidas de archivos van DIRECTO a Laravel (saltan el proxy de Next para evitar 413).
-// En producción el navegador debe alcanzar el backend público → NEXT_PUBLIC_BACKEND_URL.
-// (requiere que ese origen esté en CORS_ALLOWED_ORIGINS del backend).
+// Backend público para subidas directas (requiere estar en CORS_ALLOWED_ORIGINS).
 const BASE_DIRECT = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001"}/api/admin`;
+
+// Solo subimos DIRECTO al backend cuando es HTTPS (evita el bloqueo mixed-content).
+// Si el backend es HTTP, las subidas van por el proxy same-origin de Vercel: funciona
+// para imágenes y videos comprimidos (el único costo es el límite de tamaño del proxy).
+// Al configurar HTTPS y poner NEXT_PUBLIC_BACKEND_URL=https://… vuelve solo al modo directo.
+const DIRECT_UPLOADS = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").startsWith("https://");
 
 export interface AdminCategory {
   id: number;
@@ -104,13 +109,13 @@ export const adminGetItems = () =>
   request<AdminItem[]>("/items", { headers: authHeaders() })
     .then(items => items.map(normalizeItem));
 
-// File uploads go directly to PHP (bypass Next.js proxy to avoid 413)
+// Subidas: directo al backend si es HTTPS; si no, por el proxy same-origin.
 export const adminCreateItem = (data: FormData) =>
   request<AdminItem>("/items", {
     method: "POST",
     headers: authHeaders(),
     body: data,
-  }, true).then(normalizeItem);
+  }, DIRECT_UPLOADS).then(normalizeItem);
 
 export const adminUpdateItem = (id: number, data: FormData) => {
   data.append("_method", "PUT");
@@ -118,7 +123,7 @@ export const adminUpdateItem = (id: number, data: FormData) => {
     method: "POST",
     headers: authHeaders(),
     body: data,
-  }, true).then(normalizeItem);
+  }, DIRECT_UPLOADS).then(normalizeItem);
 };
 
 export const adminDeleteItem = (id: number) =>
