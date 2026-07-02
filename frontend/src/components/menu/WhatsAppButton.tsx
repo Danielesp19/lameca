@@ -6,14 +6,20 @@ import { useCart } from "@/context/CartContext";
 import { getSedes } from "@/lib/orders-api";
 import type { SedeInfo } from "@/lib/table-session";
 
-const GREEN = "#25D366";
+// Paleta rediseño v2
+const OLIVE = "#6E8B4E";
 const DARK = "#3E2A1C";
 const CREAM = "#F7F1E5";
 
 const MESSAGE = "¡Hola! Vi la carta de La Meca y quisiera hacer un pedido 🧉";
 
+// Número de respaldo (opcional, formato internacional sin +). Si ninguna sede
+// tiene WhatsApp configurado y tampoco hay env, se abre el selector de contacto.
+const FALLBACK_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "";
+
 function waLink(phone: string): string {
-  return `https://wa.me/${phone}?text=${encodeURIComponent(MESSAGE)}`;
+  const text = encodeURIComponent(MESSAGE);
+  return phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 
 export default function WhatsAppButton() {
@@ -25,37 +31,48 @@ export default function WhatsAppButton() {
     getSedes().then(list => setSedes(list.filter(s => s.whatsapp_phone)));
   }, []);
 
-  // Se muestra siempre que NO haya una sesión de QR válida (público o caducada),
-  // y si hay al menos un número de WhatsApp configurado.
-  if (hasSession || sedes.length === 0) return null;
+  // Se muestra siempre que NO haya una sesión de QR válida (público o caducada).
+  if (hasSession) return null;
 
   function go(sede: SedeInfo) {
-    if (sede.whatsapp_phone) window.open(waLink(sede.whatsapp_phone), "_blank", "noopener");
+    window.open(waLink(sede.whatsapp_phone ?? FALLBACK_PHONE), "_blank", "noopener");
     setPick(false);
   }
 
   function onClick() {
-    if (sedes.length === 1) go(sedes[0]);
-    else setPick(true);
+    if (sedes.length > 1) setPick(true);
+    else if (sedes.length === 1) go(sedes[0]);
+    else window.open(waLink(FALLBACK_PHONE), "_blank", "noopener");
   }
 
   return (
     <>
+      {/* Botón flotante centrado — estilo del diseño (pill con anillo pulsante) */}
       <motion.button
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26, delay: 0.6 }}
         onClick={onClick}
         style={{
-          position: "fixed", bottom: 22, right: 22, zIndex: 150,
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "14px 20px", borderRadius: 999, border: "none", cursor: "pointer",
-          background: GREEN, color: "#FFFFFF",
-          boxShadow: "0 12px 36px rgba(10,6,4,0.4)",
-          fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600,
+          position: "fixed", bottom: 20, left: "50%", zIndex: 150,
+          x: "-50%",
+          display: "inline-flex", alignItems: "center", gap: 10,
+          padding: "14px 28px", borderRadius: 999, border: "none", cursor: "pointer",
+          background: OLIVE, color: "#FBF7EC",
+          boxShadow: "0 16px 34px -12px rgba(110,139,78,0.65)",
+          fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600,
+          letterSpacing: "0.1em", textTransform: "uppercase",
         }}
+        whileTap={{ scale: 0.96 }}
         aria-label="Pedir por WhatsApp"
       >
-        <span style={{ fontSize: 20 }}>💬</span>
+        <span aria-hidden="true" style={{
+          position: "absolute", inset: 0, borderRadius: 999,
+          border: "2px solid rgba(110,139,78,0.55)",
+          animation: "pulseRing 2.2s ease-out infinite",
+          pointerEvents: "none",
+        }} />
+        <span style={{ fontSize: 17 }}>💬</span>
         Pedir por WhatsApp
       </motion.button>
 
@@ -67,7 +84,7 @@ export default function WhatsAppButton() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.22 }}
               onClick={() => setPick(false)}
-              style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(10,6,4,0.7)", backdropFilter: "blur(6px)" }}
+              style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(46,30,18,0.6)", backdropFilter: "blur(6px)" }}
             />
             <motion.div
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
@@ -77,11 +94,11 @@ export default function WhatsAppButton() {
                 maxWidth: 460, margin: "0 auto",
                 background: CREAM, borderRadius: "24px 24px 0 0",
                 padding: "22px 22px 28px", fontFamily: "var(--font-sans)", color: DARK,
-                boxShadow: "0 -20px 60px rgba(10,6,4,0.5)",
+                boxShadow: "0 -20px 60px rgba(46,30,18,0.5)",
               }}
             >
-              <span style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", width: 42, height: 5, borderRadius: 3, background: "rgba(36,26,18,0.2)" }} />
-              <h2 style={{ fontFamily: "var(--font-serif)", fontSize: 22, margin: "6px 0 4px" }}>¿A cuál sede?</h2>
+              <span style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", width: 42, height: 5, borderRadius: 3, background: "rgba(62,42,28,0.2)" }} />
+              <h2 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 22, margin: "6px 0 4px" }}>¿A cuál sede?</h2>
               <p style={{ fontSize: 13, opacity: 0.65, margin: "0 0 16px" }}>Elige el local con el que quieres coordinar tu pedido.</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {sedes.map(s => (

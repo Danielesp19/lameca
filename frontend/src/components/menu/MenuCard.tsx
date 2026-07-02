@@ -261,18 +261,6 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
 
       {/* ── Content ── */}
       <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "11px 13px 12px" }}>
-        {highlight && (
-          <span style={{
-            alignSelf: "flex-start", marginBottom: 7,
-            display: "inline-flex", alignItems: "center", gap: 5,
-            padding: "3px 9px", borderRadius: 999,
-            background: `${TERRA}14`, border: `1px solid ${TERRA}66`,
-            color: TERRA, fontSize: 9, fontWeight: 700,
-            letterSpacing: "0.14em", textTransform: "uppercase",
-          }}>
-            ★ Promo del día
-          </span>
-        )}
         <h3 style={{
           fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
           fontSize: 19, margin: 0, lineHeight: 1.05, color: TERRA,
@@ -293,7 +281,7 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
           </p>
         )}
 
-        {/* Precio + flecha en una sola fila → tarjeta más baja y equilibrada */}
+        {/* Precio + "Ver más →" en una sola fila (estilo del diseño, sin alargar) */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
           <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 20, color: CHOCO }}>
             ${item.price.toLocaleString("es-CO")}
@@ -301,16 +289,17 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
           <span
             aria-hidden="true"
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 32, height: 32, borderRadius: "50%",
-              border: "1px solid rgba(62,42,28,0.3)",
-              color: CHOCO, fontSize: 15, lineHeight: 1,
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "7px 13px", borderRadius: 999,
+              border: `1px solid ${isActive ? CHOCO : "rgba(62,42,28,0.35)"}`,
               background: isActive ? CHOCO : "transparent",
-              transition: "all .35s ease",
-              transform: isActive ? "translateX(2px)" : "none",
+              color: isActive ? "#F7F1E5" : CHOCO,
+              fontFamily: "var(--font-sans)", fontSize: 10.5, fontWeight: 500,
+              letterSpacing: "0.09em", textTransform: "uppercase",
+              transition: "all .35s ease", whiteSpace: "nowrap",
             }}
           >
-            <span style={{ color: isActive ? "#F7F1E5" : CHOCO, transition: "color .35s ease" }}>→</span>
+            Ver más →
           </span>
         </div>
       </div>
