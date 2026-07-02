@@ -267,29 +267,12 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 return (
                 <div key={cat.id} style={{ marginTop: gi > 0 || activeCategory === "todos" ? 26 : 0 }}>
                   {showHeader && (
-                    isFeatured ? (
-                      <div style={{ marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                          <span style={{ fontSize: 15, color: TERRA }}>★</span>
-                          <span style={{ fontSize: 11, letterSpacing: "0.32em", textTransform: "uppercase", color: TERRA, fontWeight: 600 }}>
-                            Promoción del día
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 11 }}>
-                          <h2 style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 24, margin: 0, whiteSpace: "nowrap", color: CHOCO }}>
-                            {cat.name}
-                          </h2>
-                          <span style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${TERRA}, transparent)`, display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
-                        <h2 style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 24, margin: 0, whiteSpace: "nowrap", color: CHOCO }}>
-                          {cat.name}
-                        </h2>
-                        <span style={{ flex: 1, height: 1, background: "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
-                      </div>
-                    )
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
+                      <h2 style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 24, margin: 0, whiteSpace: "nowrap", color: CHOCO }}>
+                        {cat.name}
+                      </h2>
+                      <span style={{ flex: 1, height: 1, background: isFeatured ? `linear-gradient(90deg, ${TERRA}, transparent)` : "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
+                    </div>
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -299,7 +282,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                         item={item}
                         isActive={item.id === activeItemId}
                         onSelect={setSelected}
-                        highlight={isFeatured}
                         hot={isHot}
                         index={idx}
                       />

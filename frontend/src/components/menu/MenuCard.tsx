@@ -17,14 +17,13 @@ interface Props {
   item: MenuItem;
   isActive: boolean;
   onSelect?: (item: MenuItem) => void;
-  highlight?: boolean;
   /** Bebida caliente → vapor animado cuando la tarjeta está activa */
   hot?: boolean;
   /** Posición en la lista → retraso de la entrada en cascada */
   index?: number;
 }
 
-export default function MenuCard({ item, isActive, onSelect, highlight = false, hot = false, index = 0 }: Props) {
+export default function MenuCard({ item, isActive, onSelect, hot = false, index = 0 }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -125,18 +124,14 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
         height: "100%",
         background: CARD,
         cursor: "pointer",
-        border: highlight
-          ? `1.5px solid ${TERRA}`
-          : isActive
-            ? "1px solid rgba(188,90,50,0.6)"
-            : "1px solid rgba(188,90,50,0.32)",
+        border: isActive
+          ? "1px solid rgba(188,90,50,0.6)"
+          : "1px solid rgba(188,90,50,0.32)",
         borderRadius: 18,
         overflow: "hidden",
-        boxShadow: highlight
-          ? `0 18px 40px -22px rgba(62,42,28,0.6), 0 0 0 1px ${TERRA}33, 0 0 26px -8px ${TERRA}55`
-          : isActive
-            ? "0 24px 55px -20px rgba(188,90,50,0.5), inset 0 0 0 1px rgba(188,90,50,0.25)"
-            : "0 14px 28px -22px rgba(62,42,28,0.55)",
+        boxShadow: isActive
+          ? "0 24px 55px -20px rgba(188,90,50,0.5), inset 0 0 0 1px rgba(188,90,50,0.25)"
+          : "0 14px 28px -22px rgba(62,42,28,0.55)",
         transformOrigin: "center center",
         willChange: "transform, opacity",
         transition: "box-shadow .5s ease, border-color .5s ease",
