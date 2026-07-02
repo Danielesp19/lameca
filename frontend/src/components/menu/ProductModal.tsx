@@ -221,9 +221,9 @@ export default function ProductModal({ item, onClose }: Props) {
                 </div>
               )}
 
-              {/* Content */}
+              {/* Content — entrada escalonada al abrir */}
               <div style={{ padding: "18px 22px 26px" }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, animation: "fadeUp 0.5s ease 0.15s both" }}>
                   <h2 style={{
                     fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
                     fontSize: 30, margin: 0, lineHeight: 1, color: TERRA,
@@ -238,14 +238,14 @@ export default function ProductModal({ item, onClose }: Props) {
                   </span>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 16px" }}>
-                  <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 16px", animation: "fadeUp 0.5s ease 0.25s both" }}>
+                  <span style={{ width: 28, height: 1, background: OLIVE, display: "block", transformOrigin: "left", animation: "lineGrow 0.7s ease 0.35s both" }} />
                   <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.5 }}>
                     Descripción
                   </span>
                 </div>
 
-                <p style={{ fontSize: 14.5, fontWeight: 300, lineHeight: 1.65, opacity: 0.78, margin: 0, color: CHOCO }}>
+                <p style={{ fontSize: 14.5, fontWeight: 300, lineHeight: 1.65, margin: 0, color: "rgba(62,42,28,0.78)", animation: "fadeUp 0.5s ease 0.32s both" }}>
                   {item.description ?? "Sin descripción disponible."}
                 </p>
 
@@ -255,6 +255,7 @@ export default function ProductModal({ item, onClose }: Props) {
                     display: "inline-flex", alignItems: "center", gap: 8, marginTop: 18,
                     padding: "8px 14px", borderRadius: 999,
                     background: "rgba(62,42,28,0.05)", border: `1px solid ${TERRA}55`,
+                    animation: "fadeUp 0.5s ease 0.4s both",
                   }}>
                     <span style={{ fontSize: 15, letterSpacing: caffeine.beans > 1 ? "-2px" : 0 }}>{caffeine.emoji}</span>
                     <span style={{ fontSize: 12.5, fontWeight: 500, color: CHOCO }}>{caffeine.label}</span>
@@ -263,7 +264,7 @@ export default function ProductModal({ item, onClose }: Props) {
 
                 {/* ── Selector de nivel de azúcar (solo en modo QR) ── */}
                 {hasSession && item.has_sugar_option && (
-                  <div style={{ marginTop: 22 }}>
+                  <div style={{ marginTop: 22, animation: "fadeUp 0.5s ease 0.45s both" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                       <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
                       <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.5 }}>
@@ -309,6 +310,7 @@ export default function ProductModal({ item, onClose }: Props) {
                       fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600,
                       letterSpacing: "0.12em", textTransform: "uppercase", cursor: added ? "default" : "pointer",
                       transition: "transform .2s, background .2s",
+                      animation: "fadeUp 0.5s ease 0.5s both",
                     }}
                     onMouseEnter={e => { if (!added) e.currentTarget.style.transform = "translateY(-2px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = ""; }}
@@ -323,6 +325,7 @@ export default function ProductModal({ item, onClose }: Props) {
                     marginTop: 24, padding: "14px 16px", borderRadius: 14,
                     background: `${TERRA}0D`, border: `1px dashed ${TERRA}88`,
                     fontSize: 13, lineHeight: 1.55, color: CHOCO, textAlign: "center",
+                    animation: "fadeUp 0.5s ease 0.5s both",
                   }}>
                     📷 Escanea el <strong>QR de tu mesa</strong> para pedir desde la app,
                     o usa el botón de <strong>WhatsApp</strong> para coordinar tu pedido.

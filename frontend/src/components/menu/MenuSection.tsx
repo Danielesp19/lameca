@@ -160,6 +160,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           <h2 style={{
             fontFamily: "var(--font-serif)", fontWeight: 500, fontStyle: "italic",
             fontSize: 44, lineHeight: 1, margin: 0, color: CHOCO,
+            animation: "titleIn 0.8s cubic-bezier(0.2,0.7,0.2,1) both",
           }}>
             Menú
           </h2>
@@ -170,7 +171,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
               style={{ strokeDasharray: 135, strokeDashoffset: 135, animation: "drawLine 1s ease 0.5s forwards" }}
             />
           </svg>
-          <p style={{ margin: "12px 0 0", fontSize: 13, fontWeight: 300, lineHeight: 1.55, opacity: 0.65, maxWidth: 300 }}>
+          <p style={{ margin: "12px 0 0", fontSize: 13, fontWeight: 300, lineHeight: 1.55, maxWidth: 300, color: "rgba(62,42,28,0.65)", animation: "fadeUp 0.7s ease 0.35s both" }}>
             Tostado en casa, servido con calma. Elige una categoría.
           </p>
         </div>
@@ -184,7 +185,11 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         }}>
           <div
             className="cat-scroll"
-            style={{ display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none", padding: "14px 22px 10px", maxWidth: 480, margin: "0 auto" }}
+            style={{
+              display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none",
+              padding: "14px 22px 10px", maxWidth: 480, margin: "0 auto",
+              animation: "fadeUp 0.6s ease 0.45s both",
+            }}
           >
             {chips.map(chip => {
               const active = chip.id === activeCategory;
@@ -200,6 +205,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                     background: active ? CHOCO : "transparent",
                     color: active ? BG : CHOCO,
                     transition: "all .25s",
+                    animation: active ? "chipPop 0.35s ease" : "none",
                   }}
                 >
                   {chip.name}
@@ -262,7 +268,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 <div key={cat.id} style={{ marginTop: gi > 0 || activeCategory === "todos" ? 26 : 0 }}>
                   {showHeader && (
                     isFeatured ? (
-                      <div style={{ marginBottom: 14 }}>
+                      <div style={{ marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                           <span style={{ fontSize: 15, color: TERRA }}>★</span>
                           <span style={{ fontSize: 11, letterSpacing: "0.32em", textTransform: "uppercase", color: TERRA, fontWeight: 600 }}>
@@ -273,21 +279,21 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                           <h2 style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 24, margin: 0, whiteSpace: "nowrap", color: CHOCO }}>
                             {cat.name}
                           </h2>
-                          <span style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${TERRA}, transparent)`, display: "block" }} />
+                          <span style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${TERRA}, transparent)`, display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
                         <h2 style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 24, margin: 0, whiteSpace: "nowrap", color: CHOCO }}>
                           {cat.name}
                         </h2>
-                        <span style={{ flex: 1, height: 1, background: "rgba(62,42,28,0.14)", display: "block" }} />
+                        <span style={{ flex: 1, height: 1, background: "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
                       </div>
                     )
                   )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    {cat.items.map(item => (
+                    {cat.items.map((item, idx) => (
                       <MenuCard
                         key={item.id}
                         item={item}
@@ -295,6 +301,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                         onSelect={setSelected}
                         highlight={isFeatured}
                         hot={isHot}
+                        index={idx}
                       />
                     ))}
                     {cat.items.length === 0 && (

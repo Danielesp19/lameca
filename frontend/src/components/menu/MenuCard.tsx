@@ -20,9 +20,11 @@ interface Props {
   highlight?: boolean;
   /** Bebida caliente → vapor animado cuando la tarjeta está activa */
   hot?: boolean;
+  /** Posición en la lista → retraso de la entrada en cascada */
+  index?: number;
 }
 
-export default function MenuCard({ item, isActive, onSelect, highlight = false, hot = false }: Props) {
+export default function MenuCard({ item, isActive, onSelect, highlight = false, hot = false, index = 0 }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -36,7 +38,6 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
   ).filter(Boolean) as string[];
 
   const isAngles = !hasVideo && angles.length > 1;
-  const badge = hasVideo ? "▶ Video" : isAngles ? "360°" : null;
   const caffeine = caffeineInfo(item.caffeine_level);
 
   // El video se carga SOLO cuando la tarjeta llega al centro (isActive): así nunca
@@ -101,21 +102,35 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
   }
 
   return (
+    // Wrapper: entrada en cascada + feedback táctil. La animación se retira al
+    // terminar para no pelear con el :active del CSS ni el tilt del motor 3D.
+    <div
+      className="menu-card-wrap"
+      style={{ animation: `cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) ${Math.min(index, 8) * 75}ms both` }}
+      onAnimationEnd={e => { if (e.animationName === "cardIn") e.currentTarget.style.animation = "none"; }}
+    >
     <article
       onPointerEnter={replayVideo}
       onPointerMove={replayVideo}
+      onClick={() => onSelect?.(item)}
+      onKeyDown={e => e.key === "Enter" && onSelect?.(item)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver detalles de ${item.name}`}
       data-card=""
       data-id={item.id}
       style={{
         position: "relative",
         display: "flex", flexDirection: "column",
+        height: "100%",
         background: CARD,
+        cursor: "pointer",
         border: highlight
           ? `1.5px solid ${TERRA}`
           : isActive
             ? "1px solid rgba(188,90,50,0.6)"
             : "1px solid rgba(188,90,50,0.32)",
-        borderRadius: 16,
+        borderRadius: 18,
         overflow: "hidden",
         boxShadow: highlight
           ? `0 18px 40px -22px rgba(62,42,28,0.6), 0 0 0 1px ${TERRA}33, 0 0 26px -8px ${TERRA}55`
@@ -128,8 +143,8 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
       }}
     >
       {/* ── Media ── */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1.05", overflow: "hidden", background: "#EFE4D2" }}>
-        {/* Angle layers (cover is index 0) */}
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/0.82", overflow: "hidden", background: "#EFE4D2" }}>
+        {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse */}
         {angles.length > 0 ? (
           angles.map((src, i) => (
             <div
@@ -139,7 +154,8 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
                 backgroundImage: `url('${src}')`,
                 backgroundSize: "cover", backgroundPosition: "center",
                 opacity: i === imgIdx ? 1 : 0,
-                transition: "opacity 0.7s ease",
+                transform: isActive ? "scale(1.08)" : "scale(1)",
+                transition: "opacity 0.7s ease, transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
               }}
             />
           ))
@@ -152,9 +168,9 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
             position: "absolute", inset: 0,
             background: "linear-gradient(145deg, #EFE4D2 0%, #E2D3BC 100%)",
             display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 10,
+            alignItems: "center", justifyContent: "center", gap: 8,
           }}>
-            <svg width="44" height="44" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true" style={{ animation: "gentleFloat 4.5s ease-in-out infinite" }}>
               <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
               <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
               <ellipse cx="24" cy="38" rx="12" ry="2" fill="#B8A084" opacity=".3"/>
@@ -208,8 +224,8 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
           </div>
         )}
 
-        {/* Badge */}
-        {badge && (
+        {/* Badge — solo video */}
+        {hasVideo && (
           <span style={{
             position: "absolute", top: 10, left: 10, zIndex: 2,
             display: "inline-flex", alignItems: "center",
@@ -218,8 +234,9 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
             backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
             color: "#F7F1E5", fontSize: 9, fontWeight: 500,
             letterSpacing: "0.14em", textTransform: "uppercase",
+            animation: "badgeIn 0.5s ease 0.3s both",
           }}>
-            {badge}
+            ▶ Video
           </span>
         )}
 
@@ -234,6 +251,7 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
               background: "rgba(62,42,28,0.55)",
               backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
               color: "#F7F1E5", fontSize: 10, fontWeight: 500,
+              animation: "badgeIn 0.5s ease 0.4s both",
             }}
           >
             <span style={{ letterSpacing: caffeine.beans > 1 ? "-2px" : 0 }}>{caffeine.emoji}</span>
@@ -242,10 +260,10 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
       </div>
 
       {/* ── Content ── */}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "12px 13px 13px" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "11px 13px 12px" }}>
         {highlight && (
           <span style={{
-            alignSelf: "flex-start", marginBottom: 8,
+            alignSelf: "flex-start", marginBottom: 7,
             display: "inline-flex", alignItems: "center", gap: 5,
             padding: "3px 9px", borderRadius: 999,
             background: `${TERRA}14`, border: `1px solid ${TERRA}66`,
@@ -257,7 +275,7 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
         )}
         <h3 style={{
           fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 600,
-          fontSize: 20, margin: 0, lineHeight: 1.05, color: TERRA,
+          fontSize: 19, margin: 0, lineHeight: 1.05, color: TERRA,
         }}>
           {item.name}
         </h3>
@@ -265,39 +283,38 @@ export default function MenuCard({ item, isActive, onSelect, highlight = false, 
         {item.description && (
           <p style={{
             fontSize: 11.5, fontWeight: 300, lineHeight: 1.45,
-            opacity: 0.62, margin: "6px 0 0", flex: 1, color: CHOCO,
+            opacity: 0.62, margin: "5px 0 0", flex: 1, color: CHOCO,
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical" as const,
           }}>
             {item.description}
           </p>
         )}
 
-        <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 10 }}>
-          <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.5, color: CHOCO }}>
-            Precio
-          </span>
-          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 21, color: CHOCO }}>
+        {/* Precio + flecha en una sola fila → tarjeta más baja y equilibrada */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
+          <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 20, color: CHOCO }}>
             ${item.price.toLocaleString("es-CO")}
           </span>
+          <span
+            aria-hidden="true"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: "50%",
+              border: "1px solid rgba(62,42,28,0.3)",
+              color: CHOCO, fontSize: 15, lineHeight: 1,
+              background: isActive ? CHOCO : "transparent",
+              transition: "all .35s ease",
+              transform: isActive ? "translateX(2px)" : "none",
+            }}
+          >
+            <span style={{ color: isActive ? "#F7F1E5" : CHOCO, transition: "color .35s ease" }}>→</span>
+          </span>
         </div>
-
-        <button
-          onClick={() => onSelect?.(item)}
-          style={{
-            marginTop: 11, alignSelf: "flex-start",
-            display: "inline-flex", alignItems: "center", gap: 7,
-            padding: "8px 15px", borderRadius: 999,
-            border: "1px solid rgba(62,42,28,0.35)", background: "transparent",
-            color: CHOCO, fontFamily: "var(--font-sans)",
-            fontSize: 11, fontWeight: 500, letterSpacing: "0.09em",
-            textTransform: "uppercase", cursor: "pointer",
-            transition: "all .2s", whiteSpace: "nowrap",
-          }}
-          onMouseEnter={e => { const t = e.currentTarget; t.style.background = CHOCO; t.style.color = "#F7F1E5"; t.style.borderColor = CHOCO; }}
-          onMouseLeave={e => { const t = e.currentTarget; t.style.background = "transparent"; t.style.color = CHOCO; t.style.borderColor = "rgba(62,42,28,0.35)"; }}
-        >
-          Ver más →
-        </button>
       </div>
     </article>
+    </div>
   );
 }

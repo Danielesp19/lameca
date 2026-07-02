@@ -171,6 +171,36 @@ body {
   animation: steamRise 3.6s ease-in-out infinite;
 }
 
+/* ─── Animaciones del menú (entradas en cascada + micro-interacciones) ── */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(26px) scale(0.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes lineGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes titleIn {
+  from { opacity: 0; transform: translateY(18px); letter-spacing: 0.06em; }
+  to   { opacity: 1; transform: translateY(0); letter-spacing: 0; }
+}
+@keyframes chipPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes badgeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+/* Feedback táctil de las tarjetas (tras terminar su entrada) */
+.menu-card-wrap { transition: transform 0.18s ease; }
+.menu-card-wrap:active { transform: scale(0.97); }
+
 /* ─── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
