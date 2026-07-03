@@ -85,6 +85,7 @@ class MenuController extends Controller
             'price'            => (float) $item->price,
             'image_url'        => $item->image ? asset('storage/' . $item->image) : null,
             'video_url'        => $item->video ? asset('storage/' . $item->video) : null,
+            'video_poster_url' => $item->video_poster ? asset('storage/' . $item->video_poster) : null,
             'extra_image_urls' => ($item->relationLoaded('extraImages') ? $item->extraImages : $item->extraImages()->get())
                                     ->map(fn ($img) => asset('storage/' . $img->path))
                                     ->values()

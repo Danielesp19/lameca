@@ -64,8 +64,10 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
 
   const hasVideo = Boolean(item.video_url);
   // Si el producto tiene video, la tarjeta muestra SOLO el video (no cicla fotos),
-  // pero usa la foto del producto como miniatura mientras el video no corre.
-  const poster = hasVideo ? item.image_url : null;
+  // pero usa una miniatura mientras el video no corre: la foto del producto o, si
+  // no hay, el poster JPEG que el backend genera del primer frame. Solo sin
+  // ninguno de los dos se cae a cargar los metadatos del video.
+  const poster = hasVideo ? (item.image_url ?? item.video_poster_url ?? null) : null;
   const angles = (hasVideo
     ? []
     : [...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])]

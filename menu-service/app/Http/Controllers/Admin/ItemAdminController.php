@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MenuItem;
+use App\Support\VideoPoster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -35,7 +36,10 @@ class ItemAdminController extends Controller
             'sort_order'       => 'nullable|integer',
         ], $this->validationMessages());
 
-        if ($request->hasFile('video')) $data['video'] = $request->file('video')->store('menu-items/videos', 'public');
+        if ($request->hasFile('video')) {
+            $data['video']        = $request->file('video')->store('menu-items/videos', 'public');
+            $data['video_poster'] = VideoPoster::generate($data['video']);
+        }
 
         $item = MenuItem::create($data);
 
@@ -75,10 +79,13 @@ class ItemAdminController extends Controller
         // ── Video ─────────────────────────────────────────────────────────────
         if ($request->input('delete_anim') === '1') {
             if ($item->video) { Storage::disk('public')->delete($item->video); $data['video'] = null; }
+            if ($item->video_poster) { Storage::disk('public')->delete($item->video_poster); $data['video_poster'] = null; }
         }
         if ($request->hasFile('video')) {
             if ($item->video) Storage::disk('public')->delete($item->video);
-            $data['video'] = $request->file('video')->store('menu-items/videos', 'public');
+            if ($item->video_poster) Storage::disk('public')->delete($item->video_poster);
+            $data['video']        = $request->file('video')->store('menu-items/videos', 'public');
+            $data['video_poster'] = VideoPoster::generate($data['video']);
         }
 
         // ── Image management via slots ────────────────────────────────────────
@@ -92,7 +99,7 @@ class ItemAdminController extends Controller
 
     public function destroy(MenuItem $item)
     {
-        foreach (['image', 'video'] as $field) {
+        foreach (['image', 'video', 'video_poster'] as $field) {
             if ($item->$field) Storage::disk('public')->delete($item->$field);
         }
         foreach ($item->extraImages as $img) {
@@ -204,6 +211,7 @@ class ItemAdminController extends Controller
             'category_name'    => $item->category?->name,
             'image_url'        => $item->image ? asset('storage/'.$item->image) : null,
             'video_url'        => $item->video ? asset('storage/'.$item->video) : null,
+            'video_poster_url' => $item->video_poster ? asset('storage/'.$item->video_poster) : null,
             // Admin gets IDs so the UI can manage individual images
             'extra_images'     => $item->extraImages->map(fn($img) => [
                 'id'  => $img->id,

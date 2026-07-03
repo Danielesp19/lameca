@@ -5,6 +5,8 @@ export interface MenuItem {
   price: number;
   image_url: string | null;
   video_url: string | null;
+  /** Poster JPEG generado en el backend (primer frame del video); puede faltar. */
+  video_poster_url?: string | null;
   extra_image_urls: string[];
   is_featured: boolean;
   is_available?: boolean;
@@ -104,6 +106,7 @@ function normalizeItem(item: MenuItem): MenuItem {
     ...item,
     image_url:        storageUrl(item.image_url),
     video_url:        storageUrl(item.video_url),
+    video_poster_url: storageUrl(item.video_poster_url),
     extra_image_urls: item.extra_image_urls.map(u => storageUrl(u)!),
   };
 }

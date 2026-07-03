@@ -274,7 +274,18 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 const showHeader = activeCategory === "todos" || isFeatured;
                 const isHot = cat.name.toLowerCase().includes("calient");
                 return (
-                <div key={cat.id} style={{ marginTop: gi > 0 || activeCategory === "todos" ? 26 : 0 }}>
+                // .cat-block: content-visibility auto — se salta layout/paint de
+                // categorías lejanas. El padding lateral/inferior mete la sangría
+                // del carrusel y las sombras dentro de la caja contenida; los
+                // márgenes negativos lo compensan para no mover nada.
+                <div
+                  key={cat.id}
+                  className="cat-block"
+                  style={{
+                    margin: `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px -40px`,
+                    padding: "0 22px 40px",
+                  }}
+                >
                   {showHeader && (
                     <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
                       <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 600, fontSize: 23, margin: 0, whiteSpace: "nowrap", color: CHOCO, letterSpacing: "-0.01em" }}>

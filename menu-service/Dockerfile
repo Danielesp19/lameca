@@ -5,8 +5,9 @@
 FROM php:8.4-cli
 
 # Dependencias del sistema para compilar las extensiones PHP.
+# ffmpeg: genera el poster JPEG del primer frame al subir videos de productos.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git unzip libpq-dev libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libicu-dev \
+        git unzip ffmpeg libpq-dev libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libicu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo_pgsql pgsql gd zip bcmath exif intl \
     && rm -rf /var/lib/apt/lists/*

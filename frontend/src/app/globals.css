@@ -202,6 +202,15 @@ body {
 .menu-card-wrap { transition: transform 0.18s ease; }
 .menu-card-wrap:active { transform: scale(0.97); }
 
+/* Bloques de categoría fuera de pantalla: el navegador se salta su layout y
+   paint hasta que se acercan (gran ahorro en gamas bajas). La caja del bloque
+   se amplía vía padding (compensado con margen negativo en el JSX) para que el
+   paint containment no recorte la sangría del carrusel ni las sombras. */
+.cat-block {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
 /* ─── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
