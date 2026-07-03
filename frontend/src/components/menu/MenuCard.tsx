@@ -13,6 +13,33 @@ const CARD  = "#FFFCF5";
 // single-thread). Vuelve a reproducirse si el usuario interactúa con la tarjeta.
 const MAX_LOOPS = 1;
 
+// ── Prefetch por cercanía ─────────────────────────────────────────────────────
+// Un único IntersectionObserver compartido marca cada tarjeta como "cercana"
+// cuando entra en un viewport ampliado (~1.6 pantallas en horizontal, para los
+// carruseles, y ~0.8 en vertical). Al acercarse se fuerza la descarga de sus
+// imágenes y de los metadatos del video, así ya están listos aunque el usuario
+// scrollee rápido. Es one-shot: una vez cercana, deja de observarse.
+const NEAR_MARGIN = "80% 160% 80% 160%";
+let nearObs: IntersectionObserver | null = null;
+const nearCbs = new Map<Element, () => void>();
+
+function watchNear(el: Element, cb: () => void): () => void {
+  if (typeof IntersectionObserver === "undefined") { cb(); return () => {}; }
+  if (!nearObs) {
+    nearObs = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        nearCbs.get(e.target)?.();
+        nearObs?.unobserve(e.target);
+        nearCbs.delete(e.target);
+      }
+    }, { rootMargin: NEAR_MARGIN });
+  }
+  nearCbs.set(el, cb);
+  nearObs.observe(el);
+  return () => { nearObs?.unobserve(el); nearCbs.delete(el); };
+}
+
 interface Props {
   item: MenuItem;
   isActive: boolean;
@@ -29,9 +56,9 @@ interface Props {
 export default function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
-  // Los ángulos extra recién se montan (y descargan) la primera vez que la
-  // tarjeta se activa; hasta entonces solo existe la portada.
-  const [anglesUnlocked, setAnglesUnlocked] = useState(false);
+  // "Cercana" al viewport (con margen): dispara la pre-descarga de su media.
+  const [near, setNear] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopsRef = useRef(0);
 
@@ -46,6 +73,13 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
 
   const isAngles = !hasVideo && angles.length > 1;
   const caffeine = caffeineInfo(item.caffeine_level);
+
+  // Marca la tarjeta como cercana cuando entra al viewport ampliado.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    return watchNear(el, () => setNear(true));
+  }, []);
 
   // El video se carga SOLO cuando la tarjeta llega al centro (isActive): así nunca
   // hay varias descargas compitiendo a la vez (clave con el backend single-thread).
@@ -65,19 +99,24 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
     }
   }, [isActive, hasVideo, item.video_url]);
 
-  // Sin foto de producto: carga solo los metadatos del video y muestra su primer
-  // frame pausado como miniatura (descarga mínima, no compite con otros videos).
+  // Al acercarse la tarjeta, el video precarga SOLO sus metadatos (unos KB):
+  // el primer frame y la duración quedan listos y el play al centrarse arranca
+  // al instante. La descarga completa sigue ocurriendo solo al activarse, así
+  // nunca hay varios videos bajando enteros a la vez.
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !hasVideo || poster) return;
+    if (!v || !hasVideo || !near) return;
     if (!v.getAttribute("src") && item.video_url) {
       v.preload = "metadata";
       v.src = item.video_url;
-      const onMeta = () => { try { v.currentTime = 0.05; } catch { /* noop */ } };
-      v.addEventListener("loadedmetadata", onMeta, { once: true });
-      return () => v.removeEventListener("loadedmetadata", onMeta);
+      if (!poster) {
+        // Sin foto de producto, el primer frame pausado hace de miniatura.
+        const onMeta = () => { try { v.currentTime = 0.05; } catch { /* noop */ } };
+        v.addEventListener("loadedmetadata", onMeta, { once: true });
+        return () => v.removeEventListener("loadedmetadata", onMeta);
+      }
     }
-  }, [hasVideo, poster, item.video_url]);
+  }, [near, hasVideo, poster, item.video_url]);
 
   // Reproduce solo MAX_LOOPS veces y se congela en el último frame. Cuenta desde 0
   // cada vez que la tarjeta se reactiva.
@@ -101,7 +140,6 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
       setImgIdx(0);
       return;
     }
-    setAnglesUnlocked(true);
     let i = 0;
     const t = setInterval(() => {
       i = (i + 1) % angles.length;
@@ -127,6 +165,7 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
     // Wrapper: entrada en cascada + feedback táctil. La animación se retira al
     // terminar para no pelear con el :active del CSS ni el tilt del motor 3D.
     <div
+      ref={wrapRef}
       className="menu-card-wrap"
       style={{
         animation: `cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) ${Math.min(index, 8) * 75}ms both`,
@@ -168,16 +207,17 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
       {/* Imagen protagonista, como el diseño (más alta que ancha) */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "1/1.05", overflow: "hidden", background: "#EFE4D2" }}>
         {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse.
-            <img loading="lazy">: el navegador solo descarga las tarjetas cercanas
-            al viewport, y los ángulos extra recién al activarse por primera vez. */}
+            Lejos del viewport solo existe la portada en lazy; al acercarse la
+            tarjeta (margen amplio, también horizontal) se montan todos los
+            ángulos en eager para que ya estén bajados al llegar el scroll. */}
         {angles.length > 0 ? (
-          (anglesUnlocked ? angles : angles.slice(0, 1)).map((src, i) => (
+          (near ? angles : angles.slice(0, 1)).map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={i}
               src={src}
               alt=""
-              loading="lazy"
+              loading={near ? "eager" : "lazy"}
               decoding="async"
               draggable={false}
               style={{
@@ -197,7 +237,7 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
             <img
               src={poster}
               alt=""
-              loading="lazy"
+              loading={near ? "eager" : "lazy"}
               decoding="async"
               draggable={false}
               style={{
