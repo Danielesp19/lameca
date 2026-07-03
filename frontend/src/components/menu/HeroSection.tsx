@@ -7,9 +7,9 @@ import type { HeroSection as HeroData } from "@/lib/menu-api";
 
 const ACCENT = "#BC5A32";
 
-// Veces que se reproduce el video del hero cada vez que entra en pantalla.
-// Tras alcanzarlo se detiene; vuelve a contar desde 0 cuando el hero reaparece.
-const MAX_LOOPS = 2;
+// El video del hero se reproduce UNA sola vez por visita y queda congelado en el
+// último frame como fondo estático. Salir y volver al hero no lo reinicia.
+const MAX_LOOPS = 1;
 
 const rise = (delay: number) => ({
   initial: { opacity: 0, y: 28 },
@@ -47,14 +47,18 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
     v.muted = true;
     v.playbackRate = 0.75;
 
-    let plays = 0; // reproducciones completadas en la visita actual al hero
+    let plays = 0;    // reproducciones completadas en esta visita a la página
+    let done = false; // ya terminó: queda como fondo estático para siempre
 
-    // Al terminar cada pasada: si no llegó al máximo, repite; si llegó, se queda quieto.
     const onEnded = () => {
       plays += 1;
       if (plays < MAX_LOOPS) {
         v.currentTime = 0;
         v.play().catch(() => {});
+      } else {
+        done = true;
+        // Fondo estático de verdad: también se detiene el zoom infinito (GPU).
+        v.style.animationPlayState = "paused";
       }
     };
     v.addEventListener("ended", onEnded);
@@ -62,11 +66,9 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // Cada vez que el hero reaparece (entrar a la página o subir mucho)
-          // reinicia el contador y reproduce desde el principio.
-          plays = 0;
-          v.currentTime = 0;
-          v.play().catch(() => {});
+          // Reanuda solo si quedó a mitad de la única pasada; si ya terminó,
+          // se queda en el último frame sin volver a decodificar video.
+          if (!done) v.play().catch(() => {});
         } else {
           v.pause(); // fuera de pantalla: detener
         }
@@ -96,7 +98,7 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
             ref={videoRef}
             muted
             playsInline
-            preload="auto"
+            preload="metadata"
             aria-hidden="true"
             tabIndex={-1}
             className="hero-bg-media"

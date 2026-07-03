@@ -29,6 +29,9 @@ interface Props {
 export default function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
+  // Los ángulos extra recién se montan (y descargan) la primera vez que la
+  // tarjeta se activa; hasta entonces solo existe la portada.
+  const [anglesUnlocked, setAnglesUnlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopsRef = useRef(0);
 
@@ -98,6 +101,7 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
       setImgIdx(0);
       return;
     }
+    setAnglesUnlocked(true);
     let i = 0;
     const t = setInterval(() => {
       i = (i + 1) % angles.length;
@@ -163,15 +167,22 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
       {/* ── Media ── */}
       {/* Imagen protagonista, como el diseño (más alta que ancha) */}
       <div style={{ position: "relative", width: "100%", aspectRatio: "1/1.05", overflow: "hidden", background: "#EFE4D2" }}>
-        {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse */}
+        {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse.
+            <img loading="lazy">: el navegador solo descarga las tarjetas cercanas
+            al viewport, y los ángulos extra recién al activarse por primera vez. */}
         {angles.length > 0 ? (
-          angles.map((src, i) => (
-            <div
+          (anglesUnlocked ? angles : angles.slice(0, 1)).map((src, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               key={i}
+              src={src}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              draggable={false}
               style={{
                 position: "absolute", inset: 0,
-                backgroundImage: `url('${src}')`,
-                backgroundSize: "cover", backgroundPosition: "center",
+                width: "100%", height: "100%", objectFit: "cover",
                 opacity: i === imgIdx ? 1 : 0,
                 transform: isActive ? "scale(1.08)" : "scale(1)",
                 transition: "opacity 0.7s ease, transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
@@ -182,13 +193,20 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
           /* Miniatura del video: foto del producto (o el primer frame del video
              pausado si no hay foto). El video la tapa al reproducirse. */
           poster ? (
-            <div style={{
-              position: "absolute", inset: 0,
-              backgroundImage: `url('${poster}')`,
-              backgroundSize: "cover", backgroundPosition: "center",
-              transform: isActive ? "scale(1.08)" : "scale(1)",
-              transition: "transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
-            }} />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={poster}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              style={{
+                position: "absolute", inset: 0,
+                width: "100%", height: "100%", objectFit: "cover",
+                transform: isActive ? "scale(1.08)" : "scale(1)",
+                transition: "transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
+              }}
+            />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
           )
