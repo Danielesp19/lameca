@@ -38,39 +38,47 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
     return () => mq.removeEventListener("change", upd);
   }, []);
 
-  // Reproduce un nº limitado de veces al entrar/volver al hero, no en bucle infinito.
+  // Controla el fondo del hero: el video se reproduce una sola vez y queda
+  // estático, y la animación de zoom (video o imagen del admin) se pausa por
+  // completo cuando el hero sale de pantalla — sin esto el navegador sigue
+  // compositando un layer a pantalla completa mientras se scrollea el menú.
   useEffect(() => {
-    const v = videoRef.current;
     const outer = outerRef.current;
-    if (!v || !outer || bgGifOrImg) return; // nothing to control if showing admin image
-
-    v.muted = true;
-    v.playbackRate = 0.75;
+    if (!outer) return;
+    const media = outer.querySelector<HTMLElement>(".hero-bg-media");
+    const v = bgGifOrImg ? null : videoRef.current;
 
     let plays = 0;    // reproducciones completadas en esta visita a la página
     let done = false; // ya terminó: queda como fondo estático para siempre
 
     const onEnded = () => {
       plays += 1;
-      if (plays < MAX_LOOPS) {
+      if (v && plays < MAX_LOOPS) {
         v.currentTime = 0;
         v.play().catch(() => {});
       } else {
         done = true;
         // Fondo estático de verdad: también se detiene el zoom infinito (GPU).
-        v.style.animationPlayState = "paused";
+        if (media) media.style.animationPlayState = "paused";
       }
     };
-    v.addEventListener("ended", onEnded);
+    if (v) {
+      v.muted = true;
+      v.playbackRate = 0.75;
+      v.addEventListener("ended", onEnded);
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           // Reanuda solo si quedó a mitad de la única pasada; si ya terminó,
           // se queda en el último frame sin volver a decodificar video.
-          if (!done) v.play().catch(() => {});
+          if (!done && media) media.style.animationPlayState = "running";
+          if (!done && v) v.play().catch(() => {});
         } else {
-          v.pause(); // fuera de pantalla: detener
+          // Fuera de pantalla: detener video Y animación de zoom del fondo.
+          if (media) media.style.animationPlayState = "paused";
+          v?.pause();
         }
       },
       { threshold: 0.05 }, // reactiva cuando ~5% del hero vuelve a verse
@@ -79,7 +87,7 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
     observer.observe(outer);
     return () => {
       observer.disconnect();
-      v.removeEventListener("ended", onEnded);
+      v?.removeEventListener("ended", onEnded);
     };
   }, [bgGifOrImg]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { MenuItem, caffeineInfo } from "@/lib/menu-api";
 
 // Paleta rediseño v2
@@ -53,7 +53,11 @@ interface Props {
   index?: number;
 }
 
-export default function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }: Props) {
+// memo: al cambiar la tarjeta activa durante el scroll, React solo re-renderiza
+// las 2 tarjetas afectadas en vez de todas las del menú (jank en gamas bajas).
+export default memo(MenuCard);
+
+function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   // "Cercana" al viewport (con margen): dispara la pre-descarga de su media.
@@ -90,11 +94,16 @@ export default function MenuCard({ item, isActive, onSelect, cardKey, hot = fals
     const v = videoRef.current;
     if (!v || !hasVideo) return;
     if (isActive) {
-      loopsRef.current = 0;
-      if (item.video_url && !v.getAttribute("src")) { v.src = item.video_url; v.load(); }
-      v.muted = true;
-      v.playbackRate = 0.85;
-      v.play().then(() => setVideoVisible(true)).catch(() => {});
+      // Pequeña espera: si el usuario pasa volando por la tarjeta durante el
+      // scroll, no dispara descarga/decodificación del video para nada.
+      const t = setTimeout(() => {
+        loopsRef.current = 0;
+        if (item.video_url && !v.getAttribute("src")) { v.src = item.video_url; v.load(); }
+        v.muted = true;
+        v.playbackRate = 0.85;
+        v.play().then(() => setVideoVisible(true)).catch(() => {});
+      }, 230);
+      return () => clearTimeout(t);
     } else {
       v.pause();
       setVideoVisible(false);

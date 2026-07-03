@@ -50,27 +50,37 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     let bestKey: string | null = null;
     let bestDist = Infinity;
 
-    section.querySelectorAll<HTMLElement>("[data-card]").forEach(card => {
-      const r = card.getBoundingClientRect();
-      const centerY = r.top + r.height / 2;
-      const centerX = r.left + r.width / 2;
+    // Recorre por BLOQUE de categoría: un solo getBoundingClientRect para
+    // descartar bloques lejanos, en vez de medir tarjeta por tarjeta. Crítico
+    // con content-visibility: leer rects de los hijos de un bloque saltado
+    // forzaría su layout en cada frame (jank).
+    section.querySelectorAll<HTMLElement>(".cat-block").forEach(block => {
+      const b = block.getBoundingClientRect();
+      if (b.bottom < -200 || b.top > vh + 200) return;
 
-      // Carrusel cilíndrico: t = -1 (arriba) · 0 (centro) · 1 (abajo)
-      if (!reduceMotion.current) {
-        let t = (centerY - midY) / midY;
-        t = Math.max(-1.3, Math.min(1.3, t));
-        const a = Math.min(Math.abs(t), 1);
-        card.style.transform = `perspective(1100px) rotateX(${(-t * 8).toFixed(2)}deg) scale(${(1.01 - a * 0.06).toFixed(3)})`;
-        card.style.opacity = (1 - a * 0.35).toFixed(3);
-      }
+      block.querySelectorAll<HTMLElement>("[data-card]").forEach(card => {
+        const r = card.getBoundingClientRect();
+        const centerY = r.top + r.height / 2;
+        const centerX = r.left + r.width / 2;
+        const offX = r.right <= 0 || r.left >= vw; // fuera en horizontal
 
-      if (r.bottom <= 0 || r.top >= vh) return;
-      if (r.right <= 0 || r.left >= vw) return; // fuera de pantalla en horizontal
-      const d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
-      if (d < bestDist) {
-        bestDist = d;
-        bestKey = card.getAttribute("data-key");
-      }
+        // Carrusel cilíndrico: t = -1 (arriba) · 0 (centro) · 1 (abajo).
+        // Solo se escribe en tarjetas visibles: menos capas trabajando.
+        if (!reduceMotion.current && !offX) {
+          let t = (centerY - midY) / midY;
+          t = Math.max(-1.3, Math.min(1.3, t));
+          const a = Math.min(Math.abs(t), 1);
+          card.style.transform = `perspective(1100px) rotateX(${(-t * 8).toFixed(2)}deg) scale(${(1.01 - a * 0.06).toFixed(3)})`;
+          card.style.opacity = (1 - a * 0.35).toFixed(3);
+        }
+
+        if (r.bottom <= 0 || r.top >= vh || offX) return;
+        const d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
+        if (d < bestDist) {
+          bestDist = d;
+          bestKey = card.getAttribute("data-key");
+        }
+      });
     });
 
     setActiveCardKey(prev => (prev === bestKey ? prev : bestKey));
