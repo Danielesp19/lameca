@@ -25,7 +25,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
   const sectionRef    = useRef<HTMLElement>(null);
   const rafRef        = useRef<number | null>(null);
-  const reduceMotion  = useRef(false);
 
   const chips = [
     { id: "todos" as number | "todos", name: "Todos" },
@@ -37,8 +36,8 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     : categories.filter(c => c.id === activeCategory);
 
   // Find the card whose center is closest to the viewport midpoint (both axes —
-  // the rows also scroll horizontally). Además aplica el tilt 3D por-frame
-  // (solo transform/opacity — GPU) a cada card.
+  // the rows also scroll horizontally). SOLO lee posiciones: cero escrituras de
+  // estilo por frame — el realce de la tarjeta activa lo hace CSS (compositor).
   const updateActive = useCallback(() => {
     const section = sectionRef.current;
     if (!section || document.hidden || selected !== null) return;
@@ -60,21 +59,10 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
       block.querySelectorAll<HTMLElement>("[data-card]").forEach(card => {
         const r = card.getBoundingClientRect();
+        if (r.bottom <= 0 || r.top >= vh) return;
+        if (r.right <= 0 || r.left >= vw) return; // fuera en horizontal
         const centerY = r.top + r.height / 2;
         const centerX = r.left + r.width / 2;
-        const offX = r.right <= 0 || r.left >= vw; // fuera en horizontal
-
-        // Carrusel cilíndrico: t = -1 (arriba) · 0 (centro) · 1 (abajo).
-        // Solo se escribe en tarjetas visibles: menos capas trabajando.
-        if (!reduceMotion.current && !offX) {
-          let t = (centerY - midY) / midY;
-          t = Math.max(-1.3, Math.min(1.3, t));
-          const a = Math.min(Math.abs(t), 1);
-          card.style.transform = `perspective(1100px) rotateX(${(-t * 8).toFixed(2)}deg) scale(${(1.01 - a * 0.06).toFixed(3)})`;
-          card.style.opacity = (1 - a * 0.35).toFixed(3);
-        }
-
-        if (r.bottom <= 0 || r.top >= vh || offX) return;
         const d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
         if (d < bestDist) {
           bestDist = d;
@@ -87,8 +75,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   }, [selected]);
 
   useEffect(() => {
-    reduceMotion.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     const onScroll = () => {
       if (rafRef.current) return;
       rafRef.current = requestAnimationFrame(() => {
@@ -195,11 +181,12 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           </p>
         </div>
 
-        {/* ── Sticky category chips ── */}
+        {/* ── Sticky category chips ──
+            Sin backdrop-filter: un blur sticky re-difumina lo que pasa por
+            detrás en CADA frame de scroll (jank garantizado en móvil). */}
         <div style={{
           position: "sticky", top: 0, zIndex: 8,
-          background: "rgba(247,241,229,0.92)",
-          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          background: "rgba(247,241,229,0.97)",
           borderBottom: "1px solid rgba(62,42,28,0.08)",
         }}>
           <div

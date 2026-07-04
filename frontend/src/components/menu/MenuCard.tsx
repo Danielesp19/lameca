@@ -210,8 +210,9 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
           ? "0 24px 55px -20px rgba(188,90,50,0.5), inset 0 0 0 1px rgba(188,90,50,0.25)"
           : "0 14px 28px -22px rgba(62,42,28,0.55)",
         transformOrigin: "center center",
-        willChange: "transform, opacity",
-        transition: "box-shadow .5s ease, border-color .5s ease",
+        // Realce sutil por CSS (compositor) — sin tilt por-frame desde JS
+        transform: isActive ? "scale(1.02)" : "scale(1)",
+        transition: "transform .5s cubic-bezier(0.2,0.7,0.2,1), box-shadow .5s ease, border-color .5s ease",
       }}
     >
       {/* ── Media ── */}
@@ -306,16 +307,16 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
           }}
         />
 
-        {/* Vapor de café — solo bebidas calientes, se enciende al centrarse */}
-        {hot && (
+        {/* Vapor de café — solo bebidas calientes y SOLO montado en la tarjeta
+            activa: si estuviera siempre, cada tarjeta caliente tendría 3 blurs
+            animándose infinitamente aunque no se vean. Los wisps ya nacen con
+            opacidad 0 en su keyframe, así que aparecen suave igual. */}
+        {hot && isActive && (
           <div
             aria-hidden="true"
             style={{
               position: "absolute", top: 0, left: 0, right: 0, height: "55%",
-              opacity: isActive ? 1 : 0,
-              transition: "opacity .9s ease",
               pointerEvents: "none",
-              mixBlendMode: "screen",
             }}
           >
             <span className="wisp" style={{ left: "36%", animationDuration: "3.4s" }} />
@@ -330,8 +331,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
             position: "absolute", top: 10, left: 10, zIndex: 2,
             display: "inline-flex", alignItems: "center",
             padding: "4px 9px", borderRadius: 999,
-            background: "rgba(62,42,28,0.55)",
-            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+            background: "rgba(62,42,28,0.68)",
             color: "#F7F1E5", fontSize: 9, fontWeight: 500,
             letterSpacing: "0.14em", textTransform: "uppercase",
             animation: "badgeIn 0.5s ease 0.3s both",
@@ -348,8 +348,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
               position: "absolute", top: 10, right: 10, zIndex: 2,
               display: "inline-flex", alignItems: "center", gap: 5,
               padding: "4px 9px", borderRadius: 999,
-              background: "rgba(62,42,28,0.55)",
-              backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+              background: "rgba(62,42,28,0.68)",
               color: "#F7F1E5", fontSize: 10, fontWeight: 500,
               animation: "badgeIn 0.5s ease 0.4s both",
             }}
