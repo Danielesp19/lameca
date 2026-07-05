@@ -62,7 +62,9 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
   const [videoVisible, setVideoVisible] = useState(false);
   // "Cercana" al viewport (con margen): dispara la pre-descarga de su media.
   const [near, setNear] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef  = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const stripRaf = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopsRef = useRef(0);
 
@@ -77,7 +79,6 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
     : [...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])]
   ).filter(Boolean) as string[];
 
-  const isAngles = !hasVideo && angles.length > 1;
   const caffeine = caffeineInfo(item.caffeine_level);
 
   // Marca la tarjeta como cercana cuando entra al viewport ampliado.
@@ -145,19 +146,19 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
     return () => v.removeEventListener("ended", onEnded);
   }, [hasVideo]);
 
-  // Angles: loop interval while active
-  useEffect(() => {
-    if (!isActive || !isAngles || angles.length < 2) {
-      setImgIdx(0);
-      return;
-    }
-    let i = 0;
-    const t = setInterval(() => {
-      i = (i + 1) % angles.length;
-      setImgIdx(i);
-    }, 1500);
-    return () => clearInterval(t);
-  }, [isActive, isAngles, angles.length]);
+  // Swipe de imágenes: el índice del punto activo sigue al scroll del strip.
+  // (El ciclo automático se reemplazó por deslizamiento táctil — feedback del
+  // cliente: la navegación entre fotos debe ser manual e intuitiva.)
+  function onStripScroll() {
+    if (stripRaf.current) return;
+    stripRaf.current = requestAnimationFrame(() => {
+      stripRaf.current = null;
+      const s = stripRef.current;
+      if (!s) return;
+      setImgIdx(Math.round(s.scrollLeft / Math.max(1, s.clientWidth)));
+    });
+  }
+  useEffect(() => () => { if (stripRaf.current) cancelAnimationFrame(stripRaf.current); }, []);
 
   // Si el usuario interactúa con la tarjeta (mueve el puntero/hover) y el video ya
   // terminó su pasada, lo reproduce de nuevo. En móvil el re-scroll ya lo reactiva.
@@ -179,8 +180,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
       ref={wrapRef}
       className="menu-card-wrap"
       style={{
-        animation: `cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) ${Math.min(index, 8) * 75}ms both`,
-        scrollSnapAlign: "start",
+        animation: `cardIn 0.6s cubic-bezier(0.2,0.7,0.2,1) ${Math.min(index, 8) * 60}ms both`,
         minWidth: 0,
       }}
       onAnimationEnd={e => { if (e.animationName === "cardIn") e.currentTarget.style.animation = "none"; }}
@@ -195,6 +195,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
       aria-label={`Ver detalles de ${item.name}`}
       data-card=""
       data-key={cardKey ?? String(item.id)}
+      data-video={hasVideo ? "" : undefined}
       style={{
         position: "relative",
         display: "flex", flexDirection: "column",
@@ -216,31 +217,69 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
       }}
     >
       {/* ── Media ── */}
-      {/* Imagen protagonista, como el diseño (más alta que ancha) */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1.05", overflow: "hidden", background: "#EFE4D2" }}>
-        {/* Angle layers (cover is index 0) — zoom lento tipo Ken Burns al activarse.
-            Lejos del viewport solo existe la portada en lazy; al acercarse la
-            tarjeta (margen amplio, también horizontal) se montan todos los
-            ángulos en eager para que ya estén bajados al llegar el scroll. */}
+      {/* Cuadrada y compacta para la grilla de 2 columnas */}
+      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1", overflow: "hidden", background: "#EFE4D2" }}>
+        {/* Fotos con SWIPE táctil: strip horizontal con snap — el usuario
+            desliza con el dedo para ver más ángulos desde la tarjeta. Lejos
+            del viewport solo existe la portada en lazy; al acercarse se montan
+            todos los ángulos en eager (prefetch por cercanía). */}
         {angles.length > 0 ? (
-          (near ? angles : angles.slice(0, 1)).map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={i}
-              src={src}
-              alt=""
-              loading={near ? "eager" : "lazy"}
-              decoding="async"
-              draggable={false}
+          <>
+            <div
+              ref={stripRef}
+              className="cat-scroll"
+              onScroll={onStripScroll}
               style={{
                 position: "absolute", inset: 0,
-                width: "100%", height: "100%", objectFit: "cover",
-                opacity: i === imgIdx ? 1 : 0,
-                transform: isActive ? "scale(1.08)" : "scale(1)",
-                transition: "opacity 0.7s ease, transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
+                display: "flex",
+                overflowX: angles.length > 1 ? "auto" : "hidden",
+                scrollSnapType: "x mandatory",
+                overscrollBehaviorX: "contain",
+                WebkitOverflowScrolling: "touch",
               }}
-            />
-          ))
+            >
+              {(near ? angles : angles.slice(0, 1)).map((src, i) => (
+                <div key={i} style={{ flex: "0 0 100%", height: "100%", overflow: "hidden", scrollSnapAlign: "start" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt=""
+                    loading={near ? "eager" : "lazy"}
+                    decoding="async"
+                    draggable={false}
+                    style={{
+                      width: "100%", height: "100%", objectFit: "cover", display: "block",
+                      transform: isActive ? "scale(1.06)" : "scale(1)",
+                      transition: "transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Puntos indicadores: muestran cuántas fotos hay y cuál se ve */}
+            {angles.length > 1 && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute", bottom: 8, left: 0, right: 0, zIndex: 2,
+                  display: "flex", justifyContent: "center", gap: 5,
+                  pointerEvents: "none",
+                }}
+              >
+                {angles.map((_, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: i === imgIdx ? 16 : 5, height: 5, borderRadius: 3,
+                      background: i === imgIdx ? "#F7F1E5" : "rgba(247,241,229,0.55)",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                      transition: "all .3s ease",
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : hasVideo ? (
           /* Miniatura del video: foto del producto (o el primer frame del video
              pausado si no hay foto). El video la tapa al reproducirse. */
@@ -288,7 +327,9 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
             muted playsInline preload="none" aria-hidden="true"
             style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover",
+              // "contain": respeta las proporciones originales del video sin
+              // recortarlo (feedback: los videos se veían mutilados/fuera de escala)
+              objectFit: "contain",
               // Sin póster, el video mismo (primer frame pausado) es la miniatura
               opacity: videoVisible || !poster ? 1 : 0,
               transition: "opacity 0.6s ease",
@@ -358,11 +399,11 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
         )}
       </div>
 
-      {/* ── Content ── */}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "11px 13px 12px" }}>
+      {/* ── Content ── (compacto: 2 tarjetas por fila) */}
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "9px 11px 11px" }}>
         <h3 style={{
           fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 700,
-          fontSize: 20, margin: 0, lineHeight: 1.1, color: TERRA,
+          fontSize: 16.5, margin: 0, lineHeight: 1.15, color: TERRA,
           letterSpacing: "-0.01em",
         }}>
           {item.name}
@@ -370,8 +411,8 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
 
         {item.description && (
           <p style={{
-            fontSize: 12, fontWeight: 300, lineHeight: 1.45,
-            margin: "5px 0 0", flex: 1, color: "rgba(62,42,28,0.68)",
+            fontSize: 11.5, fontWeight: 300, lineHeight: 1.4,
+            margin: "4px 0 0", flex: 1, color: "rgba(62,42,28,0.68)",
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -382,11 +423,11 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
         )}
 
         {/* Fila de precio con etiqueta + "Ver más →" abajo, como el diseño */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginTop: 10 }}>
-          <span style={{ fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(62,42,28,0.5)" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(62,42,28,0.5)" }}>
             Precio
           </span>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 19, color: CHOCO, letterSpacing: "-0.01em" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: CHOCO, letterSpacing: "-0.01em" }}>
             ${item.price.toLocaleString("es-CO")}
           </span>
         </div>
@@ -394,13 +435,13 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
         <span
           aria-hidden="true"
           style={{
-            marginTop: 11, alignSelf: "flex-start",
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "8px 15px", borderRadius: 999,
+            marginTop: 9, alignSelf: "flex-start",
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "6px 12px", borderRadius: 999,
             border: `1px solid ${isActive ? CHOCO : "rgba(62,42,28,0.35)"}`,
             background: isActive ? CHOCO : "transparent",
             color: isActive ? "#F7F1E5" : CHOCO,
-            fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500,
+            fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
             letterSpacing: "0.09em", textTransform: "uppercase",
             transition: "all .35s ease", whiteSpace: "nowrap",
           }}

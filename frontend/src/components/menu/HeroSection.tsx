@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useHero } from "@/hooks/useHero";
 import type { HeroSection as HeroData } from "@/lib/menu-api";
 
@@ -19,23 +19,44 @@ const rise = (delay: number) => ({
 
 export default function HeroSection({ initialHero }: { initialHero?: HeroData | null }) {
   const { hero } = useHero(initialHero);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const outerRef  = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   // Admin image takes priority; fallback to local video.
   const bgGifOrImg = hero?.image_url ?? null;
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 760px)");
-    const upd = () => {
-      setIsMobile(mq.matches);
-      if (!mq.matches) setMenuOpen(false);
-    };
+    const upd = () => setIsMobile(mq.matches);
     upd();
     mq.addEventListener("change", upd);
     return () => mq.removeEventListener("change", upd);
+  }, []);
+
+  // Header con fade dinámico: al bajar hacia los productos se desvanece suave;
+  // al volver a subir reaparece. Solo escribe opacity/transform (compositor).
+  useEffect(() => {
+    let raf: number | null = null;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        const h = headerRef.current;
+        if (!h) return;
+        const f = Math.min(1, window.scrollY / (window.innerHeight * 0.45));
+        h.style.opacity = (1 - f).toFixed(3);
+        h.style.transform = `translateY(${(-16 * f).toFixed(1)}px)`;
+        h.style.pointerEvents = f > 0.85 ? "none" : "";
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   // Controla el fondo del hero: el video se reproduce una sola vez y queda
@@ -119,81 +140,35 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
         <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(14,9,6,0.62) 0%, rgba(18,12,8,0.46) 32%, rgba(18,12,8,0.5) 64%, rgba(11,7,4,0.72) 100%)" }} />
         <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0) 40%, rgba(8,5,3,0.55) 100%)" }} />
 
-        {/* ── Header ── */}
-        <header style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, padding: "clamp(18px,3.2vw,34px) clamp(20px,5vw,68px)", animation: "videoIn 1.1s ease both" }}>
-          <a href="#" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none", color: "#F4EEE3" }}>
-            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 48, height: 48, borderRadius: "50%", background: "rgba(244,238,227,0.94)", boxShadow: "0 4px 18px rgba(0,0,0,0.35)", flexShrink: 0 }}>
+        {/* ── Header ──
+            Sin texto "LA MECA" (redundante con el logo) → eslogan breve.
+            Sin menú hamburguesa: "Ver menú" es la única acción y vive aquí.
+            La animación de entrada se retira al terminar para que el fade por
+            scroll (inline opacity) tome el control. */}
+        <header
+          ref={headerRef}
+          onAnimationEnd={e => { e.currentTarget.style.animation = "none"; }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "clamp(18px,3.2vw,34px) clamp(20px,5vw,68px)", animation: "videoIn 1.1s ease both", willChange: "opacity, transform" }}
+        >
+          <a href="#" style={{ display: "flex", alignItems: "center", gap: 13, textDecoration: "none", color: "#F4EEE3", minWidth: 0 }}>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 50, height: 50, borderRadius: "50%", background: "rgba(244,238,227,0.94)", boxShadow: "0 4px 18px rgba(0,0,0,0.35)", flexShrink: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="La Meca" style={{ width: 42, height: 42, objectFit: "contain", display: "block" }} />
+              <img src="/logo.png" alt="La Meca" style={{ width: 44, height: 44, objectFit: "contain", display: "block" }} />
             </span>
-            <span style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-              <span style={{ fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 22, letterSpacing: "0.34em", paddingLeft: "0.34em", whiteSpace: "nowrap" }}>LA MECA</span>
-              <span style={{ fontSize: 9, letterSpacing: "0.42em", paddingLeft: "0.42em", opacity: 0.7, marginTop: 5, textTransform: "uppercase", whiteSpace: "nowrap" }}>Café · Coffee House</span>
+            <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(13px,3.4vw,16px)", lineHeight: 1.35, opacity: 0.92, maxWidth: 190 }}>
+              Tostado en casa, servido con calma
             </span>
           </a>
 
-          {!isMobile ? (
-            <a
-              href="#menu"
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 24px", border: "1px solid rgba(244,238,227,0.55)", borderRadius: 999, color: "#F4EEE3", textDecoration: "none", fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase", backdropFilter: "blur(2px)", transition: "all .25s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "#F4EEE3"; (e.currentTarget as HTMLAnchorElement).style.color = "#1a120c"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; (e.currentTarget as HTMLAnchorElement).style.color = "#F4EEE3"; }}
-            >
-              Ver menú
-            </a>
-          ) : (
-            <button
-              aria-label="Abrir menú de navegación"
-              onClick={() => setMenuOpen(v => !v)}
-              style={{ display: "flex", flexDirection: "column", gap: 5, background: "transparent", border: "none", cursor: "pointer", padding: 8 }}
-            >
-              <span style={{ width: 26, height: 1.5, background: "#F4EEE3", display: "block" }} />
-              <span style={{ width: 26, height: 1.5, background: "#F4EEE3", display: "block" }} />
-              <span style={{ width: 18, height: 1.5, background: "#F4EEE3", display: "block" }} />
-            </button>
-          )}
+          <a
+            href="#menu"
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px clamp(16px,3vw,24px)", border: "1px solid rgba(244,238,227,0.55)", borderRadius: 999, color: "#F4EEE3", textDecoration: "none", fontSize: "clamp(11px,2.6vw,13px)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0, transition: "all .25s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "#F4EEE3"; (e.currentTarget as HTMLAnchorElement).style.color = "#1a120c"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; (e.currentTarget as HTMLAnchorElement).style.color = "#F4EEE3"; }}
+          >
+            Ver menú
+          </a>
         </header>
-
-        {/* ── Mobile overlay ── */}
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "clamp(22px,4vw,34px)", background: "rgba(11,7,4,0.96)", backdropFilter: "blur(16px)" }}
-            >
-              <button
-                aria-label="Cerrar menú"
-                onClick={() => setMenuOpen(false)}
-                style={{ position: "absolute", top: 22, right: 20, width: 46, height: 46, borderRadius: "50%", border: "1px solid rgba(244,238,227,0.3)", background: "transparent", color: "#F4EEE3", fontSize: 24, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                ×
-              </button>
-              <motion.a
-                href="#menu"
-                onClick={() => setMenuOpen(false)}
-                {...rise(0.05)}
-                style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(38px,11vw,52px)", color: "#F4EEE3", textDecoration: "none" }}
-              >
-                Ver menú
-              </motion.a>
-              <span style={{ width: 44, height: 1, background: ACCENT, display: "block" }} />
-              <motion.div {...rise(0.12)} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 10, letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.55, marginBottom: 8 }}>Horario · Hours</div>
-                <div style={{ fontSize: 16, letterSpacing: "0.03em" }}>Lun–Dom · 7:00 — 21:00</div>
-              </motion.div>
-              <motion.div {...rise(0.19)} style={{ display: "flex", gap: 14 }}>
-                {(["IG", "FB", "TT"] as const).map(label => (
-                  <a key={label} href="#" aria-label={label} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 42, height: 42, border: "1px solid rgba(244,238,227,0.4)", borderRadius: "50%", color: "#F4EEE3", textDecoration: "none", fontSize: 12 }}>
-                    {label}
-                  </a>
-                ))}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ── Hero content — centrado elegante ── */}
         <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px" }}>

@@ -24,6 +24,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   const [selected, setSelected]             = useState<MenuItem | null>(null);
 
   const sectionRef    = useRef<HTMLElement>(null);
+  const listRef       = useRef<HTMLDivElement>(null);
   const rafRef        = useRef<number | null>(null);
 
   const chips = [
@@ -63,7 +64,11 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         if (r.right <= 0 || r.left >= vw) return; // fuera en horizontal
         const centerY = r.top + r.height / 2;
         const centerX = r.left + r.width / 2;
-        const d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
+        // En la grilla de 2 columnas ambas quedan a la misma distancia del
+        // centro: las tarjetas con video reciben un pequeño bonus para que
+        // también se activen (y reproduzcan) cuando están en la columna derecha.
+        let d = Math.abs(centerY - midY) + Math.abs(centerX - midX) * 0.9;
+        if (card.hasAttribute("data-video")) d -= 30;
         if (d < bestDist) {
           bestDist = d;
           bestKey = card.getAttribute("data-key");
@@ -115,6 +120,14 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   function handleCategoryChange(id: number | "todos") {
     setActiveCardKey(null);
     setActiveCategory(id);
+    // El contenido cambia en vertical, bajo la barra: lleva la vista al inicio
+    // de los productos con un desplazamiento suave (sin saltos bruscos).
+    requestAnimationFrame(() => {
+      const el = listRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY - 62;
+      if (window.scrollY > top + 40) window.scrollTo({ top, behavior: "smooth" });
+    });
     setTimeout(updateActive, 100);
   }
 
@@ -182,12 +195,13 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         </div>
 
         {/* ── Sticky category chips ──
-            Sin backdrop-filter: un blur sticky re-difumina lo que pasa por
-            detrás en CADA frame de scroll (jank garantizado en móvil). */}
+            Fondo 100% opaco: cualquier transparencia aquí "titila" cuando el
+            contenido pasa por detrás al scrollear. Sin backdrop-filter (jank). */}
         <div style={{
           position: "sticky", top: 0, zIndex: 8,
-          background: "rgba(247,241,229,0.97)",
+          background: BG,
           borderBottom: "1px solid rgba(62,42,28,0.08)",
+          boxShadow: "0 8px 18px -14px rgba(62,42,28,0.28)",
         }}>
           <div
             className="cat-scroll"
@@ -222,7 +236,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         </div>
 
         {/* ── Productos: grid 2 columnas ── */}
-        <div style={{ maxWidth: 480, margin: "0 auto", padding: "6px 22px 110px" }}>
+        <div ref={listRef} style={{ maxWidth: 480, margin: "0 auto", padding: "6px 22px 110px" }}>
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 26 }}>
               {Array.from({ length: 4 }).map((_, i) => (
@@ -265,7 +279,9 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
               </button>
             </div>
           ) : (
-            <div key={String(activeCategory)}>
+            // key + fadeUp: al cambiar de categoría el contenido entra con un
+            // desvanecido suave en vez de saltar de golpe
+            <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
               {groups.map((cat, gi) => {
                 const isFeatured = cat.slug === "destacados";
                 const showHeader = activeCategory === "todos" || isFeatured;
@@ -292,23 +308,16 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                     </div>
                   )}
 
-                  {/* Carrusel horizontal con snap, una sola fila por categoría.
-                      Sangra hasta los bordes de la pantalla para invitar al swipe. */}
+                  {/* Grilla compacta: 2 productos por fila (feedback del cliente —
+                      menos scroll, formato cuadriculado). El scroll horizontal
+                      queda reservado a la barra de categorías. */}
                   {cat.items.length > 0 ? (
                     <div
-                      className="cat-scroll"
                       style={{
                         display: "grid",
-                        gridAutoFlow: "column",
-                        gridTemplateRows: "auto",
-                        gridAutoColumns: "min(62%, 250px)",
+                        gridTemplateColumns: "1fr 1fr",
                         gap: 12,
-                        overflowX: "auto",
-                        scrollSnapType: "x proximity",
-                        scrollPaddingLeft: 22,
-                        margin: "0 -22px",
-                        padding: "4px 22px 16px",
-                        WebkitOverflowScrolling: "touch",
+                        padding: "4px 0 10px",
                       }}
                     >
                       {cat.items.map((item, idx) => (

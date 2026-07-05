@@ -3,6 +3,7 @@ import HeroSection from "@/components/menu/HeroSection";
 import MenuSection from "@/components/menu/MenuSection";
 import CartRoot from "@/components/menu/CartRoot";
 import SplashIntro from "@/components/menu/SplashIntro";
+import SiteFooter from "@/components/menu/SiteFooter";
 import { getMenu, getHero, type HeroSection as HeroData } from "@/lib/menu-api";
 
 export const metadata: Metadata = {
@@ -31,19 +32,8 @@ export default async function MenuPage() {
       <SplashIntro />
       <HeroSection initialHero={hero} />
       <MenuSection initialCategories={categories} />
-      <footer style={{
-        background: "#EFE6D4",
-        padding: "clamp(32px,4vw,56px) clamp(20px,5vw,68px)",
-        textAlign: "center",
-        fontSize: 11,
-        letterSpacing: "0.2em",
-        textTransform: "uppercase",
-        color: "rgba(62,42,28,0.5)",
-        borderTop: "1px solid rgba(62,42,28,0.1)",
-        fontFamily: "var(--font-sans)",
-      }}>
-        © {new Date().getFullYear()} La Meca · Todos los derechos reservados
-      </footer>
+      {/* Pie de página con dirección, contacto y redes (feedback del cliente) */}
+      <SiteFooter />
     </main>
     </CartRoot>
   );
