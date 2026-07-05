@@ -202,18 +202,12 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
         height: "100%",
         background: CARD,
         cursor: "pointer",
-        border: isActive
-          ? "1.5px solid rgba(188,90,50,0.65)"
-          : "1.5px solid rgba(188,90,50,0.28)",
+        // Sin "target" visual en la tarjeta activa (feedback: se sentía pesado).
+        // La activación es solo funcional: video, Ken Burns y vapor.
+        border: "1.5px solid rgba(188,90,50,0.28)",
         borderRadius: 20,
         overflow: "hidden",
-        boxShadow: isActive
-          ? "0 24px 55px -20px rgba(188,90,50,0.5), inset 0 0 0 1px rgba(188,90,50,0.25)"
-          : "0 14px 28px -22px rgba(62,42,28,0.55)",
-        transformOrigin: "center center",
-        // Realce sutil por CSS (compositor) — sin tilt por-frame desde JS
-        transform: isActive ? "scale(1.02)" : "scale(1)",
-        transition: "transform .5s cubic-bezier(0.2,0.7,0.2,1), box-shadow .5s ease, border-color .5s ease",
+        boxShadow: "0 14px 28px -22px rgba(62,42,28,0.55)",
       }}
     >
       {/* ── Media ── */}
@@ -327,9 +321,9 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
             muted playsInline preload="none" aria-hidden="true"
             style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
-              // "contain": respeta las proporciones originales del video sin
-              // recortarlo (feedback: los videos se veían mutilados/fuera de escala)
-              objectFit: "contain",
+              // "cover": el video ocupa TODO el recuadro (con contain quedaba
+              // chico y se veía la portada asomándose de fondo)
+              objectFit: "cover",
               // Sin póster, el video mismo (primer frame pausado) es la miniatura
               opacity: videoVisible || !poster ? 1 : 0,
               transition: "opacity 0.6s ease",
@@ -438,12 +432,12 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
             marginTop: 9, alignSelf: "flex-start",
             display: "inline-flex", alignItems: "center", gap: 5,
             padding: "6px 12px", borderRadius: 999,
-            border: `1px solid ${isActive ? CHOCO : "rgba(62,42,28,0.35)"}`,
-            background: isActive ? CHOCO : "transparent",
-            color: isActive ? "#F7F1E5" : CHOCO,
+            border: "1px solid rgba(62,42,28,0.35)",
+            background: "transparent",
+            color: CHOCO,
             fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
             letterSpacing: "0.09em", textTransform: "uppercase",
-            transition: "all .35s ease", whiteSpace: "nowrap",
+            whiteSpace: "nowrap",
           }}
         >
           Ver más →
