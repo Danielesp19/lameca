@@ -117,6 +117,79 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     else updateActive();
   }, [selected, updateActive]);
 
+  // Precarga en segundo plano mientras el usuario está en el hero: portadas y
+  // posters (imágenes, concurrencia 3) y luego los videos vía <link prefetch> a
+  // baja prioridad. Así al bajar al menú las tarjetas ya están listas y los
+  // videos arrancan casi sin lag. Arranca en idle para no competir con el render
+  // inicial ni con el video del hero.
+  useEffect(() => {
+    if (!categories.length || typeof window === "undefined") return;
+
+    const imgs: string[] = [];
+    const vids: string[] = [];
+    for (const cat of categories) {
+      for (const it of cat.items) {
+        if (it.video_url) {
+          vids.push(it.video_url);
+          const p = it.image_url ?? it.video_poster_url ?? null;
+          if (p) imgs.push(p);
+        } else if (it.image_url) {
+          imgs.push(it.image_url);
+        }
+      }
+    }
+    const uniqImgs = [...new Set(imgs)];
+    // Tope de seguridad: nunca precargar más de 8 videos (evita bajar decenas de
+    // MB si algún clip viene sin comprimir).
+    const uniqVids = [...new Set(vids)].slice(0, 8);
+
+    let cancelled = false;
+    const links: HTMLLinkElement[] = [];
+
+    const prefetchVideos = () => {
+      if (cancelled) return;
+      for (const src of uniqVids) {
+        const l = document.createElement("link");
+        l.rel = "prefetch";
+        l.as = "video";
+        l.href = src;
+        document.head.appendChild(l);
+        links.push(l);
+      }
+    };
+
+    const preloadImages = () => {
+      let i = 0, active = 0;
+      const MAX = 3;
+      const pump = () => {
+        if (cancelled) return;
+        while (active < MAX && i < uniqImgs.length) {
+          const src = uniqImgs[i++];
+          active++;
+          const img = new Image();
+          const done = () => { active--; pump(); };
+          img.onload = done;
+          img.onerror = done;
+          img.src = src;
+        }
+        if (i >= uniqImgs.length && active === 0) prefetchVideos();
+      };
+      pump();
+    };
+
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const handle: number = hasIdle
+      ? window.requestIdleCallback(() => preloadImages(), { timeout: 1500 })
+      : window.setTimeout(preloadImages, 1200);
+
+    return () => {
+      cancelled = true;
+      links.forEach(l => l.remove());
+      if (hasIdle) window.cancelIdleCallback(handle);
+      else clearTimeout(handle);
+    };
+  }, [categories]);
+
   function handleCategoryChange(id: number | "todos") {
     setActiveCardKey(null);
     setActiveCategory(id);

@@ -198,8 +198,10 @@ body {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
 }
-/* Feedback táctil de las tarjetas (tras terminar su entrada) */
-.menu-card-wrap { transition: transform 0.18s ease; }
+/* Feedback táctil de las tarjetas (tras terminar su entrada).
+   height:100% → en la grilla y en el carrusel todas las tarjetas de una fila
+   se estiran a la más alta (mismo tamaño aunque el texto varíe). */
+.menu-card-wrap { height: 100%; transition: transform 0.18s ease; }
 .menu-card-wrap:active { transform: scale(0.97); }
 
 /* Bloques de categoría fuera de pantalla: el navegador se salta su layout y
