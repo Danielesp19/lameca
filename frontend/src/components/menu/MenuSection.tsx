@@ -308,30 +308,62 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                     </div>
                   )}
 
-                  {/* Grilla compacta: 2 productos por fila (feedback del cliente —
-                      menos scroll, formato cuadriculado). El scroll horizontal
-                      queda reservado a la barra de categorías. */}
+                  {/* "Todos": carrusel horizontal por categoría (se desliza de lado).
+                      Categoría seleccionada: grilla estática 2 columnas con todos
+                      los productos. */}
                   {cat.items.length > 0 ? (
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 12,
-                        padding: "4px 0 10px",
-                      }}
-                    >
-                      {cat.items.map((item, idx) => (
-                        <MenuCard
-                          key={item.id}
-                          item={item}
-                          cardKey={`${cat.id}:${item.id}`}
-                          isActive={activeCardKey === `${cat.id}:${item.id}`}
-                          onSelect={setSelected}
-                          hot={isHot}
-                          index={idx}
-                        />
-                      ))}
-                    </div>
+                    activeCategory === "todos" ? (
+                      <div
+                        className="cat-scroll"
+                        style={{
+                          display: "flex",
+                          gap: 12,
+                          overflowX: "auto",
+                          scrollSnapType: "x mandatory",
+                          overscrollBehaviorX: "contain",
+                          WebkitOverflowScrolling: "touch",
+                          scrollbarWidth: "none",
+                          padding: "4px 0 10px",
+                        }}
+                      >
+                        {cat.items.map((item, idx) => (
+                          <div
+                            key={item.id}
+                            style={{ flex: "0 0 46%", maxWidth: 210, minWidth: 150, scrollSnapAlign: "start" }}
+                          >
+                            <MenuCard
+                              item={item}
+                              cardKey={`${cat.id}:${item.id}`}
+                              isActive={activeCardKey === `${cat.id}:${item.id}`}
+                              onSelect={setSelected}
+                              hot={isHot}
+                              index={idx}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 12,
+                          padding: "4px 0 10px",
+                        }}
+                      >
+                        {cat.items.map((item, idx) => (
+                          <MenuCard
+                            key={item.id}
+                            item={item}
+                            cardKey={`${cat.id}:${item.id}`}
+                            isActive={activeCardKey === `${cat.id}:${item.id}`}
+                            onSelect={setSelected}
+                            hot={isHot}
+                            index={idx}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <p style={{ fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
                       Pronto habrá novedades aquí.
