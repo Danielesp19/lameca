@@ -43,7 +43,7 @@ ufw --force enable
 
 ```bash
 mysql -e "CREATE DATABASE lameca CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'lameca'@'localhost' IDENTIFIED BY 'CLAVE_BD_FUERTE';
+CREATE USER 'lameca'@'localhost' IDENTIFIED BY '38610d732c3e43f0dabfe96bb8907f23';
 GRANT ALL PRIVILEGES ON lameca.* TO 'lameca'@'localhost'; FLUSH PRIVILEGES;"
 ```
 (usa la misma `CLAVE_BD_FUERTE` que pusiste en `menu-service/.env.production`)
@@ -77,7 +77,8 @@ sed -i 's/^upload_max_filesize.*/upload_max_filesize = 25M/; s/^post_max_size.*/
 systemctl restart php8.3-fpm
 ```
 
-Menú de demo (opcional): `php artisan db:seed --class=MenuSeeder --force`
+Menú de demo (opcional): 
+`php artisan db:seed --class=MenuSeeder --force`
 (SOLO MenuSeeder; el seed completo crea usuarios y usa dependencias de dev).
 
 ## 6. Nginx
