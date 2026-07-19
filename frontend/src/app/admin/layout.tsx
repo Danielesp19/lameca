@@ -75,6 +75,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
+        {/* Descarga de la carta en PDF (misma que ven los clientes en el menú) */}
+        <a
+          href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
+          download="carta-la-meca.pdf"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "9px 12px",
+            marginBottom: 6,
+            borderRadius: 8,
+            fontSize: 13.5,
+            color: "#6B5744",
+            textDecoration: "none",
+            border: "1px solid #E8E0D8",
+          }}
+        >
+          <span style={{ fontSize: 15 }}>⬇</span>
+          Descargar carta (PDF)
+        </a>
+
         {/* Logout */}
         <button
           onClick={() => { sessionStorage.removeItem("admin_token"); router.push("/admin/login"); }}
@@ -95,7 +116,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Content */}
       <main style={{ marginLeft: 220, flex: 1, padding: "40px 48px" }}>
-        <SedeSwitcher />
+        {/* El selector de sede solo aplica a pedidos y mesas; productos y categorías son compartidos */}
+        {(pathname.startsWith("/admin/orders") || pathname.startsWith("/admin/tables")) && <SedeSwitcher />}
         {children}
       </main>
     </div>

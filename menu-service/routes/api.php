@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 // Carta digital — pública
 Route::prefix('menu')->group(function () {
     Route::get('/',                  [MenuController::class, 'index']);
+    Route::get('/pdf',               \App\Http\Controllers\MenuPdfController::class);
     Route::get('/items/{menuItem}',  [MenuController::class, 'show']);
     Route::get('/hero',              [MenuController::class, 'hero']);
 });
@@ -24,8 +25,8 @@ Route::get('/tables/{token}/session', [OrderController::class, 'mintSession']) /
     ->middleware('throttle:table-sessions');
 Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:orders');
 
-// Admin — protegido por token
-Route::middleware('admin.token')->prefix('admin')->group(function () {
+// Admin — protegido por token + rate limit por IP
+Route::middleware(['throttle:admin-api', 'admin.token'])->prefix('admin')->group(function () {
     Route::post('categories/reorder', [CategoryAdminController::class, 'reorder']);
     Route::apiResource('categories', CategoryAdminController::class)->except(['show']);
     Route::apiResource('items',      ItemAdminController::class)->except(['show']);

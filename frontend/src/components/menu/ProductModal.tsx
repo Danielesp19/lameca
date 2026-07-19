@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MenuItem, SUGAR_OPTIONS, DEFAULT_SUGAR, caffeineInfo } from "@/lib/menu-api";
+import LevelIcons from "@/components/menu/LevelIcons";
 import { useCart } from "@/context/CartContext";
 
 // Paleta rediseño v2
@@ -259,13 +260,13 @@ export default function ProductModal({ item, onClose }: Props) {
                     background: "rgba(62,42,28,0.05)", border: `1px solid ${TERRA}55`,
                     animation: "fadeUp 0.5s ease 0.4s both",
                   }}>
-                    <span style={{ fontSize: 15, letterSpacing: caffeine.beans > 1 ? "-2px" : 0 }}>{caffeine.emoji}</span>
+                    <LevelIcons level={caffeine.beans} icon="☕" size={15} />
                     <span style={{ fontSize: 12.5, fontWeight: 500, color: CHOCO }}>{caffeine.label}</span>
                   </div>
                 )}
 
-                {/* ── Selector de nivel de azúcar (solo en modo QR) ── */}
-                {hasSession && item.has_sugar_option && (
+                {/* ── Selector de nivel de azúcar (modo QR y modo público) ── */}
+                {item.has_sugar_option && (
                   <div style={{ marginTop: 22, animation: "fadeUp 0.5s ease 0.45s both" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                       <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
@@ -291,7 +292,8 @@ export default function ProductModal({ item, onClose }: Props) {
                               transition: "all .18s",
                             }}
                           >
-                            <span style={{ fontSize: 14 }}>{opt.emoji}</span>
+                            {/* "Sin azúcar" va solo con texto; las cucharas, grandes y juntas */}
+                            {opt.level > 0 && <LevelIcons level={opt.level} icon="🥄" size={17} gap={-5} />}
                             {opt.value}
                           </button>
                         );
@@ -300,8 +302,7 @@ export default function ProductModal({ item, onClose }: Props) {
                   </div>
                 )}
 
-                {hasSession ? (
-                  <button
+                <button
                     onClick={handleAdd}
                     disabled={added}
                     style={{
@@ -321,17 +322,14 @@ export default function ProductModal({ item, onClose }: Props) {
                       ? <>Agregado <span style={{ fontSize: 16 }}>✓</span></>
                       : <>Agregar al pedido <span style={{ fontSize: 16 }}>+</span></>}
                   </button>
-                ) : (
-                  // Modo público (sin QR): no hay carrito; se invita a escanear o a WhatsApp.
-                  <div style={{
-                    marginTop: 24, padding: "14px 16px", borderRadius: 14,
-                    background: `${TERRA}0D`, border: `1px dashed ${TERRA}88`,
-                    fontSize: 13, lineHeight: 1.55, color: CHOCO, textAlign: "center",
-                    animation: "fadeUp 0.5s ease 0.5s both",
+                {!hasSession && (
+                  // Modo público (sin QR): el pedido se arma igual y se envía por WhatsApp.
+                  <p style={{
+                    margin: "10px 0 0", fontSize: 12, textAlign: "center",
+                    color: "rgba(62,42,28,0.55)", animation: "fadeUp 0.5s ease 0.55s both",
                   }}>
-                    📷 Escanea el <strong>QR de tu mesa</strong> para pedir desde la app,
-                    o usa el botón de <strong>WhatsApp</strong> para coordinar tu pedido.
-                  </div>
+                    Tu pedido se enviará como mensaje de <strong>WhatsApp</strong> al finalizar.
+                  </p>
                 )}
               </div>
             </div>

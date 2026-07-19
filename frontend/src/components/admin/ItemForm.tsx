@@ -369,7 +369,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
             <label style={lbl}>Nivel de cafeína</label>
             <select style={{ ...inp, cursor: "pointer" }} value={caffeine} onChange={e => setCaffeine(e.target.value)}>
               <option value="">— No mostrar —</option>
-              <option value="0">🌿 Sin cafeína</option>
+              <option value="0">🚫 Sin cafeína</option>
               <option value="1">☕ Baja</option>
               <option value="2">☕☕ Media</option>
               <option value="3">☕☕☕ Alta</option>

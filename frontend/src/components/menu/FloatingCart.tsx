@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
-import { createOrder, SessionExpiredError } from "@/lib/orders-api";
+import { createOrder, getSedes, SessionExpiredError } from "@/lib/orders-api";
+import type { SedeInfo } from "@/lib/table-session";
 import Turnstile, { turnstileEnabled } from "./Turnstile";
 
 // Paleta rediseño v2
@@ -26,9 +27,43 @@ export default function FloatingCart() {
   const [done, setDone] = useState<string | null>(null);
   const [tsToken, setTsToken] = useState<string>("");
 
-  // El carrito y "Llamar al mesero" solo existen con una sesión de QR VÁLIDA.
-  // Sin QR válido (público o sesión caducada) se muestra el botón de WhatsApp.
-  if (!hasSession) return null;
+  // Modo público (sin sesión de QR): el carrito funciona igual, pero el pedido
+  // se envía como mensaje prefabricado de WhatsApp en vez de ir a la mesa.
+  const publicMode = !hasSession;
+  const [sedes, setSedes] = useState<SedeInfo[]>([]);
+  const [pickSede, setPickSede] = useState(false);
+
+  useEffect(() => {
+    if (publicMode) {
+      getSedes().then(list => setSedes(list.filter(s => s.whatsapp_phone))).catch(() => {});
+    }
+  }, [publicMode]);
+
+  function waMessage(): string {
+    const rows = lines.map(l => {
+      let row = `• ${l.quantity}× ${l.name}`;
+      if (l.sugar_level) {
+        row += l.sugar_level === "Sin azúcar" ? " — sin azúcar" : ` — azúcar: ${l.sugar_level.toLowerCase()}`;
+      }
+      if (l.notes?.trim()) row += ` (nota: ${l.notes.trim()})`;
+      return row;
+    });
+    return `¡Hola! Vengo de la carta de La Meca y quiero hacer este pedido:\n\n${rows.join("\n")}\n\nTotal estimado: ${money(total)}`;
+  }
+
+  function openWhatsApp(phone: string | null) {
+    const fallback = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "";
+    const target = phone || fallback;
+    const text = encodeURIComponent(waMessage());
+    window.open(target ? `https://wa.me/${target}?text=${text}` : `https://wa.me/?text=${text}`, "_blank", "noopener");
+    setPickSede(false);
+    setDone("Abrimos WhatsApp con tu pedido listo — solo dale enviar.");
+  }
+
+  function sendWhatsApp() {
+    if (sedes.length > 1) { setPickSede(true); return; }
+    openWhatsApp(sedes[0]?.whatsapp_phone ?? null);
+  }
 
   async function submit(type: "order" | "call") {
     setError("");
@@ -67,7 +102,8 @@ export default function FloatingCart() {
     <>
       {/* Botón flotante */}
       <AnimatePresence>
-        {!open && (
+        {/* En modo público el botón solo aparece con productos (si no, se ve el de WhatsApp) */}
+        {!open && (hasSession || count > 0) && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -124,14 +160,15 @@ export default function FloatingCart() {
                   <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", fontSize: 26, cursor: "pointer", color: DARK, lineHeight: 1 }}>×</button>
                 </div>
                 <p style={{ margin: "4px 0 0", fontSize: 13, opacity: 0.7 }}>
-                  {table ? table.label : "Mesa"}
+                  {publicMode ? "Se enviará por WhatsApp" : table ? table.label : "Mesa"}
                 </p>
               </div>
 
               {/* Banner de sesión expirada */}
               {sessionExpired && (
                 <div style={{ margin: "12px 22px 0", padding: "12px 14px", borderRadius: 12, background: "#FBEEE6", border: "1px solid #E7C8B3", color: "#8A4B2A", fontSize: 13, lineHeight: 1.5 }}>
-                  ⏱ Tu sesión de mesa expiró. <strong>Vuelve a escanear el QR</strong> de tu mesa para enviar el pedido.
+                  ⏱ Tu sesión de mesa expiró. <strong>Vuelve a escanear el QR</strong> para pedir a tu mesa,
+                  o envía tu pedido por <strong>WhatsApp</strong> aquí abajo.
                 </div>
               )}
 
@@ -150,12 +187,16 @@ export default function FloatingCart() {
                   <div style={{ textAlign: "center", padding: "40px 12px", opacity: 0.6 }}>
                     <div style={{ fontSize: 44, marginBottom: 10 }}>🛒</div>
                     <p style={{ fontSize: 14 }}>Tu carrito está vacío.</p>
-                    <p style={{ fontSize: 13, marginTop: 18 }}>¿Solo necesitas atención?</p>
-                    <button onClick={() => submit("call")} disabled={sending || !hasSession}
-                      style={{ position: "relative", marginTop: 8, padding: "13px 26px", borderRadius: 999, border: "none", background: OLIVE, color: "#FBF7EC", cursor: hasSession ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", boxShadow: "0 16px 34px -12px rgba(110,139,78,0.65)" }}>
-                      <span aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: 999, border: "2px solid rgba(110,139,78,0.55)", animation: "pulseRing 2.2s ease-out infinite", pointerEvents: "none" }} />
-                      🔔 Llamar al mesero
-                    </button>
+                    {!publicMode && (
+                      <>
+                        <p style={{ fontSize: 13, marginTop: 18 }}>¿Solo necesitas atención?</p>
+                        <button onClick={() => submit("call")} disabled={sending}
+                          style={{ position: "relative", marginTop: 8, padding: "13px 26px", borderRadius: 999, border: "none", background: OLIVE, color: "#FBF7EC", cursor: "pointer", fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", boxShadow: "0 16px 34px -12px rgba(110,139,78,0.65)" }}>
+                          <span aria-hidden="true" style={{ position: "absolute", inset: 0, borderRadius: 999, border: "2px solid rgba(110,139,78,0.55)", animation: "pulseRing 2.2s ease-out infinite", pointerEvents: "none" }} />
+                          🔔 Llamar al mesero
+                        </button>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -198,23 +239,63 @@ export default function FloatingCart() {
               {/* Footer / checkout */}
               {!done && lines.length > 0 && (
                 <div style={{ padding: "14px 22px 22px", borderTop: "1px solid rgba(36,26,18,0.1)" }}>
-                  {turnstileEnabled() && hasSession && (
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-                      <Turnstile onToken={setTsToken} />
-                    </div>
+                  {publicMode ? (
+                    pickSede ? (
+                      // Selector de sede (más de una con WhatsApp)
+                      <>
+                        <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 10px" }}>¿A cuál sede envías tu pedido?</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {sedes.map(s => (
+                            <button key={s.id} onClick={() => openWhatsApp(s.whatsapp_phone)}
+                              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "13px 16px", borderRadius: 14, cursor: "pointer", border: "1px solid rgba(62,42,28,0.14)", background: "#FFFCF5", color: DARK, fontSize: 14, fontWeight: 600, textAlign: "left" }}>
+                              <span>
+                                {s.name}
+                                {s.address && <span style={{ display: "block", fontSize: 12, fontWeight: 400, opacity: 0.6, marginTop: 2 }}>{s.address}</span>}
+                              </span>
+                              <span style={{ color: OLIVE, fontSize: 18 }}>›</span>
+                            </button>
+                          ))}
+                        </div>
+                        <button onClick={() => setPickSede(false)}
+                          style={{ width: "100%", marginTop: 10, padding: "10px", borderRadius: 999, border: "none", background: "transparent", color: DARK, fontSize: 13, opacity: 0.6, cursor: "pointer" }}>
+                          ‹ Volver al pedido
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 16, fontWeight: 600 }}>
+                          <span>Total estimado</span><span>{money(total)}</span>
+                        </div>
+                        <button onClick={sendWhatsApp}
+                          style={{ width: "100%", padding: "15px", borderRadius: 999, border: "none", background: OLIVE, color: "#FBF7EC", fontSize: 14, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", boxShadow: "0 16px 34px -12px rgba(110,139,78,0.65)" }}>
+                          Pedir por WhatsApp
+                        </button>
+                        <p style={{ margin: "10px 0 0", fontSize: 12, textAlign: "center", opacity: 0.55 }}>
+                          Se abrirá WhatsApp con el mensaje de tu pedido listo para enviar.
+                        </p>
+                      </>
+                    )
+                  ) : (
+                    <>
+                      {turnstileEnabled() && (
+                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                          <Turnstile onToken={setTsToken} />
+                        </div>
+                      )}
+                      {error && <p style={{ color: "#B0392B", fontSize: 13, margin: "0 0 10px", textAlign: "center" }}>{error}</p>}
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 16, fontWeight: 600 }}>
+                        <span>Total</span><span>{money(total)}</span>
+                      </div>
+                      <button onClick={() => submit("order")} disabled={sending}
+                        style={{ width: "100%", padding: "15px", borderRadius: 999, border: "none", background: DARK, color: CREAM, fontSize: 14, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}>
+                        {sending ? "Enviando…" : "Enviar pedido"}
+                      </button>
+                      <button onClick={() => submit("call")} disabled={sending}
+                        style={{ width: "100%", marginTop: 10, padding: "12px", borderRadius: 999, border: `1px solid ${OLIVE}`, background: "transparent", color: OLIVE, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        🔔 Llamar al mesero
+                      </button>
+                    </>
                   )}
-                  {error && <p style={{ color: "#B0392B", fontSize: 13, margin: "0 0 10px", textAlign: "center" }}>{error}</p>}
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 16, fontWeight: 600 }}>
-                    <span>Total</span><span>{money(total)}</span>
-                  </div>
-                  <button onClick={() => submit("order")} disabled={sending || !hasSession}
-                    style={{ width: "100%", padding: "15px", borderRadius: 999, border: "none", background: hasSession ? DARK : "#9b8e80", color: CREAM, fontSize: 14, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", cursor: hasSession ? "pointer" : "not-allowed" }}>
-                    {sending ? "Enviando…" : hasSession ? "Enviar pedido" : "Re-escanea el QR"}
-                  </button>
-                  <button onClick={() => submit("call")} disabled={sending || !hasSession}
-                    style={{ width: "100%", marginTop: 10, padding: "12px", borderRadius: 999, border: `1px solid ${OLIVE}`, background: "transparent", color: OLIVE, fontSize: 13, fontWeight: 600, cursor: hasSession ? "pointer" : "not-allowed" }}>
-                    🔔 Llamar al mesero
-                  </button>
                 </div>
               )}
             </motion.div>

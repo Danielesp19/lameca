@@ -6,6 +6,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Sede;
 use App\Models\Table;
+use App\Support\ServiceHours;
 use App\Support\TableSession;
 use App\Support\Turnstile;
 use Illuminate\Http\Request;
@@ -101,6 +102,22 @@ class OrderController extends Controller
 
         if (! $table) {
             return response()->json(['error' => 'Mesa no válida o inactiva'], 422);
+        }
+
+        // ── Horario de atención: fuera de horario no entra nada ───────────────
+        if (! ServiceHours::isOpen()) {
+            return response()->json([
+                'error' => 'En este momento estamos fuera del horario de atención.',
+            ], 422);
+        }
+
+        // ── Tope de pedidos activos por mesa (frena inundación aunque la URL
+        //    del QR se haya filtrado; el mesero libera cupo al atenderlos) ──────
+        $maxActive = (int) config('coffee.max_active_orders', 3);
+        if ($maxActive > 0 && $table->orders()->active()->count() >= $maxActive) {
+            return response()->json([
+                'error' => 'Esta mesa ya tiene pedidos en curso. Un mesero pasará a atenderlos.',
+            ], 422);
         }
 
         // ── Capa 3: Turnstile (se omite si no hay clave configurada) ──────────

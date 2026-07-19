@@ -15,7 +15,7 @@ class VideoPoster
 {
     public static function generate(string $videoPath): ?string
     {
-        $bin = env('FFMPEG_PATH') ?: 'ffmpeg';
+        $bin = config('coffee.ffmpeg', 'ffmpeg');
 
         $disk = Storage::disk('public');
         $src  = $disk->path($videoPath);

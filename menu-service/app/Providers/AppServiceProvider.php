@@ -41,5 +41,11 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour(120)->by($request->ip()),
             ];
         });
+
+        // API admin: generoso para el uso real del panel (polling cada 8s +
+        // navegación), pero frena martilleo/fuerza bruta del token Bearer.
+        RateLimiter::for('admin-api', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
     }
 }

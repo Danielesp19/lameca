@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { MenuItem, caffeineInfo } from "@/lib/menu-api";
+import LevelIcons from "@/components/menu/LevelIcons";
 
 // Paleta rediseño v2
 const CHOCO = "#3E2A1C";
@@ -74,9 +75,11 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
   // no hay, el poster JPEG que el backend genera del primer frame. Solo sin
   // ninguno de los dos se cae a cargar los metadatos del video.
   const poster = hasVideo ? (item.image_url ?? item.video_poster_url ?? null) : null;
+  // La tarjeta muestra SOLO la portada: las imágenes extra (galería) se cargan
+  // únicamente al abrir el detalle del producto — ahorra ancho de banda.
   const angles = (hasVideo
     ? []
-    : [...(item.image_url ? [item.image_url] : []), ...(item.extra_image_urls ?? [])]
+    : [...(item.image_url ? [item.image_url] : [])]
   ).filter(Boolean) as string[];
 
   const caffeine = caffeineInfo(item.caffeine_level);
@@ -388,7 +391,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
               animation: "badgeIn 0.5s ease 0.4s both",
             }}
           >
-            <span style={{ letterSpacing: caffeine.beans > 1 ? "-2px" : 0 }}>{caffeine.emoji}</span>
+            <LevelIcons level={caffeine.beans} icon="☕" size={11} />
           </span>
         )}
       </div>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MenuItem;
+use App\Support\ImageOptimizer;
+use App\Support\VideoOptimizer;
 use App\Support\VideoPoster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -37,7 +39,7 @@ class ItemAdminController extends Controller
         ], $this->validationMessages());
 
         if ($request->hasFile('video')) {
-            $data['video']        = $request->file('video')->store('menu-items/videos', 'public');
+            $data['video']        = VideoOptimizer::store($request->file('video'), 'menu-items/videos');
             $data['video_poster'] = VideoPoster::generate($data['video']);
         }
 
@@ -47,7 +49,7 @@ class ItemAdminController extends Controller
         if ($request->hasFile('new_images')) {
             $files = $request->file('new_images');
             foreach ($files as $idx => $file) {
-                $path = $file->store('menu-items/images', 'public');
+                $path = ImageOptimizer::store($file, 'menu-items/images');
                 if ($idx === 0) {
                     $item->update(['image' => $path]);
                 } else {
@@ -84,7 +86,7 @@ class ItemAdminController extends Controller
         if ($request->hasFile('video')) {
             if ($item->video) Storage::disk('public')->delete($item->video);
             if ($item->video_poster) Storage::disk('public')->delete($item->video_poster);
-            $data['video']        = $request->file('video')->store('menu-items/videos', 'public');
+            $data['video']        = VideoOptimizer::store($request->file('video'), 'menu-items/videos');
             $data['video_poster'] = VideoPoster::generate($data['video']);
         }
 
@@ -169,7 +171,7 @@ class ItemAdminController extends Controller
                 $file = $newFiles[$idx] ?? null;
                 if (!$file) continue;
 
-                $path = $file->store('menu-items/images', 'public');
+                $path = ImageOptimizer::store($file, 'menu-items/images');
 
                 if (!$coverHandled) {
                     if ($item->image) Storage::disk('public')->delete($item->image);

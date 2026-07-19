@@ -16,28 +16,29 @@ export interface MenuItem {
 }
 
 // ── Nivel de azúcar (lo elige el cliente al pedir) ───────────────────────────
+// `level` se dibuja con cucharas a color/grises (LevelIcons); 0 = 🚫.
 export const SUGAR_OPTIONS = [
-  { value: "Sin azúcar", emoji: "🚫" },
-  { value: "Poca",       emoji: "🤏" },
-  { value: "Normal",     emoji: "🥄" },
-  { value: "Extra",      emoji: "🍯" },
+  { value: "Sin azúcar", level: 0 },
+  { value: "Poca",       level: 1 },
+  { value: "Normal",     level: 2 },
+  { value: "Extra",      level: 3 },
 ] as const;
 
 export const DEFAULT_SUGAR = "Normal";
 
-// ── Nivel de cafeína (lo configura el admin, se muestra con emojis) ───────────
+// ── Nivel de cafeína (lo configura el admin) ─────────────────────────────────
+// `beans` se dibuja con tazas a color/grises (LevelIcons); 0 = 🚫.
 export interface CaffeineInfo {
-  emoji: string;
   label: string;
   beans: number;
 }
 
 export function caffeineInfo(level: number | null | undefined): CaffeineInfo | null {
   switch (level) {
-    case 0:  return { emoji: "🌿",     label: "Sin cafeína",   beans: 0 };
-    case 1:  return { emoji: "☕",      label: "Cafeína baja",  beans: 1 };
-    case 2:  return { emoji: "☕☕",    label: "Cafeína media", beans: 2 };
-    case 3:  return { emoji: "☕☕☕",  label: "Cafeína alta",  beans: 3 };
+    case 0:  return { label: "Sin cafeína",   beans: 0 };
+    case 1:  return { label: "Cafeína baja",  beans: 1 };
+    case 2:  return { label: "Cafeína media", beans: 2 };
+    case 3:  return { label: "Cafeína alta",  beans: 3 };
     default: return null;
   }
 }

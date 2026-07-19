@@ -32,7 +32,7 @@ function WaIcon({ size = 26 }: { size?: number }) {
 }
 
 export default function WhatsAppButton() {
-  const { hasSession } = useCart();
+  const { hasSession, count } = useCart();
   const [sedes, setSedes] = useState<SedeInfo[]>([]);
   const [pick, setPick] = useState(false);
 
@@ -40,8 +40,10 @@ export default function WhatsAppButton() {
     getSedes().then(list => setSedes(list.filter(s => s.whatsapp_phone)));
   }, []);
 
-  // Se muestra siempre que NO haya una sesión de QR válida (público o caducada).
-  if (hasSession) return null;
+  // Se muestra sin sesión de QR válida (público o caducada) Y con el carrito
+  // vacío: cuando hay productos, el carrito flotante toma su lugar y el envío
+  // por WhatsApp sale desde ahí con el pedido armado.
+  if (hasSession || count > 0) return null;
 
   function go(sede: SedeInfo) {
     window.open(waLink(sede.whatsapp_phone ?? FALLBACK_PHONE), "_blank", "noopener");

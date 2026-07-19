@@ -21,6 +21,21 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Cabeceras de seguridad para todo el sitio
+      {
+        source: "/:path*",
+        headers: [
+          // La página no puede ser embebida en iframes de otros sitios
+          // (clickjacking sobre el panel admin o la carta).
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // El navegador no debe adivinar tipos MIME distintos al declarado.
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // No filtrar la URL completa (tokens de mesa en /t/...) a sitios externos.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // El panel y la carta no necesitan APIs sensibles del navegador.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
       // Imágenes/videos del menú: Laravel los guarda con nombre hasheado (una subida
       // nueva = URL nueva), por lo que es seguro cachearlos por mucho tiempo. Esto
       // hace que el CDN de Vercel y el navegador sirvan los archivos sin pegar al

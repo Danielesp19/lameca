@@ -30,18 +30,30 @@ const HISTORY_TABS = [
   { key: "all",       label: "Todos" },
 ];
 
-function beep() {
+// Timbre de pedido nuevo: campana de dos tonos ("ding-dong"), con volumen
+// configurable (0 a 1). Se reutiliza un solo AudioContext — los navegadores lo
+// desbloquean con la primera interacción del usuario en la página.
+let audioCtx: AudioContext | null = null;
+function beep(volume = 0.7) {
   try {
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = 880; o.type = "sine";
-    g.gain.setValueAtTime(0.001, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-    o.start(); o.stop(ctx.currentTime + 0.5);
+    audioCtx ??= new Ctx();
+    const ctx = audioCtx;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    const vol = Math.max(0.02, Math.min(1, volume));
+
+    const tone = (freq: number, at: number, dur: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq; o.type = "sine";
+      g.gain.setValueAtTime(0.001, ctx.currentTime + at);
+      g.gain.exponentialRampToValueAtTime(vol, ctx.currentTime + at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + at + dur);
+      o.start(ctx.currentTime + at); o.stop(ctx.currentTime + at + dur);
+    };
+    tone(880, 0, 0.45);      // ding
+    tone(660, 0.28, 0.6);    // dong
   } catch { /* sin audio */ }
 }
 
@@ -65,6 +77,17 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState("");
   const [soundOn, setSoundOn] = useState(true);
+  const [volume, setVolume] = useState(0.7);
+
+  // Volumen persistido entre sesiones del panel.
+  useEffect(() => {
+    const saved = localStorage.getItem("admin_sound_vol");
+    if (saved !== null) setVolume(Number(saved));
+  }, []);
+  const changeVolume = (v: number) => {
+    setVolume(v);
+    localStorage.setItem("admin_sound_vol", String(v));
+  };
   const [dragId, setDragId]   = useState<number | null>(null);
   const [overCol, setOverCol] = useState<ColKey | null>(null);
   const lastPending = useRef<number | null>(null);
@@ -100,7 +123,7 @@ export default function OrdersPage() {
         const { pending } = await adminPendingCount(sedeId);
         if (!alive) return;
         if (lastPending.current !== null && pending > lastPending.current) {
-          if (soundOn) beep();
+          if (soundOn) beep(volume);
           if (view === "board") loadBoard();
         }
         lastPending.current = pending;
@@ -109,7 +132,7 @@ export default function OrdersPage() {
     const id = setInterval(tick, 8000);
     tick();
     return () => { alive = false; clearInterval(id); };
-  }, [soundOn, view, loadBoard, sedeId]);
+  }, [soundOn, volume, view, loadBoard, sedeId]);
 
   // Mueve una orden a un estado. Optimista: actualiza la UI antes de la red.
   const move = useCallback(async (o: AdminOrder, status: "pending" | "seen" | "served" | "billed" | "dismissed") => {
@@ -119,6 +142,18 @@ export default function OrdersPage() {
         : prev.map(x => (x.id === o.id ? { ...x, status } : x)),
     );
     try { await adminSetOrderStatus(o.id, status); }
+    catch (e) { alert((e as Error).message); loadBoard(); }
+  }, [loadBoard]);
+
+  // Mueve VARIOS pedidos de una vez (toda la mesa). Optimista, igual que move().
+  const moveMany = useCallback(async (list: AdminOrder[], status: "pending" | "seen" | "served" | "billed" | "dismissed") => {
+    const ids = new Set(list.map(o => o.id));
+    setOrders(prev =>
+      status === "dismissed"
+        ? prev.filter(x => !ids.has(x.id))
+        : prev.map(x => (ids.has(x.id) ? { ...x, status } : x)),
+    );
+    try { await Promise.all(list.map(o => adminSetOrderStatus(o.id, status))); }
     catch (e) { alert((e as Error).message); loadBoard(); }
   }, [loadBoard]);
 
@@ -153,10 +188,29 @@ export default function OrdersPage() {
               : "Historial de órdenes cerradas"}
           </p>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#6B5744", cursor: "pointer" }}>
-          <input type="checkbox" checked={soundOn} onChange={e => setSoundOn(e.target.checked)} />
-          🔔 Sonido
-        </label>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#6B5744", cursor: "pointer" }}>
+            <input type="checkbox" checked={soundOn} onChange={e => setSoundOn(e.target.checked)} />
+            🔔 Sonido
+          </label>
+          {soundOn && (
+            <>
+              <input
+                type="range" min={10} max={100} step={5}
+                value={Math.round(volume * 100)}
+                onChange={e => changeVolume(Number(e.target.value) / 100)}
+                title={`Volumen: ${Math.round(volume * 100)}%`}
+                style={{ width: 110, accentColor: "#6F4E37", cursor: "pointer" }}
+              />
+              <button
+                onClick={() => beep(volume)}
+                style={{ padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid #E8E0D8", background: "#FFFFFF", color: "#6B5744" }}
+              >
+                ▶ Probar
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Vista: Tablero / Historial */}
@@ -197,17 +251,32 @@ export default function OrdersPage() {
                   </div>
 
                   <div style={{ display: "grid", gap: 10 }}>
-                    {cards.map(o => (
-                      <Card
-                        key={o.id}
-                        o={o}
-                        colKey={col.key}
-                        showSede={sedeId === null && sedes.length > 1}
-                        sedeName={sedeName(o.sede_id)}
-                        onDragStart={() => setDragId(o.id)}
-                        onMove={move}
-                      />
-                    ))}
+                    {groupByTable(cards).map(g =>
+                      g.orders.length === 1 ? (
+                        <Card
+                          key={g.orders[0].id}
+                          o={g.orders[0]}
+                          colKey={col.key}
+                          showSede={sedeId === null && sedes.length > 1}
+                          sedeName={sedeName(g.orders[0].sede_id)}
+                          onDragStart={() => setDragId(g.orders[0].id)}
+                          onMove={move}
+                        />
+                      ) : (
+                        <TableGroup
+                          key={g.key}
+                          label={g.label}
+                          orders={g.orders}
+                          colKey={col.key}
+                          accent={col.accent}
+                          showSede={sedeId === null && sedes.length > 1}
+                          sedeName={sedeName(g.orders[0].sede_id)}
+                          setDragId={setDragId}
+                          onMove={move}
+                          onMoveMany={moveMany}
+                        />
+                      ),
+                    )}
                     {cards.length === 0 && (
                       <p style={{ textAlign: "center", color: "#C4B5A6", fontSize: 12.5, padding: "18px 0" }}>
                         {col.key === "todo" ? "Sin pedidos nuevos" : "Vacío"}
@@ -285,9 +354,108 @@ export default function OrdersPage() {
   );
 }
 
+// ── Agrupado por mesa ─────────────────────────────────────────────────────────
+// Varias personas en la misma mesa (cada una desde su celular) generan varios
+// pedidos: dentro de cada columna se muestran juntos bajo una sola cabecera de
+// mesa, con total combinado y acciones en bloque.
+function groupByTable(cards: AdminOrder[]): { key: string; label: string; orders: AdminOrder[] }[] {
+  const groups: { key: string; label: string; orders: AdminOrder[] }[] = [];
+  for (const o of cards) {
+    const key = `${o.sede_id ?? "s"}-${o.table_id ?? o.table_label}`;
+    const g = groups.find(x => x.key === key);
+    if (g) g.orders.push(o);
+    else groups.push({ key, label: o.table_label, orders: [o] });
+  }
+  return groups;
+}
+
+// Grupo de pedidos de una misma mesa dentro de una columna.
+function TableGroup({
+  label, orders, colKey, accent, showSede, sedeName, setDragId, onMove, onMoveMany,
+}: {
+  label: string;
+  orders: AdminOrder[];
+  colKey: ColKey;
+  accent: string;
+  showSede: boolean;
+  sedeName: string | null;
+  setDragId: (id: number) => void;
+  onMove: (o: AdminOrder, status: "pending" | "seen" | "served" | "billed" | "dismissed") => void;
+  onMoveMany: (list: AdminOrder[], status: "pending" | "seen" | "served" | "billed" | "dismissed") => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const sum = orders.reduce((acc, o) => acc + o.total, 0);
+  const bulk: { label: string; target: "seen" | "served" | "billed" } | null =
+    colKey === "todo"   ? { label: "Preparar todos →", target: "seen" } :
+    colKey === "prep"   ? { label: "Servir todos →",   target: "served" } :
+    colKey === "served" ? { label: "Facturar mesa →",  target: "billed" } :
+    null;
+
+  return (
+    <div style={{
+      background: "#FBF7F1", borderRadius: 14, padding: "10px 10px 12px",
+      border: `1.5px solid ${accent}44`,
+    }}>
+      {/* Cabecera de la mesa */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 8, background: "none", border: "none", cursor: "pointer", padding: "2px 4px 8px",
+          color: "#1C0F05", textAlign: "left",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 14.5 }}>🪑 {label}</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "1px 8px", borderRadius: 999, background: accent, color: "#FFF" }}>
+            {orders.length} pedidos
+          </span>
+          {showSede && sedeName && <span style={{ fontSize: 11, color: "#9A7055" }}>🏪 {sedeName}</span>}
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {sum > 0 && <span style={{ fontWeight: 700, color: "#6F4E37", fontSize: 13.5, whiteSpace: "nowrap" }}>{money(sum)}</span>}
+          <span style={{ fontSize: 12, color: "#9A7055" }}>{open ? "▾" : "▸"}</span>
+        </span>
+      </button>
+
+      {/* Pedidos individuales de la mesa */}
+      {open && (
+        <div style={{ display: "grid", gap: 8 }}>
+          {orders.map(o => (
+            <Card
+              key={o.id}
+              o={o}
+              colKey={colKey}
+              showSede={false}
+              sedeName={null}
+              onDragStart={() => setDragId(o.id)}
+              onMove={onMove}
+              inGroup
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Acción en bloque: mueve TODOS los pedidos de la mesa a la vez */}
+      {bulk && (
+        <button
+          onClick={() => onMoveMany(orders, bulk.target)}
+          style={{
+            width: "100%", marginTop: 10, padding: "8px 12px", borderRadius: 9,
+            border: "none", background: accent, color: "#FFF",
+            fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+          }}
+        >
+          {bulk.label} ({orders.length})
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Tarjeta del tablero ───────────────────────────────────────────────────────
 function Card({
-  o, colKey, showSede, sedeName, onDragStart, onMove,
+  o, colKey, showSede, sedeName, onDragStart, onMove, inGroup = false,
 }: {
   o: AdminOrder;
   colKey: ColKey;
@@ -295,6 +463,8 @@ function Card({
   sedeName: string | null;
   onDragStart: () => void;
   onMove: (o: AdminOrder, status: "pending" | "seen" | "served" | "billed" | "dismissed") => void;
+  /** Dentro de un grupo de mesa: la mesa ya se ve en la cabecera del grupo. */
+  inGroup?: boolean;
 }) {
   return (
     <div
@@ -309,8 +479,8 @@ function Card({
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div>
-          <div style={{ fontWeight: 700, color: "#1C0F05", fontSize: 14.5, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            {o.table_label}
+          <div style={{ fontWeight: 700, color: "#1C0F05", fontSize: inGroup ? 13 : 14.5, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            {inGroup ? `Pedido #${o.id}` : o.table_label}
             {o.type === "call" && <span style={{ fontSize: 11, color: "#9A7055" }}>🔔 Llamada</span>}
             {o.status === "pending" && (
               <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 999, background: "#ECFDF5", color: "#059669" }}>NUEVO</span>
@@ -320,7 +490,7 @@ function Card({
             )}
           </div>
           <div style={{ fontSize: 11.5, color: "#B0A090", marginTop: 2 }}>
-            {timeAgo(o.created_at)} · #{o.id}
+            {timeAgo(o.created_at)}{!inGroup && <> · #{o.id}</>}
             {showSede && sedeName && <span style={{ marginLeft: 5, color: "#9A7055" }}>· 🏪 {sedeName}</span>}
           </div>
         </div>

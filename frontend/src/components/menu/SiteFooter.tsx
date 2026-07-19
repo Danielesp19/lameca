@@ -97,6 +97,13 @@ export default function SiteFooter() {
             {sedes.every(s => !s.whatsapp_phone) && (
               <p style={{ fontSize: 13, opacity: 0.65, margin: 0 }}>Atención en el local</p>
             )}
+            <a
+              href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
+              download="carta-la-meca.pdf"
+              style={{ color: CREAM, textDecoration: "underline", fontSize: 13, opacity: 0.85 }}
+            >
+              Descargar carta (PDF)
+            </a>
           </div>
         </div>
 

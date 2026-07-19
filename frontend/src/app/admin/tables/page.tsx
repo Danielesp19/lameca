@@ -78,7 +78,7 @@ export default function TablesPage() {
   }
 
   async function rotate(t: AdminTable) {
-    if (!confirm(`Rotar el token de la ${t.label}?\n\nLos QR impresos viejos dejarán de funcionar — deberás reimprimir este.`)) return;
+    if (!confirm(`¿Cambiar el QR de la ${t.label}?\n\nEl QR impreso actual dejará de funcionar — deberás imprimir el nuevo.`)) return;
     try { await adminRotateTableToken(t.id); load(); }
     catch (e) { alert((e as Error).message); }
   }
@@ -160,7 +160,7 @@ export default function TablesPage() {
               </div>
 
               <div style={{ display: "flex", gap: 14, justifyContent: "center", borderTop: "1px solid #F0EBE5", paddingTop: 10 }}>
-                <button onClick={() => rotate(t)} style={{ fontSize: 12, color: "#B5852A", background: "none", border: "none", cursor: "pointer" }}>↻ Rotar token</button>
+                <button onClick={() => rotate(t)} style={{ fontSize: 12, color: "#B5852A", background: "none", border: "none", cursor: "pointer" }}>↻ Cambiar QR</button>
                 <button onClick={() => del(t)} style={{ fontSize: 12, color: "#DC2626", background: "none", border: "none", cursor: "pointer" }}>Eliminar</button>
               </div>
             </div>

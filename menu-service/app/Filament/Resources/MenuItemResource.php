@@ -78,6 +78,10 @@ class MenuItemResource extends Resource
                     ->image()
                     ->directory('menu-items/images')
                     ->imageEditor()
+                    // Reduce en el navegador antes de subir (mismo tope que el panel web)
+                    ->imageResizeMode('contain')
+                    ->imageResizeTargetWidth('1600')
+                    ->imageResizeTargetHeight('1600')
                     ->nullable(),
 
                 FileUpload::make('gif')

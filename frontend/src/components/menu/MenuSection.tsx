@@ -139,8 +139,9 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
       }
     }
     const uniqImgs = [...new Set(imgs)];
-    // Tope de seguridad: nunca precargar más de 8 videos (evita bajar decenas de
-    // MB si algún clip viene sin comprimir).
+    // Los videos SÍ se precargan (decisión de producto: fluidez > datos — los
+    // clips ya vienen comprimidos a ~1-3 MB por el backend). Tope de seguridad:
+    // nunca más de 8, por si algún clip viejo quedó sin comprimir.
     const uniqVids = [...new Set(vids)].slice(0, 8);
 
     let cancelled = false;
@@ -265,6 +266,25 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           <p style={{ margin: "12px 0 0", fontSize: 13, fontWeight: 300, lineHeight: 1.55, maxWidth: 300, color: "rgba(62,42,28,0.65)", animation: "fadeUp 0.7s ease 0.35s both" }}>
             Tostado en casa, servido con calma. Elige una categoría.
           </p>
+          {/* Descarga de la carta en PDF (la genera el backend con fotos y precios) */}
+          <a
+            href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
+            download="carta-la-meca.pdf"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14,
+              padding: "8px 15px", borderRadius: 999, textDecoration: "none",
+              border: `1.5px solid rgba(62,42,28,0.25)`, color: CHOCO,
+              fontSize: 12.5, fontWeight: 500,
+              animation: "fadeUp 0.7s ease 0.45s both",
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Descargar carta (PDF)
+          </a>
         </div>
 
         {/* ── Sticky category chips ──

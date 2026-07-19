@@ -20,7 +20,6 @@ export default function SedeSwitcher() {
         Sede
       </span>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <Chip label="Todas" active={current === null} onClick={() => setCurrent(null)} />
         {sedes.map(s => (
           <Chip key={s.id} label={s.name} active={current === s.id} onClick={() => setCurrent(s.id)} />
         ))}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useHero } from "@/hooks/useHero";
 import type { HeroSection as HeroData } from "@/lib/menu-api";
+import SedesModal from "@/components/menu/SedesModal";
 
 const ACCENT = "#BC5A32";
 
@@ -20,6 +21,7 @@ const rise = (delay: number) => ({
 export default function HeroSection({ initialHero }: { initialHero?: HeroData | null }) {
   const { hero } = useHero(initialHero);
   const [isMobile, setIsMobile] = useState(false);
+  const [sedesOpen, setSedesOpen] = useState(false);
   const videoRef  = useRef<HTMLVideoElement>(null);
   const outerRef  = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -160,15 +162,18 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
             </span>
           </a>
 
-          <a
-            href="#menu"
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px clamp(16px,3vw,24px)", border: "1px solid rgba(244,238,227,0.55)", borderRadius: 999, color: "#F4EEE3", textDecoration: "none", fontSize: "clamp(11px,2.6vw,13px)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0, transition: "all .25s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "#F4EEE3"; (e.currentTarget as HTMLAnchorElement).style.color = "#1a120c"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; (e.currentTarget as HTMLAnchorElement).style.color = "#F4EEE3"; }}
+          <button
+            onClick={() => setSedesOpen(true)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px clamp(16px,3vw,24px)", border: "1px solid rgba(244,238,227,0.55)", borderRadius: 999, background: "transparent", cursor: "pointer", color: "#F4EEE3", fontFamily: "inherit", fontSize: "clamp(11px,2.6vw,13px)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0, transition: "all .25s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#F4EEE3"; e.currentTarget.style.color = "#1a120c"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#F4EEE3"; }}
           >
-            Ver menú
-          </a>
+            Nuestras sedes
+          </button>
         </header>
+
+        {/* Modal con la información de las sedes (fotos en /public/sedes/) */}
+        <SedesModal open={sedesOpen} onClose={() => setSedesOpen(false)} />
 
         {/* ── Hero content — centrado elegante ── */}
         <div style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px" }}>
