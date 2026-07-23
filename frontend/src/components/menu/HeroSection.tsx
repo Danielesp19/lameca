@@ -236,28 +236,29 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
           </span>
         </motion.div>
 
-        {/* Instagram — parte de abajo-izquierda del hero, visible en todo
-            dispositivo. Forma e íconos fieles al ícono real de Instagram
-            (cuadrado redondeado + degradado de marca) para que se reconozca
-            de inmediato como el enlace a Instagram. */}
+        {/* Instagram — misma altura que el indicador de "Scroll", a su
+            izquierda. Silueta fiel al ícono de Instagram (cuadrado redondeado
+            + cámara), pero con la paleta del hero (oscuro/crema) en vez del
+            degradado de marca — para que combine con el resto de botones. */}
         <motion.a
           href="https://www.instagram.com/cafelameca/"
           target="_blank" rel="noopener noreferrer"
           aria-label="Síguenos en Instagram"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.7 }}
-          whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
           style={{
-            position: "absolute", bottom: "clamp(86px,11vw,116px)", left: "clamp(20px,5vw,68px)",
+            position: "absolute", bottom: "clamp(22px,3.4vw,40px)", left: "clamp(90px,16vw,160px)",
             zIndex: 25, display: "flex", alignItems: "center", justifyContent: "center",
-            width: 44, height: 44, borderRadius: "30%",
-            background: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)",
-            boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+            width: 40, height: 40, borderRadius: "30%",
+            border: "1px solid rgba(244,238,227,0.5)", background: "transparent", color: "#F4EEE3",
+            transition: "all .25s",
           }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#F4EEE3"; e.currentTarget.style.color = "#1a120c"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#F4EEE3"; }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="5" />
             <circle cx="12" cy="12" r="4.2" />
-            <circle cx="17.1" cy="6.9" r="0.4" fill="#FFFFFF" stroke="none" />
+            <circle cx="17.1" cy="6.9" r="0.4" fill="currentColor" stroke="none" />
           </svg>
         </motion.a>
 

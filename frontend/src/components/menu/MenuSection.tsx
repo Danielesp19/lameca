@@ -26,7 +26,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
   const sectionRef    = useRef<HTMLElement>(null);
   const listRef       = useRef<HTMLDivElement>(null);
-  const rafRef        = useRef<number | null>(null);
 
   const chips = [
     { id: "todos" as number | "todos", name: "Todos" },
@@ -81,19 +80,28 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   }, [selected]);
 
   useEffect(() => {
+    // capture: true → también se dispara con el scroll horizontal de los
+    // carruseles (no solo el vertical de la página). Por eso NO se puede medir
+    // en cada frame con rAF: hacer getBoundingClientRect() de todas las
+    // tarjetas en cada tick, justo mientras el dedo arrastra el carrusel,
+    // competía con el compositor del navegador y se sentía trabado/pegajoso
+    // (reportado en producción). En vez de eso, se espera a que el scroll se
+    // asiente (~110ms sin nuevos eventos) y ahí sí se mide una sola vez — la
+    // tarjeta activa (video/realce) queda casi igual de responsiva, pero el
+    // gesto de scroll ya no compite por el hilo principal mientras ocurre.
+    const debounceRef = { current: null as number | null };
     const onScroll = () => {
-      if (rafRef.current) return;
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+      debounceRef.current = window.setTimeout(() => {
+        debounceRef.current = null;
         updateActive();
-      });
+      }, 110);
     };
     const onVis = () => {
       if (document.hidden) setActiveCardKey(null);
       else updateActive();
     };
 
-    // capture: true → también reacciona al scroll horizontal de los carruseles
     window.addEventListener("scroll",  onScroll, { passive: true, capture: true });
     window.addEventListener("resize",  onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVis);
@@ -106,7 +114,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
       window.removeEventListener("scroll",  onScroll, { capture: true });
       window.removeEventListener("resize",  onScroll);
       document.removeEventListener("visibilitychange", onVis);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
       clearTimeout(t1);
       clearTimeout(t2);
     };
@@ -282,6 +290,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
             className="cat-scroll"
             style={{
               display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none",
+              touchAction: "pan-x pan-y",
               padding: "14px 22px 10px", maxWidth: 480, margin: "0 auto",
               animation: "fadeUp 0.6s ease 0.45s both",
             }}
