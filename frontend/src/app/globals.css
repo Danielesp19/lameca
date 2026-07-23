@@ -198,11 +198,19 @@ body {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
 }
-/* Feedback táctil de las tarjetas (tras terminar su entrada).
-   height:100% → en la grilla y en el carrusel todas las tarjetas de una fila
+/* height:100% → en la grilla y en el carrusel todas las tarjetas de una fila
    se estiran a la más alta (mismo tamaño aunque el texto varíe). */
-.menu-card-wrap { height: 100%; transition: transform 0.18s ease; }
-.menu-card-wrap:active { transform: scale(0.97); }
+.menu-card-wrap { height: 100%; }
+/* Feedback de "presión" SOLO en dispositivos con puntero fino (mouse/trackpad).
+   En móvil se quitó a propósito: el :active se activa al apoyar el dedo para
+   arrastrar el carrusel, y el scale(0.97) hacía que la tarjeta se "hundiera"
+   justo al empezar a deslizar → el scroll horizontal se sentía pegajoso. En
+   táctil el toque abre el producto igual (onClick), sin animación que compita
+   con el gesto. */
+@media (hover: hover) and (pointer: fine) {
+  .menu-card-wrap { transition: transform 0.18s ease; }
+  .menu-card-wrap:active { transform: scale(0.97); }
+}
 
 /* NOTA: .cat-block tuvo content-visibility:auto para saltar el layout/paint
    de categorías fuera de pantalla, pero eso dejaba el carrusel un instante

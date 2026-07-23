@@ -416,11 +416,11 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                           display: "flex",
                           gap: 12,
                           overflowX: "auto",
-                          // "proximity" (no "mandatory") + touchAction explícito:
-                          // con mandatory el navegador bloqueaba el scroll
-                          // vertical de la página al tocar el carrusel a mitad
-                          // de pantalla. Así deja pasar ambos ejes con naturalidad.
-                          scrollSnapType: "x proximity",
+                          // SIN scroll-snap: el usuario pidió deslizar el carrusel
+                          // con total libertad (momentum), sin que el navegador
+                          // "agarre" cada tarjeta al soltar. touchAction pan-x
+                          // pan-y deja pasar los dos ejes con naturalidad.
+                          scrollSnapType: "none",
                           touchAction: "pan-x pan-y",
                           overscrollBehaviorX: "contain",
                           WebkitOverflowScrolling: "touch",
@@ -431,7 +431,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                         {cat.items.map((item, idx) => (
                           <div
                             key={item.id}
-                            style={{ flex: "0 0 46%", maxWidth: 210, minWidth: 150, scrollSnapAlign: "start" }}
+                            style={{ flex: "0 0 46%", maxWidth: 210, minWidth: 150 }}
                           >
                             <MenuCard
                               item={item}

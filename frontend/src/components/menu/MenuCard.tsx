@@ -257,6 +257,12 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
                   <img
                     src={src}
                     alt=""
+                    // Carga "justo por delante": el observer `near` (margen ~1.6
+                    // pantallas en horizontal) pasa la imagen a eager ANTES de
+                    // llegar a ella al deslizar el carrusel, y la precarga de
+                    // fondo ya la tiene en caché → aparece al instante. En móvil
+                    // esto evita reventar la conexión cargando TODO de golpe y
+                    // compitiendo con el video del hero en el arranque.
                     loading={near ? "eager" : "lazy"}
                     decoding="async"
                     draggable={false}
