@@ -70,13 +70,10 @@ interface Props {
 export default memo(MenuCard);
 
 function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, premium = false }: Props) {
-  const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   // "Cercana" al viewport (con margen): dispara la pre-descarga de su media.
   const [near, setNear] = useState(false);
   const wrapRef  = useRef<HTMLDivElement>(null);
-  const stripRef = useRef<HTMLDivElement>(null);
-  const stripRaf = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopsRef = useRef(0);
 
@@ -158,20 +155,6 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
     return () => v.removeEventListener("ended", onEnded);
   }, [hasVideo]);
 
-  // Swipe de imágenes: el índice del punto activo sigue al scroll del strip.
-  // (El ciclo automático se reemplazó por deslizamiento táctil — feedback del
-  // cliente: la navegación entre fotos debe ser manual e intuitiva.)
-  function onStripScroll() {
-    if (stripRaf.current) return;
-    stripRaf.current = requestAnimationFrame(() => {
-      stripRaf.current = null;
-      const s = stripRef.current;
-      if (!s) return;
-      setImgIdx(Math.round(s.scrollLeft / Math.max(1, s.clientWidth)));
-    });
-  }
-  useEffect(() => () => { if (stripRaf.current) cancelAnimationFrame(stripRaf.current); }, []);
-
   // Si el usuario interactúa con la tarjeta (mueve el puntero/hover) y el video ya
   // terminó su pasada, lo reproduce de nuevo. En móvil el re-scroll ya lo reactiva.
   function replayVideo() {
@@ -232,73 +215,24 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
             del viewport solo existe la portada en lazy; al acercarse se montan
             todos los ángulos en eager (prefetch por cercanía). */}
         {angles.length > 0 ? (
-          <>
-            <div
-              ref={stripRef}
-              className="cat-scroll"
-              onScroll={onStripScroll}
-              style={{
-                position: "absolute", inset: 0,
-                display: "flex",
-                overflowX: angles.length > 1 ? "auto" : "hidden",
-                // "proximity" (no "mandatory") + touchAction explícito: con
-                // mandatory el navegador secuestra el gesto y bloquea el
-                // scroll vertical de la página al tocar el carrusel a mitad
-                // de pantalla. Así deja pasar ambos ejes con naturalidad.
-                scrollSnapType: "x proximity",
-                touchAction: "pan-x pan-y",
-                overscrollBehaviorX: "contain",
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              {(near ? angles : angles.slice(0, 1)).map((src, i) => (
-                <div key={i} style={{ flex: "0 0 100%", height: "100%", overflow: "hidden", scrollSnapAlign: "start" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={src}
-                    alt=""
-                    // Carga "justo por delante": el observer `near` (margen ~1.6
-                    // pantallas en horizontal) pasa la imagen a eager ANTES de
-                    // llegar a ella al deslizar el carrusel, y la precarga de
-                    // fondo ya la tiene en caché → aparece al instante. En móvil
-                    // esto evita reventar la conexión cargando TODO de golpe y
-                    // compitiendo con el video del hero en el arranque.
-                    loading={near ? "eager" : "lazy"}
-                    decoding="async"
-                    draggable={false}
-                    style={{
-                      width: "100%", height: "100%", objectFit: "cover", display: "block",
-                      transform: isActive ? "scale(1.06)" : "scale(1)",
-                      transition: "transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            {/* Puntos indicadores: muestran cuántas fotos hay y cuál se ve */}
-            {angles.length > 1 && (
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute", bottom: 8, left: 0, right: 0, zIndex: 2,
-                  display: "flex", justifyContent: "center", gap: 5,
-                  pointerEvents: "none",
-                }}
-              >
-                {angles.map((_, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      width: i === imgIdx ? 16 : 5, height: 5, borderRadius: 3,
-                      background: i === imgIdx ? "#F7F1E5" : "rgba(247,241,229,0.55)",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
-                      transition: "all .3s ease",
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+          // Portada ESTÁTICA (sin strip de scroll de fotos): así el gesto
+          // horizontal sobre la imagen queda libre para deslizar el carrusel de
+          // la categoría. Para ver más fotos, el usuario abre el detalle con
+          // "Ver más". Se conserva el Ken Burns (scale al estar activa).
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={angles[0]}
+            alt=""
+            loading={near ? "eager" : "lazy"}
+            decoding="async"
+            draggable={false}
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%", objectFit: "cover", display: "block",
+              transform: isActive ? "scale(1.06)" : "scale(1)",
+              transition: "transform 2.2s cubic-bezier(0.2,0.6,0.3,1)",
+            }}
+          />
         ) : hasVideo ? (
           /* Miniatura del video: foto del producto (o el primer frame del video
              pausado si no hay foto). El video la tapa al reproducirse. */
