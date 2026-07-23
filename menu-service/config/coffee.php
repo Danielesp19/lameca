@@ -39,8 +39,10 @@ return [
 
     // Imágenes subidas: lado máximo en píxeles y calidad WebP (30-100).
     // Toda imagen se reduce a este límite y se re-encodea al subirla.
-    'max_image_px'  => (int) env('MAX_IMAGE_PX', 1600),
-    'image_quality' => (int) env('IMAGE_QUALITY', 80),
+    // (87 en vez de 80: el salto de peso es moderado y se nota más nítido en
+    // degradados/texturas finas — café con espuma, glaseados, etc.)
+    'max_image_px'  => (int) env('MAX_IMAGE_PX', 1800),
+    'image_quality' => (int) env('IMAGE_QUALITY', 87),
 
     // Videos subidos: se recomprimen con FFmpeg (H.264, sin audio) al subirlos.
     // CRF más alto = más compresión (30 deja un clip de ~10s en ~1-3 MB).

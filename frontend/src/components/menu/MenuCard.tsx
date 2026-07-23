@@ -1,13 +1,20 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { MenuItem, caffeineInfo } from "@/lib/menu-api";
-import LevelIcons from "@/components/menu/LevelIcons";
+import { MenuItem } from "@/lib/menu-api";
 
 // Paleta rediseño v2
 const CHOCO = "#3E2A1C";
 const TERRA = "#BC5A32";
 const CARD  = "#FFFCF5";
+
+// Paleta "premium" — solo para tarjetas dentro de la sección Destacados
+// (prop `premium`; el mismo producto en su categoría real se ve normal).
+// Misma gama oscura/neutra del modal "Nuestras sedes" (#1a120c/#F4EEE3);
+// el nombre del producto va en dorado, el resto casi sin dorado.
+const PREM_LIGHT = "#F4EEE3";
+const PREM_GOLD  = "#D9B382";
+const PREM_CARD  = "linear-gradient(165deg, #241a12 0%, #170f09 100%)";
 
 // Veces que se reproduce el video en la tarjeta antes de congelarse en el último
 // frame. 1 = una pasada y se detiene (ahorra ancho de banda del backend
@@ -52,13 +59,17 @@ interface Props {
   hot?: boolean;
   /** Posición en la lista → retraso de la entrada en cascada */
   index?: number;
+  /** Tarjeta dentro de la sección Destacados → paleta oscura/dorada.
+   *  Es de la SECCIÓN, no del producto: el mismo ítem en su categoría real
+   *  se sigue viendo con los colores normales. */
+  premium?: boolean;
 }
 
 // memo: al cambiar la tarjeta activa durante el scroll, React solo re-renderiza
 // las 2 tarjetas afectadas en vez de todas las del menú (jank en gamas bajas).
 export default memo(MenuCard);
 
-function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }: Props) {
+function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, premium = false }: Props) {
   const [imgIdx, setImgIdx] = useState(0);
   const [videoVisible, setVideoVisible] = useState(false);
   // "Cercana" al viewport (con margen): dispara la pre-descarga de su media.
@@ -81,8 +92,6 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
     ? []
     : [...(item.image_url ? [item.image_url] : [])]
   ).filter(Boolean) as string[];
-
-  const caffeine = caffeineInfo(item.caffeine_level);
 
   // Marca la tarjeta como cercana cuando entra al viewport ampliado.
   useEffect(() => {
@@ -203,14 +212,16 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
         position: "relative",
         display: "flex", flexDirection: "column",
         height: "100%",
-        background: CARD,
+        background: premium ? PREM_CARD : CARD,
         cursor: "pointer",
         // Sin "target" visual en la tarjeta activa (feedback: se sentía pesado).
         // La activación es solo funcional: video, Ken Burns y vapor.
-        border: "1.5px solid rgba(188,90,50,0.28)",
+        border: premium ? "1px solid rgba(247,241,229,0.12)" : "1.5px solid rgba(188,90,50,0.28)",
         borderRadius: 20,
         overflow: "hidden",
-        boxShadow: "0 14px 28px -22px rgba(62,42,28,0.55)",
+        boxShadow: premium
+          ? "0 16px 30px -18px rgba(0,0,0,0.6)"
+          : "0 14px 28px -22px rgba(62,42,28,0.55)",
       }}
     >
       {/* ── Media ── */}
@@ -230,7 +241,12 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
                 position: "absolute", inset: 0,
                 display: "flex",
                 overflowX: angles.length > 1 ? "auto" : "hidden",
-                scrollSnapType: "x mandatory",
+                // "proximity" (no "mandatory") + touchAction explícito: con
+                // mandatory el navegador secuestra el gesto y bloquea el
+                // scroll vertical de la página al tocar el carrusel a mitad
+                // de pantalla. Así deja pasar ambos ejes con naturalidad.
+                scrollSnapType: "x proximity",
+                touchAction: "pan-x pan-y",
                 overscrollBehaviorX: "contain",
                 WebkitOverflowScrolling: "touch",
               }}
@@ -296,22 +312,22 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
               }}
             />
           ) : (
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: premium ? PREM_CARD : "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
           )
         ) : (
           /* Placeholder for products without image */
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(145deg, #EFE4D2 0%, #E2D3BC 100%)",
+            background: premium ? PREM_CARD : "linear-gradient(145deg, #EFE4D2 0%, #E2D3BC 100%)",
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: 8,
           }}>
             <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true" style={{ animation: "gentleFloat 4.5s ease-in-out infinite" }}>
-              <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
-              <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
-              <ellipse cx="24" cy="38" rx="12" ry="2" fill="#B8A084" opacity=".3"/>
+              <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke={premium ? "rgba(247,241,229,0.5)" : "#B8A084"} strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke={premium ? "rgba(247,241,229,0.5)" : "#B8A084"} strokeWidth="1.8" strokeLinecap="round"/>
+              <ellipse cx="24" cy="38" rx="12" ry="2" fill={premium ? "rgba(247,241,229,0.5)" : "#B8A084"} opacity=".3"/>
             </svg>
-            <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "#A08A6E", opacity: 0.8 }}>
+            <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: premium ? "rgba(247,241,229,0.55)" : "#A08A6E", opacity: 0.8 }}>
               Foto próximamente
             </span>
           </div>
@@ -378,29 +394,13 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
           </span>
         )}
 
-        {/* Caffeine badge (top-right) */}
-        {caffeine && (
-          <span
-            title={caffeine.label}
-            style={{
-              position: "absolute", top: 10, right: 10, zIndex: 2,
-              display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "4px 9px", borderRadius: 999,
-              background: "rgba(62,42,28,0.68)",
-              color: "#F7F1E5", fontSize: 10, fontWeight: 500,
-              animation: "badgeIn 0.5s ease 0.4s both",
-            }}
-          >
-            <LevelIcons level={caffeine.beans} icon="☕" size={11} />
-          </span>
-        )}
       </div>
 
       {/* ── Content ── (compacto: 2 tarjetas por fila) */}
       <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "9px 11px 11px" }}>
         <h3 style={{
           fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 700,
-          fontSize: 16.5, margin: 0, lineHeight: 1.15, color: TERRA,
+          fontSize: 16.5, margin: 0, lineHeight: 1.15, color: premium ? PREM_GOLD : TERRA,
           letterSpacing: "-0.01em",
         }}>
           {item.name}
@@ -409,7 +409,8 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
         {item.description && (
           <p style={{
             fontSize: 11.5, fontWeight: 300, lineHeight: 1.4,
-            margin: "4px 0 0", flex: 1, color: "rgba(62,42,28,0.68)",
+            margin: "4px 0 0", flex: 1,
+            color: premium ? "rgba(247,241,229,0.72)" : "rgba(62,42,28,0.68)",
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -421,10 +422,10 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
 
         {/* Fila de precio con etiqueta + "Ver más →" abajo, como el diseño */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
-          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(62,42,28,0.5)" }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: premium ? "rgba(247,241,229,0.55)" : "rgba(62,42,28,0.5)" }}>
             Precio
           </span>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: CHOCO, letterSpacing: "-0.01em" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: premium ? PREM_LIGHT : CHOCO, letterSpacing: "-0.01em" }}>
             ${item.price.toLocaleString("es-CO")}
           </span>
         </div>
@@ -435,8 +436,11 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0 }:
             marginTop: 9, alignSelf: "flex-start",
             display: "inline-flex", alignItems: "center", gap: 5,
             padding: "6px 12px", borderRadius: 999,
+            // Igual en Destacados y en el resto: pill clara con borde gris y
+            // texto choco — se pinta explícita (no "transparent") para que se
+            // vea idéntica también sobre el fondo oscuro de las tarjetas premium.
             border: "1px solid rgba(62,42,28,0.35)",
-            background: "transparent",
+            background: CARD,
             color: CHOCO,
             fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
             letterSpacing: "0.09em", textTransform: "uppercase",

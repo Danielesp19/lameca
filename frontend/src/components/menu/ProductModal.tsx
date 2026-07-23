@@ -252,16 +252,23 @@ export default function ProductModal({ item, onClose }: Props) {
                   {item.description ?? "Sin descripción disponible."}
                 </p>
 
-                {/* ── Nivel de cafeína ── */}
+                {/* ── Nivel de cafeína (mismo formato de encabezado que "Nivel de azúcar") ── */}
                 {caffeine && (
-                  <div style={{
-                    display: "inline-flex", alignItems: "center", gap: 8, marginTop: 18,
-                    padding: "8px 14px", borderRadius: 999,
-                    background: "rgba(62,42,28,0.05)", border: `1px solid ${TERRA}55`,
-                    animation: "fadeUp 0.5s ease 0.4s both",
-                  }}>
-                    <LevelIcons level={caffeine.beans} icon="☕" size={15} />
-                    <span style={{ fontSize: 12.5, fontWeight: 500, color: CHOCO }}>{caffeine.label}</span>
+                  <div style={{ marginTop: 18, animation: "fadeUp 0.5s ease 0.4s both" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <span style={{ width: 28, height: 1, background: TERRA, display: "block" }} />
+                      <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.5 }}>
+                        Nivel de cafeína
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "inline-flex", alignItems: "center", gap: 8,
+                      padding: "8px 14px", borderRadius: 999,
+                      background: "rgba(62,42,28,0.05)", border: `1px solid ${TERRA}55`,
+                    }}>
+                      <LevelIcons level={caffeine.beans} icon="☕" size={16} />
+                      <span style={{ fontSize: 12.5, fontWeight: 500, color: CHOCO }}>{caffeine.label}</span>
+                    </div>
                   </div>
                 )}
 
@@ -292,8 +299,15 @@ export default function ProductModal({ item, onClose }: Props) {
                               transition: "all .18s",
                             }}
                           >
-                            {/* "Sin azúcar" va solo con texto; las cucharas, grandes y juntas */}
-                            {opt.level > 0 && <LevelIcons level={opt.level} icon="🥄" size={17} gap={-5} />}
+                            {/* Número en vez de emoji: se lee mejor y es más consistente */}
+                            <span style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
+                              border: "1.5px solid currentColor",
+                              fontSize: 10, fontWeight: 700,
+                            }}>
+                              {opt.level}
+                            </span>
                             {opt.value}
                           </button>
                         );

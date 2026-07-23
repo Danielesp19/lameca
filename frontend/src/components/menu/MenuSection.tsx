@@ -13,6 +13,7 @@ const CHOCO  = "#3E2A1C";
 const TERRA  = "#BC5A32";
 const OLIVE  = "#6E8B4E";
 const BAND   = "#EADCC3";
+const PREM_CREAM = "#F4EEE3"; // Destacados: misma paleta oscura del modal "Nuestras sedes"
 
 export default function MenuSection({ initialCategories }: { initialCategories?: MenuCategory[] }) {
   const { categories, loading, error, retry } = useMenu(initialCategories);
@@ -266,25 +267,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           <p style={{ margin: "12px 0 0", fontSize: 13, fontWeight: 300, lineHeight: 1.55, maxWidth: 300, color: "rgba(62,42,28,0.65)", animation: "fadeUp 0.7s ease 0.35s both" }}>
             Tostado en casa, servido con calma. Elige una categoría.
           </p>
-          {/* Descarga de la carta en PDF (la genera el backend con fotos y precios) */}
-          <a
-            href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
-            download="carta-la-meca.pdf"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 7, marginTop: 14,
-              padding: "8px 15px", borderRadius: 999, textDecoration: "none",
-              border: `1.5px solid rgba(62,42,28,0.25)`, color: CHOCO,
-              fontSize: 12.5, fontWeight: 500,
-              animation: "fadeUp 0.7s ease 0.45s both",
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Descargar carta (PDF)
-          </a>
         </div>
 
         {/* ── Sticky category chips ──
@@ -384,20 +366,33 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 // categorías lejanas. El padding lateral/inferior mete la sangría
                 // del carrusel y las sombras dentro de la caja contenida; los
                 // márgenes negativos lo compensan para no mover nada.
+                // Destacados: fondo oscuro de SECCIÓN (no por tarjeta) — el bleed
+                // horizontal ya existente (margin negativo) hace que el color
+                // llegue de borde a borde en pantallas de celular. OJO: a
+                // diferencia de las categorías normales, aquí NO se cancela el
+                // padding-bottom con un margin-bottom negativo — ese truco asume
+                // un bloque transparente; con fondo real, cancelarlo hacía que la
+                // categoría siguiente se dibujara encima de esos últimos 40px.
                 <div
                   key={cat.id}
                   className="cat-block"
                   style={{
-                    margin: `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px -40px`,
-                    padding: "0 22px 40px",
+                    margin: isFeatured
+                      ? `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px 0px`
+                      : `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px -40px`,
+                    padding: isFeatured ? "28px 22px 34px" : "0 22px 40px",
+                    // Misma paleta oscura del modal "Nuestras sedes" (#1a120c → #120c08).
+                    background: isFeatured ? "linear-gradient(180deg, #1a120c 0%, #120c08 100%)" : "transparent",
+                    borderTop: isFeatured ? "1px solid rgba(244,238,227,0.1)" : "none",
+                    borderBottom: isFeatured ? "1px solid rgba(244,238,227,0.1)" : "none",
                   }}
                 >
                   {showHeader && (
                     <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
-                      <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 600, fontSize: 23, margin: 0, whiteSpace: "nowrap", color: CHOCO, letterSpacing: "-0.01em" }}>
+                      <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 600, fontSize: 23, margin: 0, whiteSpace: "nowrap", color: isFeatured ? PREM_CREAM : CHOCO, letterSpacing: "-0.01em" }}>
                         {cat.name}
                       </h2>
-                      <span style={{ flex: 1, height: 1, background: isFeatured ? `linear-gradient(90deg, ${TERRA}, transparent)` : "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
+                      <span style={{ flex: 1, height: 1, background: isFeatured ? "rgba(244,238,227,0.25)" : "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
                     </div>
                   )}
 
@@ -412,7 +407,12 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                           display: "flex",
                           gap: 12,
                           overflowX: "auto",
-                          scrollSnapType: "x mandatory",
+                          // "proximity" (no "mandatory") + touchAction explícito:
+                          // con mandatory el navegador bloqueaba el scroll
+                          // vertical de la página al tocar el carrusel a mitad
+                          // de pantalla. Así deja pasar ambos ejes con naturalidad.
+                          scrollSnapType: "x proximity",
+                          touchAction: "pan-x pan-y",
                           overscrollBehaviorX: "contain",
                           WebkitOverflowScrolling: "touch",
                           scrollbarWidth: "none",
@@ -431,6 +431,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                               onSelect={setSelected}
                               hot={isHot}
                               index={idx}
+                              premium={isFeatured}
                             />
                           </div>
                         ))}
@@ -453,6 +454,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                             onSelect={setSelected}
                             hot={isHot}
                             index={idx}
+                            premium={isFeatured}
                           />
                         ))}
                       </div>

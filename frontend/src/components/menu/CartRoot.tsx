@@ -9,7 +9,8 @@ export default function CartRoot({ children }: { children: ReactNode }) {
   return (
     <CartProvider>
       {children}
-      {/* Modo QR → carrito; modo público → WhatsApp. Cada uno se auto-oculta. */}
+      {/* Modo QR → carrito; modo público → WhatsApp. Cada uno se auto-oculta.
+          Instagram vive en el hero y en el footer — no flota con el scroll. */}
       <FloatingCart />
       <WhatsAppButton />
     </CartProvider>

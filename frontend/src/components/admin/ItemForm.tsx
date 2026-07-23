@@ -23,10 +23,31 @@ async function compressImage(file: File): Promise<File> {
       let { width, height } = img;
       if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
 
-      const canvas = document.createElement("canvas");
-      canvas.width  = width;
-      canvas.height = height;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      // Downscale en pasos de ½ hasta acercarnos al tamaño final: el canvas 2D
+      // de los navegadores hace un mal trabajo reduciendo de golpe una foto de
+      // celular (p.ej. 4000px → 1920px) incluso con smoothing en "high" — el
+      // resultado sale perceptiblemente borroso. Reducir en varios saltos
+      // cortos evita eso (es la técnica estándar para esto).
+      let cur = img as CanvasImageSource & { width: number; height: number };
+      let curW = img.naturalWidth || img.width;
+      let curH = img.naturalHeight || img.height;
+
+      const step = (targetW: number, targetH: number) => {
+        const c = document.createElement("canvas");
+        c.width = targetW; c.height = targetH;
+        const ctx = c.getContext("2d")!;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(cur, 0, 0, targetW, targetH);
+        cur = c; curW = targetW; curH = targetH;
+      };
+
+      while (curW > width * 2) {
+        step(Math.round(curW / 2), Math.round(curH / 2));
+      }
+      step(width, height);
+
+      const canvas = cur as HTMLCanvasElement;
       URL.revokeObjectURL(src);
 
       canvas.toBlob(
@@ -97,14 +118,14 @@ function ImageRow({
       transition: "background 150ms",
     }}>
 
-      {/* Thumbnail */}
+      {/* Thumbnail: grande para poder revisar encuadre/calidad antes de publicar */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={previewSrc}
         alt=""
         style={{
-          width: 80, height: 60, objectFit: "cover",
-          borderRadius: 8, flexShrink: 0,
+          width: 156, height: 117, objectFit: "cover",
+          borderRadius: 10, flexShrink: 0,
           border: "1px solid rgba(0,0,0,0.08)",
         }}
       />

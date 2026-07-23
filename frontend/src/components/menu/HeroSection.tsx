@@ -153,23 +153,30 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
           style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, padding: "clamp(18px,3.2vw,34px) clamp(20px,5vw,68px)", animation: "videoIn 1.1s ease both", willChange: "opacity, transform" }}
         >
           <a href="#" style={{ display: "flex", alignItems: "center", gap: 13, textDecoration: "none", color: "#F4EEE3", minWidth: 0 }}>
-            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 50, height: 50, borderRadius: "50%", background: "rgba(244,238,227,0.94)", boxShadow: "0 4px 18px rgba(0,0,0,0.35)", flexShrink: 0 }}>
+            <span style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "clamp(66px,13.5vw,92px)", height: "clamp(66px,13.5vw,92px)",
+              borderRadius: "50%", background: "rgba(244,238,227,0.94)",
+              boxShadow: "0 4px 18px rgba(0,0,0,0.35)", flexShrink: 0,
+            }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="La Meca" style={{ width: 44, height: 44, objectFit: "contain", display: "block" }} />
+              <img src="/logo.png" alt="La Meca" style={{ width: "94%", height: "94%", objectFit: "contain", display: "block" }} />
             </span>
             <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(13px,3.4vw,16px)", lineHeight: 1.35, opacity: 0.92, maxWidth: 190 }}>
               Tostado en casa, servido con calma
             </span>
           </a>
 
-          <button
-            onClick={() => setSedesOpen(true)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px clamp(16px,3vw,24px)", border: "1px solid rgba(244,238,227,0.55)", borderRadius: 999, background: "transparent", cursor: "pointer", color: "#F4EEE3", fontFamily: "inherit", fontSize: "clamp(11px,2.6vw,13px)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0, transition: "all .25s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#F4EEE3"; e.currentTarget.style.color = "#1a120c"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#F4EEE3"; }}
-          >
-            Nuestras sedes
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "clamp(8px,1.6vw,12px)", flexShrink: 0 }}>
+            <button
+              onClick={() => setSedesOpen(true)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px clamp(16px,3vw,24px)", border: "1px solid rgba(244,238,227,0.55)", borderRadius: 999, background: "transparent", cursor: "pointer", color: "#F4EEE3", fontFamily: "inherit", fontSize: "clamp(11px,2.6vw,13px)", letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0, transition: "all .25s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#F4EEE3"; e.currentTarget.style.color = "#1a120c"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#F4EEE3"; }}
+            >
+              Nuestras sedes
+            </button>
+          </div>
         </header>
 
         {/* Modal con la información de las sedes (fotos en /public/sedes/) */}
@@ -229,6 +236,31 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
           </span>
         </motion.div>
 
+        {/* Instagram — parte de abajo-izquierda del hero, visible en todo
+            dispositivo. Forma e íconos fieles al ícono real de Instagram
+            (cuadrado redondeado + degradado de marca) para que se reconozca
+            de inmediato como el enlace a Instagram. */}
+        <motion.a
+          href="https://www.instagram.com/cafelameca/"
+          target="_blank" rel="noopener noreferrer"
+          aria-label="Síguenos en Instagram"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.7 }}
+          whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
+          style={{
+            position: "absolute", bottom: "clamp(86px,11vw,116px)", left: "clamp(20px,5vw,68px)",
+            zIndex: 25, display: "flex", alignItems: "center", justifyContent: "center",
+            width: 44, height: 44, borderRadius: "30%",
+            background: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4.2" />
+            <circle cx="17.1" cy="6.9" r="0.4" fill="#FFFFFF" stroke="none" />
+          </svg>
+        </motion.a>
+
         {/* ── Desktop: schedule + socials ── */}
         {!isMobile && (
           <>
@@ -245,7 +277,8 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
               style={{ position: "absolute", right: "clamp(20px,5vw,68px)", bottom: "clamp(22px,3.4vw,40px)", zIndex: 25, display: "flex", alignItems: "center", gap: 12 }}
             >
               <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.55, marginRight: 4 }}>Síguenos</span>
-              {(["IG", "FB", "TT"] as const).map(label => (
+              {/* IG no va aquí: ya tiene su propio botón dedicado más arriba */}
+              {(["FB", "TT"] as const).map(label => (
                 <a
                   key={label}
                   href="#"

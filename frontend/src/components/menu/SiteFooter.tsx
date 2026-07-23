@@ -8,11 +8,11 @@ const CREAM = "#F7F1E5";
 const DARK  = "#241710";
 
 // ── Redes sociales del local ──────────────────────────────────────────────────
-// TODO(cliente): reemplazar por los enlaces reales de La Meca.
+// TODO(cliente): reemplazar Facebook/TikTok por los enlaces reales cuando existan.
 const SOCIALS: { label: string; url: string; icon: "ig" | "fb" | "tt" }[] = [
-  { label: "Instagram", url: "https://www.instagram.com/",  icon: "ig" },
-  { label: "Facebook",  url: "https://www.facebook.com/",   icon: "fb" },
-  { label: "TikTok",    url: "https://www.tiktok.com/",     icon: "tt" },
+  { label: "Instagram", url: "https://www.instagram.com/cafelameca/", icon: "ig" },
+  { label: "Facebook",  url: "https://www.facebook.com/",             icon: "fb" },
+  { label: "TikTok",    url: "https://www.tiktok.com/",               icon: "tt" },
 ];
 
 function SocialIcon({ icon }: { icon: "ig" | "fb" | "tt" }) {
@@ -97,13 +97,6 @@ export default function SiteFooter() {
             {sedes.every(s => !s.whatsapp_phone) && (
               <p style={{ fontSize: 13, opacity: 0.65, margin: 0 }}>Atención en el local</p>
             )}
-            <a
-              href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
-              download="carta-la-meca.pdf"
-              style={{ color: CREAM, textDecoration: "underline", fontSize: 13, opacity: 0.85 }}
-            >
-              Descargar carta (PDF)
-            </a>
           </div>
         </div>
 

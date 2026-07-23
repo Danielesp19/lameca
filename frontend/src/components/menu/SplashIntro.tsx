@@ -11,8 +11,8 @@ const COFFEE2 = "#B9895B";
 // Splash de entrada: taza que se llena de café + logo + marca. Se muestra en
 // CADA carga/recarga (feedback del cliente: posiciona la marca) y se desliza
 // hacia arriba revelando el hero — el video ya carga/reproduce detrás.
-// Ritmo pausado: llenado 2.9s, salida a los 4s (total ~4.8s).
-const TOTAL_MS = 4800;
+// Ritmo pausado: llenado 2.2s, salida a los 3s (total ~3.8s).
+const TOTAL_MS = 3800;
 
 export default function SplashIntro() {
   const [show, setShow] = useState(true);
@@ -33,8 +33,13 @@ export default function SplashIntro() {
         alignItems: "center", justifyContent: "center", gap: 34,
         background: BG,
         fontFamily: "var(--font-sans)", color: CHOCO,
-        animation: "splashOut 0.85s cubic-bezier(0.7,0,0.3,1) 4s forwards",
-        pointerEvents: "none",
+        animation: "splashOut 0.85s cubic-bezier(0.7,0,0.3,1) 3s forwards",
+        // pointerEvents NO debe ser "none": con eso el dedo pasaba de largo
+        // hacia la página real de abajo, que ya está cargada y es scrolleable.
+        // Si alguien deslizaba durante el splash, el menú se desplazaba en
+        // silencio detrás y "saltaba" a otra posición al retirarse el splash.
+        // Al bloquear el toque aquí, no hay scroll fantasma que revelar.
+        pointerEvents: "auto",
         // Aísla el splash del layout de la página que carga detrás: su
         // animación no se ve afectada por reflows del contenido.
         contain: "layout style paint",
@@ -49,7 +54,7 @@ export default function SplashIntro() {
           boxShadow: "0 26px 60px -24px rgba(62,42,28,0.45)",
         }}>
           {/* Café subiendo con oleaje (dos discos girando) */}
-          <div style={{ position: "absolute", inset: 0, animation: "riseFill 2.9s cubic-bezier(0.35,0.6,0.3,1) 0.35s both" }}>
+          <div style={{ position: "absolute", inset: 0, animation: "riseFill 2.2s cubic-bezier(0.35,0.6,0.3,1) 0.3s both" }}>
             <div style={{
               position: "absolute", top: "-128%", left: "-55%",
               width: "210%", height: "210%", borderRadius: "44%",
@@ -97,7 +102,7 @@ export default function SplashIntro() {
         <span style={{
           fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 30,
           letterSpacing: "0.3em", paddingLeft: "0.3em",
-          animation: "trackIn 1.9s cubic-bezier(0.2,0.7,0.2,1) 0.6s both",
+          animation: "trackIn 1.5s cubic-bezier(0.2,0.7,0.2,1) 0.45s both",
         }}>
           LA MECA
         </span>
@@ -105,7 +110,7 @@ export default function SplashIntro() {
         <span style={{
           fontSize: 11, letterSpacing: "0.34em", paddingLeft: "0.34em",
           textTransform: "uppercase", opacity: 0.55,
-          animation: "fadeUp 0.9s ease 1.7s both",
+          animation: "fadeUp 0.9s ease 1.3s both",
         }}>
           Café de origen
         </span>
