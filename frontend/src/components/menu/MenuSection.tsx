@@ -51,9 +51,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     let bestDist = Infinity;
 
     // Recorre por BLOQUE de categoría: un solo getBoundingClientRect para
-    // descartar bloques lejanos, en vez de medir tarjeta por tarjeta. Crítico
-    // con content-visibility: leer rects de los hijos de un bloque saltado
-    // forzaría su layout en cada frame (jank).
+    // descartar bloques lejanos, en vez de medir tarjeta por tarjeta.
     section.querySelectorAll<HTMLElement>(".cat-block").forEach(block => {
       const b = block.getBoundingClientRect();
       if (b.bottom < -200 || b.top > vh + 200) return;
@@ -371,10 +369,12 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 const showHeader = activeCategory === "todos" || isFeatured;
                 const isHot = cat.name.toLowerCase().includes("calient");
                 return (
-                // .cat-block: content-visibility auto — se salta layout/paint de
-                // categorías lejanas. El padding lateral/inferior mete la sangría
-                // del carrusel y las sombras dentro de la caja contenida; los
-                // márgenes negativos lo compensan para no mover nada.
+                // .cat-block: SIN content-visibility (se quitó a propósito —
+                // ver globals.css — porque dejaba el carrusel un instante sin
+                // responder al tacto justo al llegar a él). El padding
+                // lateral/inferior mete la sangría del carrusel y las sombras
+                // dentro de la caja contenida; los márgenes negativos lo
+                // compensan para no mover nada.
                 // Destacados: fondo oscuro de SECCIÓN (no por tarjeta) — el bleed
                 // horizontal ya existente (margin negativo) hace que el color
                 // llegue de borde a borde en pantallas de celular. OJO: a

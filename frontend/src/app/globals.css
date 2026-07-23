@@ -204,14 +204,14 @@ body {
 .menu-card-wrap { height: 100%; transition: transform 0.18s ease; }
 .menu-card-wrap:active { transform: scale(0.97); }
 
-/* Bloques de categoría fuera de pantalla: el navegador se salta su layout y
-   paint hasta que se acercan (gran ahorro en gamas bajas). La caja del bloque
-   se amplía vía padding (compensado con margen negativo en el JSX) para que el
-   paint containment no recorte la sangría del carrusel ni las sombras. */
-.cat-block {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 500px;
-}
+/* NOTA: .cat-block tuvo content-visibility:auto para saltar el layout/paint
+   de categorías fuera de pantalla, pero eso dejaba el carrusel un instante
+   sin terminar de renderizar justo cuando el dedo ya lo estaba tocando al
+   llegar ahí — se sentía como si el scroll horizontal no respondiera ("un
+   target que tarda en cargar"). Se quitó: con un puñado de categorías el
+   costo de render es insignificante en un celular moderno, y así cada una
+   queda lista para el gesto apenas es visible. La clase sigue existiendo
+   solo para que JS la seleccione (MenuSection.tsx), sin reglas de CSS. */
 
 /* ─── Reduced motion ─────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
