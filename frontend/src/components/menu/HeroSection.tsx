@@ -160,7 +160,7 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
               boxShadow: "0 4px 18px rgba(0,0,0,0.35)", flexShrink: 0,
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="La Meca" style={{ width: "94%", height: "94%", objectFit: "contain", display: "block" }} />
+              <img src="/logo.png" alt="La Meca" style={{ width: "99%", height: "99%", objectFit: "contain", display: "block" }} />
             </span>
             <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(13px,3.4vw,16px)", lineHeight: 1.35, opacity: 0.92, maxWidth: 190 }}>
               Tostado en casa, servido con calma
@@ -246,7 +246,7 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
           aria-label="Síguenos en Instagram"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.7 }}
           style={{
-            position: "absolute", bottom: "clamp(22px,3.4vw,40px)", left: "clamp(90px,16vw,160px)",
+            position: "absolute", bottom: "clamp(22px,3.4vw,40px)", left: "clamp(60px,12vw,120px)",
             zIndex: 25, display: "flex", alignItems: "center", justifyContent: "center",
             width: 40, height: 40, borderRadius: "30%",
             border: "1px solid rgba(244,238,227,0.5)", background: "transparent", color: "#F4EEE3",

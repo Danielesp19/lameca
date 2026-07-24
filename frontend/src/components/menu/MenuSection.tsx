@@ -410,47 +410,20 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                       los productos. */}
                   {cat.items.length > 0 ? (
                     activeCategory === "todos" ? (
-                      <div
-                        className="cat-scroll"
-                        style={{
-                          display: "flex",
-                          gap: 12,
-                          overflowX: "auto",
-                          // "proximity" (no "mandatory") + touchAction explícito:
-                          // con mandatory el navegador bloqueaba el scroll
-                          // vertical de la página al tocar el carrusel a mitad
-                          // de pantalla. Así deja pasar ambos ejes con naturalidad.
-                          scrollSnapType: "x proximity",
-                          touchAction: "pan-x pan-y",
-                          overscrollBehaviorX: "contain",
-                          WebkitOverflowScrolling: "touch",
-                          scrollbarWidth: "none",
-                          padding: "4px 0 10px",
-                        }}
-                      >
-                        {cat.items.map((item, idx) => (
-                          <div
-                            key={item.id}
-                            style={{ flex: "0 0 46%", maxWidth: 210, minWidth: 150, scrollSnapAlign: "start" }}
-                          >
-                            <MenuCard
-                              item={item}
-                              cardKey={`${cat.id}:${item.id}`}
-                              isActive={activeCardKey === `${cat.id}:${item.id}`}
-                              onSelect={setSelected}
-                              hot={isHot}
-                              index={idx}
-                              premium={isFeatured}
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      <CategoryCarousel
+                        items={cat.items}
+                        catId={cat.id}
+                        isHot={isHot}
+                        isFeatured={isFeatured}
+                        activeCardKey={activeCardKey}
+                        onSelect={setSelected}
+                      />
                     ) : (
                       <div
                         style={{
                           display: "grid",
                           gridTemplateColumns: "1fr 1fr",
-                          gap: 12,
+                          gap: 9,
                           padding: "4px 0 10px",
                         }}
                       >
@@ -487,5 +460,104 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
       <ProductModal item={selected} onClose={() => setSelected(null)} />
     </>
+  );
+}
+
+// ── Carrusel horizontal de una categoría (vista "Todos") ─────────────────────
+// Con tarjetas más anchas, a veces 2 llenan exactamente el ancho de pantalla
+// y no queda ninguna asomada por el borde — sin esa pista visual, parece que
+// la categoría solo tiene esos 2 productos. Este componente mide si el
+// carrusel realmente tiene más contenido (scrollWidth > clientWidth) y, solo
+// en ese caso, muestra una flechita sutil invitando a deslizar.
+function CategoryCarousel({
+  items, catId, isHot, isFeatured, activeCardKey, onSelect,
+}: {
+  items: MenuItem[];
+  catId: number;
+  isHot: boolean;
+  isFeatured: boolean;
+  activeCardKey: string | null;
+  onSelect: (item: MenuItem) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasMore, setHasMore] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const check = () => setHasMore(el.scrollWidth > el.clientWidth + 4);
+    check();
+    // Reacciona si las fotos cambian el ancho disponible o si rotas el celular.
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [items]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <div
+        ref={scrollRef}
+        className="cat-scroll"
+        style={{
+          display: "flex",
+          gap: 12,
+          overflowX: "auto",
+          // "proximity" (no "mandatory") + touchAction explícito: con
+          // mandatory el navegador bloqueaba el scroll vertical de la página
+          // al tocar el carrusel a mitad de pantalla. Así deja pasar ambos
+          // ejes con naturalidad.
+          scrollSnapType: "x proximity",
+          touchAction: "pan-x pan-y",
+          overscrollBehaviorX: "contain",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          padding: "4px 0 10px",
+        }}
+      >
+        {items.map((item, idx) => (
+          <div
+            key={item.id}
+            style={{ flex: "0 0 48%", maxWidth: 225, minWidth: 162, scrollSnapAlign: "start" }}
+          >
+            <MenuCard
+              item={item}
+              cardKey={`${catId}:${item.id}`}
+              isActive={activeCardKey === `${catId}:${item.id}`}
+              onSelect={onSelect}
+              hot={isHot}
+              index={idx}
+              premium={isFeatured}
+            />
+          </div>
+        ))}
+      </div>
+
+      {hasMore && (
+        // Al borde real de la pantalla (no del borde de las tarjetas): el
+        // -22px compensa el padding lateral de .cat-block, que es lo que
+        // separa este carrusel del borde de pantalla real. Clickeable: un
+        // empujoncito al carrusel, no solo un adorno.
+        <button
+          type="button"
+          aria-label="Ver más productos de esta categoría"
+          onClick={() => scrollRef.current?.scrollBy({ left: 150, behavior: "smooth" })}
+          style={{
+            position: "absolute", top: "50%", right: -22, transform: "translateY(-50%)", zIndex: 3,
+            display: "flex", alignItems: "center", justifyContent: "flex-end",
+            width: 40, height: 56, padding: "0 2px 0 0",
+            border: "none", background: "transparent", cursor: "pointer",
+            color: isFeatured ? "#D9B382" : "#3E2A1C",
+            filter: isFeatured
+              ? "drop-shadow(0 1px 4px rgba(0,0,0,0.65))"
+              : "drop-shadow(0 1px 3px rgba(255,255,255,0.55))",
+            animation: "peekHint 1.7s ease-in-out infinite",
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
+        </button>
+      )}
+    </div>
   );
 }

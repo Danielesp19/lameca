@@ -23,6 +23,15 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+/* "Scroll anchoring" del navegador desactivado: por defecto, si algo arriba
+   de lo que estás viendo cambia de tamaño mientras scrolleas (el video del
+   hero terminando de cargar, una categoría creciendo mientras llegan sus
+   fotos, etc.), el navegador mueve el scroll SOLO para "compensar" y que ese
+   contenido no se mueva bajo tu dedo — pero eso se siente como si la página
+   peleara con el gesto ("se ajusta solo"). Sin esto, el scroll queda 100% en
+   manos del usuario. */
+* { overflow-anchor: none; }
+
 body {
   background: #0A0705;
   color: #FAF7F2;
@@ -197,6 +206,12 @@ body {
 @keyframes gentleFloat {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
+}
+/* Flechita "hay más para deslizar" en los carruseles de categoría: un
+   vaivén sutil hacia la derecha, no una llamada de atención agresiva. */
+@keyframes peekHint {
+  0%, 100% { transform: translateX(0);   opacity: 0.85; }
+  50%      { transform: translateX(3px); opacity: 1;    }
 }
 /* Feedback táctil de las tarjetas (tras terminar su entrada).
    height:100% → en la grilla y en el carrusel todas las tarjetas de una fila

@@ -15,6 +15,9 @@ const CARD  = "#FFFCF5";
 const PREM_LIGHT = "#F4EEE3";
 const PREM_GOLD  = "#D9B382";
 const PREM_CARD  = "linear-gradient(165deg, #241a12 0%, #170f09 100%)";
+// Placeholder "foto próximamente" con textura diagonal sutil (a tono con el
+// mockup de referencia), sobre el mismo fondo cálido oscuro de la tarjeta.
+const PREM_STRIPES = `repeating-linear-gradient(45deg, rgba(217,179,130,0.07) 0px, rgba(217,179,130,0.07) 1.5px, transparent 1.5px, transparent 13px), ${PREM_CARD}`;
 
 // Veces que se reproduce el video en la tarjeta antes de congelarse en el último
 // frame. 1 = una pasada y se detiene (ahorra ancho de banda del backend
@@ -199,7 +202,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
         cursor: "pointer",
         // Sin "target" visual en la tarjeta activa (feedback: se sentía pesado).
         // La activación es solo funcional: video, Ken Burns y vapor.
-        border: premium ? "1px solid rgba(247,241,229,0.12)" : "1.5px solid rgba(188,90,50,0.28)",
+        border: premium ? `1px solid ${PREM_GOLD}55` : "1.5px solid rgba(188,90,50,0.28)",
         borderRadius: 20,
         overflow: "hidden",
         boxShadow: premium
@@ -209,7 +212,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
     >
       {/* ── Media ── */}
       {/* Cuadrada y compacta para la grilla de 2 columnas */}
-      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1", overflow: "hidden", background: "#EFE4D2" }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: premium ? "4/3" : "1/1", overflow: "hidden", background: "#EFE4D2" }}>
         {/* Fotos con SWIPE táctil: strip horizontal con snap — el usuario
             desliza con el dedo para ver más ángulos desde la tarjeta. Lejos
             del viewport solo existe la portada en lazy; al acercarse se montan
@@ -252,21 +255,33 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
               }}
             />
           ) : (
-            <div style={{ position: "absolute", inset: 0, background: premium ? PREM_CARD : "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
+            <div style={{ position: "absolute", inset: 0, background: premium ? PREM_STRIPES : "linear-gradient(145deg,#EFE4D2 0%,#E2D3BC 100%)" }} />
           )
         ) : (
           /* Placeholder for products without image */
           <div style={{
             position: "absolute", inset: 0,
-            background: premium ? PREM_CARD : "linear-gradient(145deg, #EFE4D2 0%, #E2D3BC 100%)",
+            background: premium ? PREM_STRIPES : "linear-gradient(145deg, #EFE4D2 0%, #E2D3BC 100%)",
             display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center", gap: 8,
+            alignItems: "center", justifyContent: "center", gap: 10,
           }}>
-            <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true" style={{ animation: "gentleFloat 4.5s ease-in-out infinite" }}>
-              <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke={premium ? "rgba(247,241,229,0.5)" : "#B8A084"} strokeWidth="1.8" strokeLinecap="round"/>
-              <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke={premium ? "rgba(247,241,229,0.5)" : "#B8A084"} strokeWidth="1.8" strokeLinecap="round"/>
-              <ellipse cx="24" cy="38" rx="12" ry="2" fill={premium ? "rgba(247,241,229,0.5)" : "#B8A084"} opacity=".3"/>
-            </svg>
+            {premium ? (
+              // Círculo + punto: minimalista, a tono con el mockup de referencia
+              <span style={{
+                width: 34, height: 34, borderRadius: "50%",
+                border: `1.5px solid ${PREM_GOLD}99`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                animation: "gentleFloat 4.5s ease-in-out infinite",
+              }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: PREM_GOLD }} />
+              </span>
+            ) : (
+              <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true" style={{ animation: "gentleFloat 4.5s ease-in-out infinite" }}>
+                <path d="M10 36h28M14 36V22a10 10 0 0 1 20 0v14" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M34 22c2 0 6 .5 6 4s-4 4-6 4" stroke="#B8A084" strokeWidth="1.8" strokeLinecap="round"/>
+                <ellipse cx="24" cy="38" rx="12" ry="2" fill="#B8A084" opacity=".3"/>
+              </svg>
+            )}
             <span style={{ fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: premium ? "rgba(247,241,229,0.55)" : "#A08A6E", opacity: 0.8 }}>
               Foto próximamente
             </span>
@@ -340,17 +355,20 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
       <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "9px 11px 11px" }}>
         <h3 style={{
           fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 700,
-          fontSize: 16.5, margin: 0, lineHeight: 1.15, color: premium ? PREM_GOLD : TERRA,
+          fontSize: 16.5, margin: 0, lineHeight: 1.15, color: premium ? PREM_LIGHT : TERRA,
           letterSpacing: "-0.01em",
         }}>
           {item.name}
         </h3>
 
-        {item.description && (
+        {/* Descripción: solo en las tarjetas de Destacados. En el resto, un
+            espaciador invisible empuja precio/botón al fondo igual, para que
+            todas las de una fila queden alineadas aunque el nombre ocupe 1 o 2 líneas. */}
+        {premium && item.description ? (
           <p style={{
             fontSize: 11.5, fontWeight: 300, lineHeight: 1.4,
             margin: "4px 0 0", flex: 1,
-            color: premium ? "rgba(247,241,229,0.72)" : "rgba(62,42,28,0.68)",
+            color: "rgba(247,241,229,0.72)",
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -358,6 +376,8 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
           }}>
             {item.description}
           </p>
+        ) : (
+          <div style={{ flex: 1, minHeight: 4 }} />
         )}
 
         {/* Fila de precio con etiqueta + "Ver más →" abajo, como el diseño */}
@@ -365,7 +385,7 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
           <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: premium ? "rgba(247,241,229,0.55)" : "rgba(62,42,28,0.5)" }}>
             Precio
           </span>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: premium ? PREM_LIGHT : CHOCO, letterSpacing: "-0.01em" }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: premium ? 18 : 16, color: premium ? PREM_GOLD : CHOCO, letterSpacing: "-0.01em" }}>
             ${item.price.toLocaleString("es-CO")}
           </span>
         </div>
@@ -373,16 +393,16 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
         <span
           aria-hidden="true"
           style={{
-            marginTop: 9, alignSelf: "flex-start",
-            display: "inline-flex", alignItems: "center", gap: 5,
-            padding: "6px 12px", borderRadius: 999,
-            // Igual en Destacados y en el resto: pill clara con borde gris y
-            // texto choco — se pinta explícita (no "transparent") para que se
-            // vea idéntica también sobre el fondo oscuro de las tarjetas premium.
-            border: "1px solid rgba(62,42,28,0.35)",
-            background: CARD,
-            color: CHOCO,
-            fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
+            marginTop: 9, alignSelf: premium ? "stretch" : "flex-start",
+            display: "inline-flex", alignItems: "center", justifyContent: premium ? "center" : "flex-start", gap: 5,
+            padding: premium ? "9px 12px" : "6px 12px", borderRadius: 999,
+            border: premium ? "none" : "1px solid rgba(62,42,28,0.35)",
+            // Premium: pill sólida dorada (a tono con el mockup). Resto: igual
+            // que siempre — pill clara con borde gris, pintada explícita (no
+            // "transparent") para que no dependa del fondo detrás.
+            background: premium ? PREM_GOLD : CARD,
+            color: premium ? "#2A1D12" : CHOCO,
+            fontFamily: "var(--font-sans)", fontSize: premium ? 11.5 : 10, fontWeight: premium ? 700 : 500,
             letterSpacing: "0.09em", textTransform: "uppercase",
             whiteSpace: "nowrap",
           }}
