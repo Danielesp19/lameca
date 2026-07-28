@@ -480,17 +480,31 @@ function CategoryCarousel({
   onSelect: (item: MenuItem) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [hasMore, setHasMore] = useState(false);
+  // Bidireccional: cada flecha refleja si de verdad hay contenido para ese
+  // lado DESDE la posición actual del scroll — no solo "el carrusel desborda"
+  // (eso mostraría la flecha derecha hasta en el último producto).
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const check = () => setHasMore(el.scrollWidth > el.clientWidth + 4);
+    const check = () => {
+      setCanLeft(el.scrollLeft > 4);
+      setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+    };
     check();
+    // Solo lecturas baratas (scrollLeft/scrollWidth/clientWidth, sin
+    // getBoundingClientRect) — no hay riesgo de repetir el jank del scroll
+    // horizontal que ya se arregló antes.
+    el.addEventListener("scroll", check, { passive: true });
     // Reacciona si las fotos cambian el ancho disponible o si rotas el celular.
     const ro = new ResizeObserver(check);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      el.removeEventListener("scroll", check);
+      ro.disconnect();
+    };
   }, [items]);
 
   return (
@@ -532,7 +546,31 @@ function CategoryCarousel({
         ))}
       </div>
 
-      {hasMore && (
+      {canLeft && (
+        // Simétrica a la derecha, mismo -22px de compensación del padding
+        // de .cat-block hacia el borde real de pantalla.
+        <button
+          type="button"
+          aria-label="Ver productos anteriores de esta categoría"
+          onClick={() => scrollRef.current?.scrollBy({ left: -150, behavior: "smooth" })}
+          style={{
+            position: "absolute", top: "40%", left: -22, transform: "translateY(-50%)", zIndex: 3,
+            display: "flex", alignItems: "center", justifyContent: "flex-start",
+            width: 40, height: 56, padding: "0 0 0 2px",
+            border: "none", background: "transparent", cursor: "pointer",
+            color: isFeatured ? "#D9B382" : "#3E2A1C",
+            filter: isFeatured
+              ? "drop-shadow(0 1px 4px rgba(0,0,0,0.65))"
+              : "drop-shadow(0 1px 3px rgba(255,255,255,0.55))",
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 6 9 12 15 18" />
+          </svg>
+        </button>
+      )}
+
+      {canRight && (
         // Al borde real de la pantalla (no del borde de las tarjetas): el
         // -22px compensa el padding lateral de .cat-block, que es lo que
         // separa este carrusel del borde de pantalla real. Clickeable: un
@@ -542,7 +580,7 @@ function CategoryCarousel({
           aria-label="Ver más productos de esta categoría"
           onClick={() => scrollRef.current?.scrollBy({ left: 150, behavior: "smooth" })}
           style={{
-            position: "absolute", top: "50%", right: -22, transform: "translateY(-50%)", zIndex: 3,
+            position: "absolute", top: "40%", right: -22, transform: "translateY(-50%)", zIndex: 3,
             display: "flex", alignItems: "center", justifyContent: "flex-end",
             width: 40, height: 56, padding: "0 2px 0 0",
             border: "none", background: "transparent", cursor: "pointer",

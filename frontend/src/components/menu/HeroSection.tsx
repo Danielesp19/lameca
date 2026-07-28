@@ -124,7 +124,12 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
           // eslint-disable-next-line @next/next/no-img-element
           <img src={bgGifOrImg} alt="" aria-hidden="true" className="hero-bg-media" />
         ) : (
-          // Default: local hero video with slowZoom animation
+          // Default: local hero video with slowZoom animation.
+          // objectFit "contain" (no "cover" de la clase compartida): este
+          // video es horizontal, con "cover" en un marco vertical de celular
+          // se recortaba a una tira central perdiendo la escena. Con
+          // "contain" se ve el cuadro completo, con margen arriba/abajo que
+          // se funde con el fondo oscuro del hero.
           <video
             ref={videoRef}
             muted
@@ -133,6 +138,7 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
             aria-hidden="true"
             tabIndex={-1}
             className="hero-bg-media"
+            style={{ objectFit: "contain" }}
           >
             <source src="/videos/hero-coffee.mp4" type="video/mp4" />
           </video>
