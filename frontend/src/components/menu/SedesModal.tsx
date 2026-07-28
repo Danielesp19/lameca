@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getSedes } from "@/lib/orders-api";
-import type { SedeInfo } from "@/lib/table-session";
+import { localPhone, type SedeInfo } from "@/lib/table-session";
 
 // Misma paleta oscura del hero (fondo #120c08/#1a120c, texto crema #F4EEE3)
 const CREAM = "#F4EEE3";
@@ -113,11 +113,19 @@ export default function SedesModal({ open, onClose }: { open: boolean; onClose: 
                   >
                     {/* Galería: 3 fotos contando la historia de la sede */}
                     <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gridTemplateRows: "1fr 1fr", gap: 6, height: 220, borderRadius: 16, overflow: "hidden", marginBottom: 14 }}>
-                      <div style={{ gridRow: "1 / 3" }}>
+                      {/* minHeight:0 + overflow:hidden en cada celda: sin esto, una
+                          foto vertical (más alta que ancha) se sale de su fila de
+                          107px y tapa la de abajo — el <img> como hijo directo del
+                          grid toma su alto intrínseco como mínimo automático. */}
+                      <div style={{ gridRow: "1 / 3", minHeight: 0, overflow: "hidden" }}>
                         <HistoriaImage src={content.images[0]} alt={`${active.name} 1`} />
                       </div>
-                      <HistoriaImage src={content.images[1]} alt={`${active.name} 2`} />
-                      <HistoriaImage src={content.images[2]} alt={`${active.name} 3`} />
+                      <div style={{ minHeight: 0, overflow: "hidden" }}>
+                        <HistoriaImage src={content.images[1]} alt={`${active.name} 2`} />
+                      </div>
+                      <div style={{ minHeight: 0, overflow: "hidden" }}>
+                        <HistoriaImage src={content.images[2]} alt={`${active.name} 3`} />
+                      </div>
                     </div>
 
                     {/* Historia: panel negro translúcido con letra blanca */}
@@ -149,7 +157,7 @@ export default function SedesModal({ open, onClose }: { open: boolean; onClose: 
                           background: OLIVE, color: "#FBF7EC", fontSize: 13, fontWeight: 600,
                         }}
                       >
-                        WhatsApp · +{active.whatsapp_phone}
+                        WhatsApp · {localPhone(active.whatsapp_phone)}
                       </a>
                     )}
                   </motion.div>

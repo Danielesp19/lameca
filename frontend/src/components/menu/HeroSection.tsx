@@ -116,7 +116,12 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
 
   return (
     <div ref={outerRef} style={{ position: "relative", width: "100%", background: "#120c08", fontFamily: "var(--font-sans)", color: "#F4EEE3" }}>
-      <section style={{ position: "sticky", top: 0, width: "100%", height: "100dvh", minHeight: 540, overflow: "hidden", background: "#120c08", zIndex: 1 }}>
+      {/* "svh" (no "dvh"): dvh se recalcula en vivo cuando el navegador
+          esconde/muestra la barra de direcciones al hacer scroll — en un
+          section fijo a pantalla completa eso se ve como que el hero cambia
+          de tamaño solo mientras se hace scroll. svh usa el alto mínimo
+          (barra visible) y se queda fijo, sin ese salto. */}
+      <section style={{ position: "sticky", top: 0, width: "100%", height: "100svh", minHeight: 540, overflow: "hidden", background: "#120c08", zIndex: 1 }}>
 
         {/* ── Background media ── */}
         {bgGifOrImg ? (

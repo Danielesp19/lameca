@@ -12,6 +12,13 @@ export interface SedeInfo {
   address?: string | null;
 }
 
+// Para mostrar en pantalla: quita el indicativo de país (57) — el número
+// completo con indicativo se sigue usando para el link wa.me, esto es solo
+// visual.
+export function localPhone(phone: string): string {
+  return phone.startsWith("57") && phone.length === 12 ? phone.slice(2) : phone;
+}
+
 export interface TableInfo {
   number: string;
   label: string;

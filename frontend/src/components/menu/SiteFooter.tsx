@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSedes } from "@/lib/orders-api";
-import type { SedeInfo } from "@/lib/table-session";
+import { localPhone, type SedeInfo } from "@/lib/table-session";
 
 const CREAM = "#F7F1E5";
 const DARK  = "#241710";
@@ -91,7 +91,7 @@ export default function SiteFooter() {
                 target="_blank" rel="noopener noreferrer"
                 style={{ color: CREAM, textDecoration: "none", fontSize: 13, opacity: 0.85 }}
               >
-                {s.name}: +{s.whatsapp_phone}
+                {s.name}: {localPhone(s.whatsapp_phone!)}
               </a>
             ))}
             {sedes.every(s => !s.whatsapp_phone) && (
