@@ -1,65 +1,62 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import HeroSection from "@/components/menu/HeroSection";
+import MenuSection from "@/components/menu/MenuSection";
+import CartRoot from "@/components/menu/CartRoot";
+import SplashIntro from "@/components/menu/SplashIntro";
+import SiteFooter from "@/components/menu/SiteFooter";
+import { getMenu, getHero, type HeroSection as HeroData } from "@/lib/menu-api";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Carta — La Meca",
+  description: "Explora nuestra carta de cafés de origen, bebidas artesanales y repostería.",
+};
+
+// ISR: Vercel regenera esta página como máximo cada 60s y la sirve desde su CDN.
+// Así 150 escaneos simultáneos se atienden desde el edge y el backend recibe ~1
+// petición/minuto en vez de una por visita.
+export const revalidate = 60;
+
+export default async function HomePage() {
+  // Datos traídos en el servidor (cacheados por ISR). Si el backend falla, se pasa
+  // un fallback "vacío/undefined" y los componentes cliente reintentan por su cuenta.
+  const [categories, hero] = await Promise.all([
+    getMenu().catch(() => [] as Awaited<ReturnType<typeof getMenu>>),
+    getHero().then(h => h[0] ?? null).catch(() => undefined as HeroData | undefined),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <CartRoot>
+    <main>
+      {/* Splash de entrada: cubre la pantalla ~3.5s; el video del hero carga y
+          se reproduce detrás y queda visible al levantarse el splash. */}
+      <SplashIntro />
+      <HeroSection initialHero={hero} />
+      <MenuSection initialCategories={categories} />
+
+      {/* Descarga de la carta en PDF — justo antes del pie de página */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "8px 22px 40px", background: "#F7F1E5" }}>
+        <a
+          href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
+          download="carta-la-meca.pdf"
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "12px 22px", borderRadius: 999, textDecoration: "none",
+            border: "1.5px solid rgba(62,42,28,0.25)", color: "#3E2A1C",
+            fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Descargar carta (PDF)
+        </a>
+      </div>
+
+      {/* Pie de página con dirección, contacto y redes (feedback del cliente) */}
+      <SiteFooter />
+    </main>
+    </CartRoot>
   );
 }

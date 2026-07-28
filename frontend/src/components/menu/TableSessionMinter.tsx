@@ -26,7 +26,7 @@ export default function TableSessionMinter({ token }: { token: string }) {
         sede: res.sede,
       });
       // Redirigimos al menú; el token queda fuera de la URL pública.
-      router.replace("/menu");
+      router.replace("/");
     })();
     return () => { alive = false; };
   }, [token, router]);
@@ -45,7 +45,7 @@ export default function TableSessionMinter({ token }: { token: string }) {
             Este QR no está activo. Pide ayuda a un mesero o explora la carta.
           </p>
           <button
-            onClick={() => router.replace("/menu")}
+            onClick={() => router.replace("/")}
             style={{
               marginTop: 6, padding: "12px 26px", borderRadius: 999, border: "none",
               background: DARK, color: CREAM, fontSize: 13, fontWeight: 600, cursor: "pointer",

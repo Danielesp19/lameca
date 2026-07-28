@@ -51,7 +51,7 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
       {/* Floating top bar */}
       <div className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between pointer-events-none">
         <Link
-          href="/menu#menu"
+          href="/#menu"
           className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200"
           style={{
             background: "rgba(10,7,5,0.75)",
@@ -218,7 +218,7 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
         {/* Back CTA */}
         <motion.div variants={fadeUp}>
           <Link
-            href="/menu#menu"
+            href="/#menu"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium tracking-wider uppercase transition-colors duration-200"
             style={{
               background: "rgba(111,78,55,0.2)",
