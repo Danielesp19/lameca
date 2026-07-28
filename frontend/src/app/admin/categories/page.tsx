@@ -8,6 +8,11 @@ import {
   adminGetItems, adminReorderItems, AdminItem,
 } from "@/lib/admin-api";
 
+// Categoría protegida: destino de productos huérfanos. No se puede
+// renombrar ni borrar (el backend también lo bloquea; esto solo evita
+// mostrar controles que fallarían igual).
+const OTROS_SLUG = "otros";
+
 const input: React.CSSProperties = {
   padding: "9px 13px", borderRadius: 9,
   border: "1.5px solid #E8E0D8", fontSize: 14,
@@ -29,7 +34,8 @@ export default function CategoriesPage() {
 
   const [items, setItems] = useState<AdminItem[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [reorderingItems, setReorderingItems] = useState(false);
+  const [reorderingCatId, setReorderingCatId] = useState<number | null>(null);
+  const [itemsErr, setItemsErr] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,23 +51,25 @@ export default function CategoriesPage() {
   useEffect(() => { load(); }, [load]);
 
   // Mueve un producto hacia arriba/abajo DENTRO de su categoría y persiste el nuevo orden.
+  // reorderingCatId se limita a ESTA categoría: mover productos de una no bloquea las demás.
   async function moveItem(catId: number, index: number, dir: -1 | 1) {
     const catItems = items.filter(i => i.menu_category_id === catId);
     const target = index + dir;
-    if (target < 0 || target >= catItems.length || reorderingItems) return;
+    if (target < 0 || target >= catItems.length || reorderingCatId !== null) return;
 
     const next = [...catItems];
     [next[index], next[target]] = [next[target], next[index]];
     setItems(prev => [...prev.filter(i => i.menu_category_id !== catId), ...next]); // optimista
-    setReorderingItems(true);
+    setReorderingCatId(catId);
+    setItemsErr("");
     try {
       const fresh = await adminReorderItems(next.map(i => i.id));
       setItems(prev => [...prev.filter(i => i.menu_category_id !== catId), ...fresh]);
     } catch (e) {
-      alert((e as Error).message);
+      setItemsErr((e as Error).message);
       load();                      // revertir desde el servidor
     } finally {
-      setReorderingItems(false);
+      setReorderingCatId(null);
     }
   }
 
@@ -106,8 +114,16 @@ export default function CategoriesPage() {
   }
 
   async function del(cat: AdminCategory) {
-    if (!confirm(`¿Eliminar "${cat.name}"? Se borrarán todos sus productos.`)) return;
-    try { await adminDeleteCategory(cat.id); setCats(p => p.filter(c => c.id !== cat.id)); }
+    const count = cat.items_count ?? 0;
+    const msg = count > 0
+      ? `¿Eliminar "${cat.name}"? Sus ${count} producto${count !== 1 ? "s" : ""} se moverán a la categoría "Otros" (no se borran).`
+      : `¿Eliminar "${cat.name}"?`;
+    if (!confirm(msg)) return;
+    try {
+      await adminDeleteCategory(cat.id);
+      setCats(p => p.filter(c => c.id !== cat.id));
+      load(); // refresca conteos (p.ej. "Otros" ahora tiene más productos)
+    }
     catch (e) { alert((e as Error).message); }
   }
 
@@ -136,7 +152,16 @@ export default function CategoriesPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nombre *</label>
-              <input style={input} value={formName} onChange={e => setFormName(e.target.value)} required />
+              <input
+                style={{ ...input, ...(editing?.slug === OTROS_SLUG ? { background: "#F9F5F2", color: "#B0A090", cursor: "not-allowed" } : {}) }}
+                value={formName}
+                onChange={e => setFormName(e.target.value)}
+                disabled={editing?.slug === OTROS_SLUG}
+                required
+              />
+              {editing?.slug === OTROS_SLUG && (
+                <p style={{ fontSize: 11, color: "#9A7055", marginTop: 4 }}>Es la categoría protegida de productos huérfanos: no se puede renombrar.</p>
+              )}
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Descripción</label>
@@ -202,7 +227,7 @@ export default function CategoriesPage() {
                   <td style={{ padding: "14px 20px", color: "#6B5744" }}>{cat.description ?? "—"}</td>
                   <td style={{ padding: "14px 20px" }}>
                     <button
-                      onClick={() => setExpandedId(expandedId === cat.id ? null : cat.id)}
+                      onClick={() => { setExpandedId(expandedId === cat.id ? null : cat.id); setItemsErr(""); }}
                       style={{
                         display: "inline-flex", alignItems: "center", gap: 6,
                         background: "none", border: "none", cursor: "pointer",
@@ -216,7 +241,11 @@ export default function CategoriesPage() {
                   <td style={{ padding: "14px 20px" }}>
                     <div style={{ display: "flex", gap: 16 }}>
                       <button onClick={() => startEdit(cat)} style={{ fontSize: 13, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
-                      <button onClick={() => del(cat)} style={{ fontSize: 13, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
+                      {cat.slug === OTROS_SLUG ? (
+                        <span style={{ fontSize: 12, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
+                      ) : (
+                        <button onClick={() => del(cat)} style={{ fontSize: 13, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -226,9 +255,13 @@ export default function CategoriesPage() {
                     <tr>
                       <td colSpan={5} style={{ padding: "0 20px 18px", background: "#FBF8F4" }}>
                         <div style={{ border: "1.5px solid #F0EBE5", borderRadius: 12, overflow: "hidden", background: "#FFFFFF" }}>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6B5744", padding: "10px 16px", margin: 0, borderBottom: "1px solid #F0EBE5", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                            Orden de productos en &quot;{cat.name}&quot;
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6B5744", padding: "10px 16px", margin: 0, borderBottom: "1px solid #F0EBE5", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span>Orden de productos en &quot;{cat.name}&quot;</span>
+                            {reorderingCatId === cat.id && <span style={{ fontSize: 11, color: "#9A7055", textTransform: "none", fontWeight: 500 }}>Guardando…</span>}
                           </p>
+                          {itemsErr && expandedId === cat.id && (
+                            <p style={{ fontSize: 12, color: "#DC2626", padding: "8px 16px 0", margin: 0 }}>{itemsErr}</p>
+                          )}
                           {catItems.length === 0 ? (
                             <p style={{ padding: "16px", fontSize: 13, color: "#B0A090", margin: 0 }}>Esta categoría no tiene productos.</p>
                           ) : (
@@ -245,23 +278,23 @@ export default function CategoriesPage() {
                                   <div style={{ display: "flex", gap: 4 }}>
                                     <button
                                       onClick={() => moveItem(cat.id, ii, -1)}
-                                      disabled={ii === 0 || reorderingItems}
+                                      disabled={ii === 0 || reorderingCatId !== null}
                                       title="Subir"
                                       style={{
-                                        width: 26, height: 26, borderRadius: 6, border: "1px solid #E8E0D8",
-                                        background: "none", cursor: ii === 0 || reorderingItems ? "default" : "pointer",
-                                        fontSize: 12, color: ii === 0 ? "#D4C4B4" : "#6B5744",
+                                        width: 30, height: 30, borderRadius: 6, border: "1px solid #E8E0D8",
+                                        background: "none", cursor: ii === 0 || reorderingCatId !== null ? "default" : "pointer",
+                                        fontSize: 14, color: ii === 0 ? "#D4C4B4" : "#6B5744",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                       }}
                                     >↑</button>
                                     <button
                                       onClick={() => moveItem(cat.id, ii, 1)}
-                                      disabled={ii === catItems.length - 1 || reorderingItems}
+                                      disabled={ii === catItems.length - 1 || reorderingCatId !== null}
                                       title="Bajar"
                                       style={{
-                                        width: 26, height: 26, borderRadius: 6, border: "1px solid #E8E0D8",
-                                        background: "none", cursor: ii === catItems.length - 1 || reorderingItems ? "default" : "pointer",
-                                        fontSize: 12, color: ii === catItems.length - 1 ? "#D4C4B4" : "#6B5744",
+                                        width: 30, height: 30, borderRadius: 6, border: "1px solid #E8E0D8",
+                                        background: "none", cursor: ii === catItems.length - 1 || reorderingCatId !== null ? "default" : "pointer",
+                                        fontSize: 14, color: ii === catItems.length - 1 ? "#D4C4B4" : "#6B5744",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                       }}
                                     >↓</button>

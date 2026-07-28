@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class CategoryAdminController extends Controller
 {
+    /** Slug de la categoría protegida donde caen los productos huérfanos. */
+    private const OTROS_SLUG = 'otros';
+
     public function index()
     {
         return MenuCategory::withCount('items')->orderBy('sort_order')->get();
@@ -34,6 +36,13 @@ class CategoryAdminController extends Controller
 
     public function update(Request $request, MenuCategory $category)
     {
+        // "Otros" es el destino fijo de productos huérfanos: si se pudiera
+        // renombrar, quien borra otra categoría no sabría dónde buscar sus
+        // productos.
+        if ($category->slug === self::OTROS_SLUG && $request->filled('name') && $request->input('name') !== $category->name) {
+            return response()->json(['message' => 'La categoría "Otros" no se puede renombrar.'], 422);
+        }
+
         $data = $request->validate([
             'name'        => ['sometimes', 'string', 'max:255', Rule::unique('menu_categories', 'name')->ignore($category->id)],
             'description' => 'nullable|string',
@@ -47,26 +56,33 @@ class CategoryAdminController extends Controller
     }
 
     /**
-     * Borra la categoría. Sus productos caen en cascada a nivel de base de
-     * datos (constraint), pero eso NUNCA pasa por el código de Laravel que
-     * limpia imágenes/videos del storage (ver ItemAdminController::destroy).
-     * Por eso aquí se borran primero los archivos físicos de cada producto y
-     * su galería — si no, quedan huérfanos en disco para siempre.
+     * Borra la categoría. Sus productos NUNCA se borran: se reasignan a la
+     * categoría protegida "Otros" para que nada se pierda por accidente
+     * (fotos, videos, cumplidos de venta, etc. quedan intactos).
      */
     public function destroy(MenuCategory $category)
     {
-        $disk = Storage::disk('public');
-
-        foreach ($category->items()->with('extraImages')->get() as $item) {
-            foreach (['image', 'video', 'video_poster'] as $field) {
-                if ($item->$field) $disk->delete($item->$field);
-            }
-            foreach ($item->extraImages as $img) {
-                $disk->delete($img->path);
-            }
+        if ($category->slug === self::OTROS_SLUG) {
+            return response()->json(['message' => 'La categoría "Otros" no se puede eliminar.'], 422);
         }
 
-        $category->delete();
+        $otros = MenuCategory::where('slug', self::OTROS_SLUG)->first();
+        if (!$otros) {
+            // No debería pasar (la migración la crea), pero por si acaso.
+            $otros = MenuCategory::create([
+                'name'       => 'Otros',
+                'sort_order' => (MenuCategory::max('sort_order') ?? -1) + 1,
+            ]);
+        }
+
+        DB::transaction(function () use ($category, $otros) {
+            $nextOrder = ($otros->items()->max('sort_order') ?? -1) + 1;
+            foreach ($category->items as $item) {
+                $item->update(['menu_category_id' => $otros->id, 'sort_order' => $nextOrder++]);
+            }
+            $category->delete();
+        });
+
         return response()->noContent();
     }
 
