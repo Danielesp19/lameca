@@ -29,6 +29,7 @@ Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:
 Route::middleware(['throttle:admin-api', 'admin.token'])->prefix('admin')->group(function () {
     Route::post('categories/reorder', [CategoryAdminController::class, 'reorder']);
     Route::apiResource('categories', CategoryAdminController::class)->except(['show']);
+    Route::post('items/reorder', [ItemAdminController::class, 'reorder']);
     Route::apiResource('items',      ItemAdminController::class)->except(['show']);
 
     // Sedes

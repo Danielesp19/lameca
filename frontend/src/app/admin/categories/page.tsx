@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback, FormEvent } from "react";
+import { useEffect, useState, useCallback, FormEvent, Fragment } from "react";
+import Link from "next/link";
 import {
   adminGetCategories, adminCreateCategory,
   adminUpdateCategory, adminDeleteCategory, adminReorderCategories, AdminCategory,
+  adminGetItems, adminReorderItems, AdminItem,
 } from "@/lib/admin-api";
 
 const input: React.CSSProperties = {
@@ -25,14 +27,43 @@ export default function CategoriesPage() {
   const [formErr,  setFormErr]  = useState("");
   const [reordering, setReordering] = useState(false);
 
+  const [items, setItems] = useState<AdminItem[]>([]);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [reorderingItems, setReorderingItems] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
-    try { setCats(await adminGetCategories()); }
+    try {
+      const [c, i] = await Promise.all([adminGetCategories(), adminGetItems()]);
+      setCats(c);
+      setItems(i);
+    }
     catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Mueve un producto hacia arriba/abajo DENTRO de su categoría y persiste el nuevo orden.
+  async function moveItem(catId: number, index: number, dir: -1 | 1) {
+    const catItems = items.filter(i => i.menu_category_id === catId);
+    const target = index + dir;
+    if (target < 0 || target >= catItems.length || reorderingItems) return;
+
+    const next = [...catItems];
+    [next[index], next[target]] = [next[target], next[index]];
+    setItems(prev => [...prev.filter(i => i.menu_category_id !== catId), ...next]); // optimista
+    setReorderingItems(true);
+    try {
+      const fresh = await adminReorderItems(next.map(i => i.id));
+      setItems(prev => [...prev.filter(i => i.menu_category_id !== catId), ...fresh]);
+    } catch (e) {
+      alert((e as Error).message);
+      load();                      // revertir desde el servidor
+    } finally {
+      setReorderingItems(false);
+    }
+  }
 
   function startCreate() { setEditing(null); setFormName(""); setFormDesc(""); setFormErr(""); setCreating(true); }
   function startEdit(c: AdminCategory) { setCreating(false); setEditing(c); setFormName(c.name); setFormDesc(c.description ?? ""); setFormErr(""); }
@@ -139,7 +170,8 @@ export default function CategoriesPage() {
             </thead>
             <tbody>
               {cats.map((cat, i) => (
-                <tr key={cat.id} style={{ borderTop: i === 0 ? "none" : "1px solid #F9F5F2" }}>
+                <Fragment key={cat.id}>
+                <tr style={{ borderTop: i === 0 ? "none" : "1px solid #F9F5F2" }}>
                   <td style={{ padding: "14px 20px" }}>
                     <div style={{ display: "flex", gap: 4 }}>
                       <button
@@ -168,7 +200,19 @@ export default function CategoriesPage() {
                   </td>
                   <td style={{ padding: "14px 20px", fontWeight: 600, color: "#1C0F05" }}>{cat.name}</td>
                   <td style={{ padding: "14px 20px", color: "#6B5744" }}>{cat.description ?? "—"}</td>
-                  <td style={{ padding: "14px 20px", color: "#9A7055" }}>{cat.items_count ?? 0}</td>
+                  <td style={{ padding: "14px 20px" }}>
+                    <button
+                      onClick={() => setExpandedId(expandedId === cat.id ? null : cat.id)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        background: "none", border: "none", cursor: "pointer",
+                        fontSize: 13, color: "#9A7055", fontWeight: 500, padding: 0,
+                      }}
+                    >
+                      {cat.items_count ?? 0} · ordenar
+                      <span style={{ fontSize: 10, transform: expandedId === cat.id ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>▼</span>
+                    </button>
+                  </td>
                   <td style={{ padding: "14px 20px" }}>
                     <div style={{ display: "flex", gap: 16 }}>
                       <button onClick={() => startEdit(cat)} style={{ fontSize: 13, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
@@ -176,6 +220,69 @@ export default function CategoriesPage() {
                     </div>
                   </td>
                 </tr>
+                {expandedId === cat.id && (() => {
+                  const catItems = items.filter(it => it.menu_category_id === cat.id);
+                  return (
+                    <tr>
+                      <td colSpan={5} style={{ padding: "0 20px 18px", background: "#FBF8F4" }}>
+                        <div style={{ border: "1.5px solid #F0EBE5", borderRadius: 12, overflow: "hidden", background: "#FFFFFF" }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6B5744", padding: "10px 16px", margin: 0, borderBottom: "1px solid #F0EBE5", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Orden de productos en &quot;{cat.name}&quot;
+                          </p>
+                          {catItems.length === 0 ? (
+                            <p style={{ padding: "16px", fontSize: 13, color: "#B0A090", margin: 0 }}>Esta categoría no tiene productos.</p>
+                          ) : (
+                            <div>
+                              {catItems.map((item, ii) => (
+                                <div
+                                  key={item.id}
+                                  style={{
+                                    display: "flex", alignItems: "center", gap: 14,
+                                    padding: "10px 16px",
+                                    borderTop: ii === 0 ? "none" : "1px solid #F9F5F2",
+                                  }}
+                                >
+                                  <div style={{ display: "flex", gap: 4 }}>
+                                    <button
+                                      onClick={() => moveItem(cat.id, ii, -1)}
+                                      disabled={ii === 0 || reorderingItems}
+                                      title="Subir"
+                                      style={{
+                                        width: 26, height: 26, borderRadius: 6, border: "1px solid #E8E0D8",
+                                        background: "none", cursor: ii === 0 || reorderingItems ? "default" : "pointer",
+                                        fontSize: 12, color: ii === 0 ? "#D4C4B4" : "#6B5744",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                      }}
+                                    >↑</button>
+                                    <button
+                                      onClick={() => moveItem(cat.id, ii, 1)}
+                                      disabled={ii === catItems.length - 1 || reorderingItems}
+                                      title="Bajar"
+                                      style={{
+                                        width: 26, height: 26, borderRadius: 6, border: "1px solid #E8E0D8",
+                                        background: "none", cursor: ii === catItems.length - 1 || reorderingItems ? "default" : "pointer",
+                                        fontSize: 12, color: ii === catItems.length - 1 ? "#D4C4B4" : "#6B5744",
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                      }}
+                                    >↓</button>
+                                  </div>
+                                  <span style={{ fontSize: 13, fontWeight: 500, color: "#1C0F05", flex: 1 }}>{item.name}</span>
+                                  {item.is_featured && (
+                                    <span style={{ fontSize: 11, color: "#9A7055" }}>★ Destacado</span>
+                                  )}
+                                  <Link href={`/admin/items/${item.id}/edit`} style={{ fontSize: 12, color: "#6F4E37", textDecoration: "none", fontWeight: 500 }}>
+                                    Editar
+                                  </Link>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })()}
+                </Fragment>
               ))}
               {cats.length === 0 && (
                 <tr><td colSpan={5} style={{ padding: "48px 20px", textAlign: "center", color: "#B0A090", fontSize: 14 }}>No hay categorías.</td></tr>

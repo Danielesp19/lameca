@@ -8,6 +8,7 @@ use App\Support\ImageOptimizer;
 use App\Support\VideoOptimizer;
 use App\Support\VideoPoster;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ItemAdminController extends Controller
@@ -109,6 +110,40 @@ class ItemAdminController extends Controller
         }
         $item->delete();
         return response()->noContent();
+    }
+
+    /**
+     * Reordena los productos de una misma categoría. Recibe los ids en el
+     * orden deseado y reasigna sort_order = posición (0, 1, 2, …). El orden
+     * es siempre relativo dentro de la categoría (index() ordena por
+     * menu_category_id y luego sort_order), así que no importa que los ids
+     * de otra categoría tengan valores de sort_order repetidos.
+     */
+    public function reorder(Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer|exists:menu_items,id',
+        ]);
+
+        $items = MenuItem::whereIn('id', $data['ids'])->get()->keyBy('id');
+        $categoryId = $items->first()->menu_category_id;
+
+        if ($items->contains(fn($i) => $i->menu_category_id !== $categoryId)) {
+            return response()->json(['message' => 'Todos los productos deben ser de la misma categoría.'], 422);
+        }
+
+        DB::transaction(function () use ($data) {
+            foreach ($data['ids'] as $position => $id) {
+                MenuItem::where('id', $id)->update(['sort_order' => $position]);
+            }
+        });
+
+        return MenuItem::with(['category:id,name', 'extraImages'])
+            ->where('menu_category_id', $categoryId)
+            ->orderBy('sort_order')
+            ->get()
+            ->map(fn($i) => $this->fmt($i));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

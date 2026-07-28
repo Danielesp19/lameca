@@ -129,6 +129,14 @@ export const adminUpdateItem = (id: number, data: FormData) => {
 export const adminDeleteItem = (id: number) =>
   request<null>(`/items/${id}`, { method: "DELETE", headers: authHeaders() });
 
+// Reordena los productos de una misma categoría: envía sus ids en el orden deseado.
+export const adminReorderItems = (ids: number[]) =>
+  request<AdminItem[]>("/items/reorder", {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  }).then(items => items.map(normalizeItem));
+
 // ── Pedidos ─────────────────────────────────────────────────────────────────
 export interface AdminOrderItem {
   name: string;
