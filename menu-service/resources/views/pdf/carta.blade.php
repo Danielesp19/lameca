@@ -23,14 +23,17 @@
     @font-face { font-family: 'Jost5';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-500-Medium.ttf") format('truetype'); }
     @font-face { font-family: 'Jost6';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-600-Semi.ttf") format('truetype'); }
 
-    @page { margin: 46px 46px 78px 46px; }
+    /* Margen holgado, y más ancho por la izquierda: la carta se imprime y se
+       archiva en un cuaderno, así que ese borde se lo come la encuadernación
+       (o la perforadora). */
+    @page { margin: 62px 52px 88px 82px; }
     div, h1, h2, p, table, td, span { margin: 0; padding: 0; }
 
     body { font-family: 'Jost4', sans-serif; font-size: 10px; color: #2e1c10; }
     header, footer, main { display: block; }
 
     /* Pie repetido en todas las páginas */
-    footer { position: fixed; bottom: -58px; left: 0; right: 0; text-align: center;
+    footer { position: fixed; bottom: -68px; left: 0; right: 0; text-align: center;
              padding-top: 12px; border-top: 1px solid #e0cfb8; }
     footer .sedes { font-family: 'Jost5', sans-serif; font-size: 8px; letter-spacing: 0.10em;
                     color: #7d6449; text-transform: uppercase; }
@@ -69,19 +72,24 @@
     td.gap { width: 4%; }
 
     /* ── Ítem ── */
+    /* Todo alineado arriba: con descripción la fila crece, y la guía punteada y
+       el precio deben quedarse a la altura del NOMBRE, no centrarse en el alto
+       total. Los `margin-top`/`padding-top` de abajo los bajan hasta la línea
+       base del nombre. */
     table.item { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
-    table.item td { padding: 7px 0; vertical-align: middle; }
-    td.foto { width: 52px; }
-    td.foto img { width: 44px; height: 44px; border-radius: 8px; }
-    td.foto .sinfoto { width: 44px; height: 44px; background: #efe3d2; }
+    table.item td { padding: 8px 0; vertical-align: top; }
+    td.foto { width: 68px; }
+    td.foto img { width: 58px; height: 58px; border-radius: 9px; }
+    td.foto .sinfoto { width: 58px; height: 58px; background: #efe3d2; }
     td.nombre { font-family: 'CormSB', serif; font-size: 15px; color: #2e1c10; line-height: 1.15;
                 padding-left: 11px; padding-right: 6px; }
     .tag { font-family: 'Jost5', sans-serif; font-size: 6.5px; letter-spacing: 0.12em; color: #a98c6a;
            border: 1px solid #ddc9ac; padding: 1px 3px; text-transform: uppercase; white-space: nowrap; }
-    td.guia { vertical-align: bottom; }
-    td.guia div { border-bottom: 1px dotted #d6c2a6; height: 1px; margin-bottom: 6px; }
+    .desc { font-family: 'Jost4', sans-serif; font-size: 8.4px; line-height: 1.45; color: #8a7157;
+            margin-top: 4px; }
+    td.guia div { border-bottom: 1px dotted #d6c2a6; height: 1px; margin-top: 12px; }
     td.precio { font-family: 'Jost5', sans-serif; font-size: 12.5px; color: #3a2417;
-                text-align: right; white-space: nowrap; width: 1%; padding-left: 7px; }
+                text-align: right; white-space: nowrap; width: 1%; padding-left: 7px; padding-top: 9px; }
 </style>
 </head>
 <body>
@@ -144,6 +152,9 @@
                                             </td>
                                             <td class="nombre">
                                                 {{ $item->name }}@if ($item->caffeine_level === 0) <span class="tag">Sin cafe&iacute;na</span>@endif
+                                                @if ($item->description)
+                                                    <div class="desc">{{ $item->description }}</div>
+                                                @endif
                                             </td>
                                             <td class="guia"><div></div></td>
                                             <td class="precio">${{ number_format((float) $item->price, 0, ',', '.') }}</td>
