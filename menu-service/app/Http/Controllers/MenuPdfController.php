@@ -22,6 +22,14 @@ use Intervention\Image\ImageManager;
  */
 class MenuPdfController extends Controller
 {
+    /**
+     * Versión del diseño de la carta. SÚBELA cada vez que cambies
+     * `resources/views/pdf/carta.blade.php` o las fuentes: entra en el hash del
+     * archivo cacheado, y sin eso el servidor seguiría entregando el PDF viejo
+     * hasta que alguien editara un producto.
+     */
+    private const DISENO = 2;
+
     public function __invoke()
     {
         $categories = MenuCategory::where('is_active', true)
@@ -34,7 +42,8 @@ class MenuPdfController extends Controller
         $sedes = Sede::where('is_active', true)->orderBy('sort_order')->get();
 
         $version = md5(
-            $categories->map(fn ($cat) => $cat->id . ':' . $cat->updated_at
+            'd' . self::DISENO . '#'
+            . $categories->map(fn ($cat) => $cat->id . ':' . $cat->updated_at
                 . '|' . $cat->availableItems->map(fn ($i) => $i->id . ':' . $i->updated_at)->implode(','))->implode(';')
             . '#' . $sedes->map(fn ($s) => $s->id . ':' . $s->updated_at)->implode(',')
         );

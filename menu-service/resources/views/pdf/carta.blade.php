@@ -1,128 +1,158 @@
-{{-- Carta descargable en PDF (dompdf). Estética de la carta web: crema/chocolate/terracota. --}}
+{{-- Carta descargable en PDF (dompdf).
+
+     OJO — dompdf NO soporta flexbox ni `column-count`. El diseño de referencia
+     está hecho con ambos, así que aquí se reconstruye a base de tablas:
+       · las dos columnas son una tabla de 2 celdas con los ítems partidos
+         en dos mitades por categoría;
+       · la línea punteada entre nombre y precio es una celda con
+         `border-bottom: dotted` que se come el espacio sobrante.
+     Tampoco uses `* { ... }`: el selector universal rompe el pie fijo. --}}
+@php
+    $fonts = resource_path('pdf/fonts');
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <style>
-    @page { margin: 118px 52px 88px 52px; }
-    /* OJO (dompdf): nada de `* { ... }` (el selector universal rompe la
-       cabecera/pie fijos) y nada de margin en html/body (pisa los márgenes
-       de @page). Reset explícito solo sobre elementos de contenido: */
+    /* Cada variante se registra como su propia familia: dompdf empareja pesos y
+       estilos de forma caprichosa, y así se elige el archivo exacto. */
+    @font-face { font-family: 'CormSB';  font-style: normal; font-weight: normal; src: url("{{ $fonts }}/CormorantGaramond-SemiBold.ttf") format('truetype'); }
+    @font-face { font-family: 'CormSBI'; font-style: normal; font-weight: normal; src: url("{{ $fonts }}/CormorantGaramond-SemiBoldItalic.ttf") format('truetype'); }
+    @font-face { font-family: 'Jost4';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-400-Book.ttf") format('truetype'); }
+    @font-face { font-family: 'Jost5';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-500-Medium.ttf") format('truetype'); }
+    @font-face { font-family: 'Jost6';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-600-Semi.ttf") format('truetype'); }
+
+    @page { margin: 46px 46px 78px 46px; }
     div, h1, h2, p, table, td, span { margin: 0; padding: 0; }
 
-    body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #3E2A1C; }
-
-    /* dompdf no conoce las etiquetas semánticas de HTML5: forzar bloque */
+    body { font-family: 'Jost4', sans-serif; font-size: 10px; color: #2e1c10; }
     header, footer, main { display: block; }
 
-    /* Fondo crema a sangre completa, repetido en cada página (medidas fijas:
-       dompdf no estira con top+bottom; A4 = 794x1123px, se sobrepasa y recorta) */
-    .bg { position: fixed; top: -118px; left: -52px; width: 900px; height: 1400px; background: #F7F1E5; z-index: -10; }
-
-    /* Cabecera repetida en todas las páginas */
-    header { position: fixed; top: -92px; left: 0; right: 0; text-align: center; }
-    header img { width: 40px; height: 40px; }
-    .brand { font-family: 'DejaVu Serif', serif; font-size: 15px; font-weight: bold; letter-spacing: 7px; color: #3E2A1C; margin-top: 5px; }
-    .tagline { font-size: 7.4px; letter-spacing: 3.2px; text-transform: uppercase; color: #9A7055; margin-top: 4px; }
-
     /* Pie repetido en todas las páginas */
-    footer { position: fixed; bottom: -66px; left: 0; right: 0; text-align: center; color: #8A6F57; font-size: 7.8px; line-height: 1.65; padding-top: 8px; border-top: 0.6px solid #E2D6C6; }
-    footer .sede { font-weight: bold; color: #6B5744; }
+    footer { position: fixed; bottom: -58px; left: 0; right: 0; text-align: center;
+             padding-top: 12px; border-top: 1px solid #e0cfb8; }
+    footer .sedes { font-family: 'Jost5', sans-serif; font-size: 8px; letter-spacing: 0.10em;
+                    color: #7d6449; text-transform: uppercase; }
+    footer .fina  { font-family: 'Jost4', sans-serif; font-size: 7.6px; letter-spacing: 0.16em;
+                    color: #a98c6a; text-transform: uppercase; margin-top: 5px; }
 
-    /* Portada tipográfica de la primera página */
-    .titulo { text-align: center; margin: 4px 0 20px; }
-    .titulo .bienvenido { font-size: 8px; letter-spacing: 4.5px; text-transform: uppercase; color: #BC5A32; }
-    .titulo h1 { font-family: 'DejaVu Serif', serif; font-style: italic; font-size: 27px; font-weight: normal; color: #3E2A1C; margin-top: 6px; }
-    .titulo .nota { font-size: 8.2px; color: #9A7055; margin-top: 7px; }
+    /* ── Portada (solo primera página, va en el flujo) ── */
+    .portada { text-align: center; padding-bottom: 2px; }
+    .portada img { width: 46px; height: 46px; }
+    .marca    { font-family: 'Jost6', sans-serif; letter-spacing: 0.42em; font-size: 19px;
+                color: #3a2417; margin-top: 12px; padding-left: 0.42em; }
+    .lema     { font-family: 'Jost4', sans-serif; letter-spacing: 0.28em; font-size: 9px;
+                color: #9a7d5c; margin-top: 7px; padding-left: 0.28em; text-transform: uppercase; }
+    .filete   { width: 38px; height: 1px; background: #c9a87e; margin: 15px auto; }
+    .titulo   { font-family: 'CormSBI', serif; font-size: 42px; color: #3a2417; line-height: 1; }
+    .subtitulo{ font-family: 'Jost4', sans-serif; letter-spacing: 0.16em; font-size: 9px;
+                color: #a98c6a; margin-top: 11px; text-transform: uppercase; }
 
-    /* Categorías */
-    .cat { margin-top: 16px; }
-    .cat-head { margin-bottom: 6px; }
-    .cat-head h2 { font-family: 'DejaVu Serif', serif; font-style: italic; font-size: 15.5px; font-weight: bold; color: #3E2A1C; display: inline; }
-    .cat-head .linea { border-top: 1px solid rgba(62,42,28,0.18); margin-top: 5px; }
-    .cat-desc { font-size: 8.6px; color: #9A7055; margin: 2px 0 6px; }
+    /* ── Categoría ── */
+    /* `avoid` evita el título huérfano al pie de página con sus productos en la
+       siguiente. Aquí es seguro porque ninguna categoría es alta: con dos
+       columnas, incluso la más larga ocupa pocas filas. */
+    .cat { margin-top: 26px; page-break-inside: avoid; }
+    table.cat-head { width: 100%; border-collapse: collapse; margin-bottom: 9px; }
+    table.cat-head td { padding: 0; vertical-align: bottom; }
+    td.cat-name { font-family: 'CormSBI', serif; font-size: 22px; color: #9a4d2e; white-space: nowrap; width: 1%; }
+    td.cat-rule { padding-left: 13px; }
+    td.cat-rule div { border-top: 1px solid #e0cfb8; height: 1px; margin-bottom: 7px; }
 
-    /* Productos: una fila por producto */
-    table.items { width: 100%; border-collapse: collapse; }
-    table.items td { vertical-align: top; padding: 7px 0; border-bottom: 0.6px solid #E8DCCB; }
-    table.items tr { page-break-inside: avoid; }
-    td.foto { width: 46px; padding-right: 12px; }
-    td.foto img { width: 40px; height: 40px; }
-    td.foto .sinfoto { width: 40px; height: 40px; background: #EFE5D5; }
-    .nombre { font-family: 'DejaVu Serif', serif; font-style: italic; font-size: 12px; font-weight: bold; color: #BC5A32; }
-    .destacado { font-size: 7.6px; color: #6E8B4E; font-weight: bold; letter-spacing: 1px; }
-    .desc { font-size: 8.8px; color: #7A6551; line-height: 1.5; margin-top: 2.5px; max-width: 360px; }
-    td.precio { width: 76px; text-align: right; white-space: nowrap; }
-    .precio-num { font-family: 'DejaVu Serif', serif; font-size: 12px; font-weight: bold; color: #3E2A1C; }
+    /* ── Dos columnas ── */
+    /* Sin combinador `>`: la tabla lleva un <tbody> implícito y `table > tr`
+       no coincidiría — los td se quedarían en `vertical-align: middle` y la
+       columna más corta saldría centrada en vez de alineada arriba. */
+    table.cols { width: 100%; border-collapse: collapse; }
+    td.col { width: 48%; vertical-align: top; }
+    td.gap { width: 4%; }
+
+    /* ── Ítem ── */
+    table.item { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    table.item td { padding: 7px 0; vertical-align: middle; }
+    td.foto { width: 52px; }
+    td.foto img { width: 44px; height: 44px; border-radius: 8px; }
+    td.foto .sinfoto { width: 44px; height: 44px; background: #efe3d2; }
+    td.nombre { font-family: 'CormSB', serif; font-size: 15px; color: #2e1c10; line-height: 1.15;
+                padding-left: 11px; padding-right: 6px; }
+    .tag { font-family: 'Jost5', sans-serif; font-size: 6.5px; letter-spacing: 0.12em; color: #a98c6a;
+           border: 1px solid #ddc9ac; padding: 1px 3px; text-transform: uppercase; white-space: nowrap; }
+    td.guia { vertical-align: bottom; }
+    td.guia div { border-bottom: 1px dotted #d6c2a6; height: 1px; margin-bottom: 6px; }
+    td.precio { font-family: 'Jost5', sans-serif; font-size: 12.5px; color: #3a2417;
+                text-align: right; white-space: nowrap; width: 1%; padding-left: 7px; }
 </style>
 </head>
 <body>
-    <div class="bg"></div>
-
-    <header>
-        @if (is_file($logo))
-            <img src="{{ $logo }}" alt="">
-        @endif
-        <div class="brand">LA MECA</div>
-        <div class="tagline">Café de origen &middot; tostado en casa</div>
-    </header>
-
     <footer>
         @if ($sedes->isNotEmpty())
-            <div>
+            <div class="sedes">
                 @foreach ($sedes as $sede)
-                    <span class="sede">{{ $sede->name }}</span>@if ($sede->address) &mdash; {{ $sede->address }}@endif @if ($sede->whatsapp_phone) &middot; WhatsApp +{{ $sede->whatsapp_phone }}@endif
+                    {{ $sede->name }}@if ($sede->whatsapp_phone) &middot; WhatsApp +{{ $sede->whatsapp_phone }}@endif
                     @if (! $loop->last) &nbsp;&nbsp;|&nbsp;&nbsp; @endif
                 @endforeach
             </div>
         @endif
-        <div>Precios en pesos colombianos. Carta vigente a {{ $fecha }} &mdash; pueden variar sin previo aviso.</div>
+        <div class="fina">La Meca &middot; Caf&eacute; de origen &middot; Precios en pesos colombianos &middot; Carta vigente a {{ $fecha }}</div>
     </footer>
 
     <main>
-        <div class="titulo">
-            <div class="bienvenido">Bienvenido</div>
-            <h1>Nuestra Carta</h1>
-            <div class="nota">Tostado en casa, servido con calma</div>
+        <div class="portada">
+            @if (is_file($logo))
+                <img src="{{ $logo }}" alt="">
+            @endif
+            <div class="marca">LA MECA</div>
+            <div class="lema">Caf&eacute; de origen &middot; Tostado en casa</div>
+            <div class="filete"></div>
+            <div class="titulo">Nuestra Carta</div>
+            <div class="subtitulo">Tostado en casa, servido con calma</div>
         </div>
 
         @foreach ($categories as $cat)
+            @php
+                // Partir en dos mitades: la izquierda se queda con la de más si
+                // el total es impar, que es como reparte el diseño.
+                $items = $cat->availableItems->values();
+                $corte = (int) ceil($items->count() / 2);
+                $columnas = [$items->take($corte), $items->slice($corte)];
+            @endphp
             <div class="cat">
-                <div class="cat-head">
-                    <h2>{{ $cat->name }}</h2>
-                    <div class="linea"></div>
-                    @if ($cat->description)
-                        <div class="cat-desc">{{ $cat->description }}</div>
-                    @endif
-                </div>
+                <table class="cat-head">
+                    <tr>
+                        <td class="cat-name">{{ $cat->name }}</td>
+                        <td class="cat-rule"><div></div></td>
+                    </tr>
+                </table>
 
-                <table class="items">
-                    @foreach ($cat->availableItems as $item)
-                        <tr>
-                            <td class="foto">
-                                @if (! empty($thumbs[$item->id]))
-                                    <img src="{{ $thumbs[$item->id] }}" alt="">
-                                @else
-                                    <div class="sinfoto"></div>
-                                @endif
+                <table class="cols">
+                    <tr>
+                        @foreach ($columnas as $ci => $columna)
+                            @if ($ci === 1)
+                                <td class="gap"></td>
+                            @endif
+                            <td class="col">
+                                @foreach ($columna as $item)
+                                    <table class="item">
+                                        <tr>
+                                            <td class="foto">
+                                                @if (! empty($thumbs[$item->id]))
+                                                    <img src="{{ $thumbs[$item->id] }}" alt="">
+                                                @else
+                                                    <div class="sinfoto"></div>
+                                                @endif
+                                            </td>
+                                            <td class="nombre">
+                                                {{ $item->name }}@if ($item->caffeine_level === 0) <span class="tag">Sin cafe&iacute;na</span>@endif
+                                            </td>
+                                            <td class="guia"><div></div></td>
+                                            <td class="precio">${{ number_format((float) $item->price, 0, ',', '.') }}</td>
+                                        </tr>
+                                    </table>
+                                @endforeach
                             </td>
-                            <td>
-                                <span class="nombre">{{ $item->name }}</span>
-                                @if ($item->is_featured)
-                                    <span class="destacado">&nbsp;&#9733; DESTACADO</span>
-                                @endif
-                                @if ($item->caffeine_level === 0)
-                                    <span class="destacado" style="color:#9A7055;">&nbsp;SIN CAFE&Iacute;NA</span>
-                                @endif
-                                @if ($item->description)
-                                    <div class="desc">{{ $item->description }}</div>
-                                @endif
-                            </td>
-                            <td class="precio">
-                                <span class="precio-num">${{ number_format((float) $item->price, 0, ',', '.') }}</span>
-                            </td>
-                        </tr>
-                    @endforeach
+                        @endforeach
+                    </tr>
                 </table>
             </div>
         @endforeach
