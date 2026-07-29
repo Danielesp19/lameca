@@ -362,25 +362,11 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
           {item.name}
         </h3>
 
-        {/* Descripción: solo en las tarjetas "premium" (Destacados/Otros). En el
-            resto, un espaciador invisible empuja precio/botón al fondo igual,
-            para que todas las de una fila queden alineadas aunque el nombre
-            ocupe 1 o 2 líneas. */}
-        {premium && item.description ? (
-          <p style={{
-            fontSize: 11.5, fontWeight: 300, lineHeight: 1.4,
-            margin: "4px 0 0", flex: 1,
-            color: "rgba(247,241,229,0.72)",
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical" as const,
-          }}>
-            {item.description}
-          </p>
-        ) : (
-          <div style={{ flex: 1, minHeight: 4 }} />
-        )}
+        {/* Ninguna tarjeta muestra descripción — la descripción completa vive en
+            el modal del producto. Este espaciador con flex:1 empuja precio y
+            botón al fondo, para que todas las de una fila queden alineadas
+            aunque el nombre ocupe 1 o 2 líneas. */}
+        <div style={{ flex: 1, minHeight: 4 }} />
 
         {/* Fila de precio con etiqueta + "Ver más →" abajo, como el diseño */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
