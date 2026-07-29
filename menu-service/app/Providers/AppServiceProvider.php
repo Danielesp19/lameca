@@ -33,12 +33,18 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
-        // Minteo de sesiones de mesa (al escanear el QR). Por IP: frena que
-        // alguien desde fuera spamee el endpoint para generar sesiones en masa.
+        // Minteo de sesiones de mesa (al escanear el QR).
+        // La llave es la MESA, no la IP: en el local todos los comensales salen
+        // por la misma IP pública del WiFi, y en datos móviles el operador usa
+        // CGNAT. Limitando por IP, el cliente 11 del minuto recibía 429 y no
+        // podía pedir. El techo por IP se mantiene, pero holgado: ya no estorba
+        // al uso real y sigue frenando la inundación desde fuera.
         RateLimiter::for('table-sessions', function (Request $request) {
+            $token = substr((string) $request->route('token'), 0, 64);
+
             return [
-                Limit::perMinute(10)->by($request->ip()),
-                Limit::perHour(120)->by($request->ip()),
+                Limit::perMinute(20)->by('mesa:' . $token),
+                Limit::perMinute(200)->by('ip:' . $request->ip()),
             ];
         });
 

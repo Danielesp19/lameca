@@ -196,11 +196,38 @@ levanta solo. Prueba desde el celular: `http://2.25.87.113/menu` y `/admin`.
 6. Cerrar el 8080: `ufw delete allow 8080/tcp`.
 7. Imprimir los QRs de mesa (ahora sí, con dominio).
 
+## Gzip para la API (ajuste único en el servidor — NO viaja por git)
+
+Ubuntu trae `gzip on;` en `/etc/nginx/nginx.conf`, pero con la línea
+`gzip_types` **comentada**: solo comprime `text/html`. Por eso la carta sí
+comprime (lo hace Next por su cuenta) y `/api/menu` viajaba en crudo — 16 KB
+por cada escaneo de QR pudiendo ser ~3 KB, que en datos móviles se siente.
+
+Descomenta en `/etc/nginx/nginx.conf` las líneas `gzip_vary on;` y
+`gzip_types ...` (la lista que trae por defecto ya incluye
+`application/json`), y recarga:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+Verificación — debe imprimir `content-encoding: gzip`:
+
+```bash
+curl -sS -o /dev/null -D - -H "Accept-Encoding: gzip" \
+  https://api.menulameca.com/api/menu | grep -i content-encoding
+```
+
 ## Actualizaciones futuras (cada vez que subamos código)
 
 ```bash
 cd /var/www/lameca && git pull
 cd menu-service && composer install --no-dev && php artisan migrate --force \
   && php artisan config:cache && php artisan route:cache && php artisan view:cache
+systemctl reload php8.3-fpm
 cd ../frontend && npm ci && npm run build && pm2 restart lameca-front
 ```
+
+> El `reload` de php-fpm hace que opcache suelte el código viejo. Sin él, un
+> cambio en PHP puede tardar en verse (o no verse) según la configuración de
+> `opcache.validate_timestamps` del servidor.
