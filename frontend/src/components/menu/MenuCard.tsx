@@ -8,8 +8,9 @@ const CHOCO = "#3E2A1C";
 const TERRA = "#BC5A32";
 const CARD  = "#FFFCF5";
 
-// Paleta "premium" — solo para tarjetas dentro de la sección Destacados
-// (prop `premium`; el mismo producto en su categoría real se ve normal).
+// Paleta "premium" — para tarjetas dentro de secciones con fondo oscuro
+// (Destacados y Otros; prop `premium`; el mismo producto en su categoría
+// normal se ve con la paleta clara de siempre).
 // Misma gama oscura/neutra del modal "Nuestras sedes" (#1a120c/#F4EEE3);
 // el nombre del producto va en dorado, el resto casi sin dorado.
 const PREM_LIGHT = "#F4EEE3";
@@ -62,9 +63,9 @@ interface Props {
   hot?: boolean;
   /** Posición en la lista → retraso de la entrada en cascada */
   index?: number;
-  /** Tarjeta dentro de la sección Destacados → paleta oscura/dorada.
-   *  Es de la SECCIÓN, no del producto: el mismo ítem en su categoría real
-   *  se sigue viendo con los colores normales. */
+  /** Tarjeta dentro de una sección con fondo oscuro (Destacados u Otros)
+   *  → paleta oscura/dorada. Es de la SECCIÓN, no del producto: el mismo
+   *  ítem en su categoría real se sigue viendo con los colores normales. */
   premium?: boolean;
 }
 
@@ -361,9 +362,10 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
           {item.name}
         </h3>
 
-        {/* Descripción: solo en las tarjetas de Destacados. En el resto, un
-            espaciador invisible empuja precio/botón al fondo igual, para que
-            todas las de una fila queden alineadas aunque el nombre ocupe 1 o 2 líneas. */}
+        {/* Descripción: solo en las tarjetas "premium" (Destacados/Otros). En el
+            resto, un espaciador invisible empuja precio/botón al fondo igual,
+            para que todas las de una fila queden alineadas aunque el nombre
+            ocupe 1 o 2 líneas. */}
         {premium && item.description ? (
           <p style={{
             fontSize: 11.5, fontWeight: 300, lineHeight: 1.4,

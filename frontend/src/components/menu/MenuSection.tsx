@@ -365,7 +365,9 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
             // desvanecido suave en vez de saltar de golpe
             <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
               {groups.map((cat, gi) => {
-                const isFeatured = cat.slug === "destacados";
+                // "otros" comparte la misma vestimenta oscura que "destacados"
+                // (fondo, header claro y tarjetas premium).
+                const isFeatured = cat.slug === "destacados" || cat.slug === "otros";
                 const showHeader = activeCategory === "todos" || isFeatured;
                 const isHot = cat.name.toLowerCase().includes("calient");
                 return (
@@ -442,7 +444,11 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                       </div>
                     )
                   ) : (
-                    <p style={{ fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
+                    // Red de seguridad: el backend ya no manda categorías vacías,
+                    // así que esto no debería verse. Si alguna vez llega una (caché
+                    // viejo, backend sin actualizar), al menos el texto se lee —
+                    // sin el color explícito quedaba oscuro sobre el fondo oscuro.
+                    <p style={{ fontSize: 14, opacity: 0.5, fontStyle: "italic", color: isFeatured ? PREM_CREAM : CHOCO }}>
                       Pronto habrá novedades aquí.
                     </p>
                   )}

@@ -15,13 +15,20 @@ class MenuController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $menu = $categories->map(fn ($cat) => [
-            'id'          => $cat->id,
-            'name'        => $cat->name,
-            'slug'        => $cat->slug,
-            'description' => $cat->description,
-            'items'       => $cat->availableItems->map(fn ($item) => $this->formatItem($item))->values(),
-        ])->values()->all();
+        // Las categorías sin productos disponibles no salen en la carta: vacías
+        // solo son ruido para el cliente. Aplica a todas, pero se nota sobre todo
+        // en "Otros" —el cajón de huérfanos—, que pasa vacío la mayor parte del
+        // tiempo. Filtrar aquí las quita también de las pestañas del frontend,
+        // que se arman de esta misma lista.
+        $menu = $categories
+            ->filter(fn ($cat) => $cat->availableItems->isNotEmpty())
+            ->map(fn ($cat) => [
+                'id'          => $cat->id,
+                'name'        => $cat->name,
+                'slug'        => $cat->slug,
+                'description' => $cat->description,
+                'items'       => $cat->availableItems->map(fn ($item) => $this->formatItem($item))->values(),
+            ])->values()->all();
 
         // ── Destacados (categoría sintética) ────────────────────────────────────
         // Reúne los productos marcados como destacados (la "promoción del día") y los
