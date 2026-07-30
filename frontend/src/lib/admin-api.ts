@@ -13,11 +13,16 @@ const BASE_DIRECT = `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:
 // Al configurar HTTPS y poner NEXT_PUBLIC_BACKEND_URL=https://… vuelve solo al modo directo.
 const DIRECT_UPLOADS = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "").startsWith("https://");
 
+/** Presentación de la categoría en la carta pública. */
+export type DisplayMode = "grid" | "vertical" | "horizontal";
+
 export interface AdminCategory {
   id: number;
   name: string;
   slug: string;
   description: string | null;
+  /** "grid" = como siempre · "vertical" = sección de cierre oscura de la carta. */
+  display_mode?: DisplayMode;
   sort_order: number;
   is_active: boolean;
   items_count?: number;

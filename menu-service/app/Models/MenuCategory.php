@@ -7,7 +7,11 @@ use Illuminate\Support\Str;
 
 class MenuCategory extends Model
 {
-    protected $fillable = ['name', 'slug', 'description', 'sort_order', 'is_active'];
+    /** Presentación en la carta web. Ver la migración add_display_mode.
+     *  "horizontal": vitrina de cierre con scroll de lado (p.ej. Métodos). */
+    public const MODOS = ['grid', 'vertical', 'horizontal'];
+
+    protected $fillable = ['name', 'slug', 'description', 'display_mode', 'sort_order', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',

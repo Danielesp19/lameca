@@ -5,7 +5,11 @@ import { getSedes } from "@/lib/orders-api";
 import { localPhone, type SedeInfo } from "@/lib/table-session";
 
 const CREAM = "#F7F1E5";
-const DARK  = "#241710";
+// Un poco más oscuro que el negro con el que terminan las vitrinas (Cafés de
+// origen, Métodos): así el footer nunca se ve más claro que lo de arriba —
+// con el mismo tono exacto, la viñeta de la foto seguía dejando una costura
+// perceptible justo en el borde.
+const DARK  = "#060402";
 
 // ── Redes sociales del local ──────────────────────────────────────────────────
 // TODO(cliente): reemplazar Facebook/TikTok por los enlaces reales cuando existan.

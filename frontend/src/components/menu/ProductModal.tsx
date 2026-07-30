@@ -237,7 +237,7 @@ export default function ProductModal({ item, onClose }: Props) {
                     fontSize: 25, whiteSpace: "nowrap", color: CHOCO,
                     letterSpacing: "-0.01em",
                   }}>
-                    ${item.price.toLocaleString("es-CO")}
+                    {item.price.toLocaleString("es-CO")}
                   </span>
                 </div>
 

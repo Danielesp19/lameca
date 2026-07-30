@@ -43,11 +43,19 @@ export function caffeineInfo(level: number | null | undefined): CaffeineInfo | n
   }
 }
 
+/** Cómo se presenta la categoría en la carta. Ver la migración add_display_mode. */
+export type DisplayMode = "grid" | "vertical" | "horizontal";
+
 export interface MenuCategory {
   id: number;
   name: string;
   slug: string;
   description: string | null;
+  /** "vertical" → vitrina de cierre vertical (fondo con foto pineada).
+   *  "horizontal" → vitrina de cierre con scroll de lado (misma idea, tumbada).
+   *  Ambas se pintan al final de la carta, antes del footer.
+   *  Opcional en el tipo: un backend sin desplegar aún no manda el campo. */
+  display_mode?: DisplayMode;
   items: MenuItem[];
 }
 

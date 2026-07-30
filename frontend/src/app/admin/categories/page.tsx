@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   adminGetCategories, adminCreateCategory,
   adminUpdateCategory, adminDeleteCategory, adminReorderCategories, AdminCategory,
-  adminGetItems, adminReorderItems, AdminItem,
+  adminGetItems, adminReorderItems, AdminItem, DisplayMode,
 } from "@/lib/admin-api";
 
 // Categoría protegida: destino de productos huérfanos. No se puede
@@ -28,6 +28,7 @@ export default function CategoriesPage() {
   const [creating, setCreating] = useState(false);
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");
+  const [formMode, setFormMode] = useState<DisplayMode>("grid");
   const [saving,   setSaving]   = useState(false);
   const [formErr,  setFormErr]  = useState("");
   const [reordering, setReordering] = useState(false);
@@ -73,8 +74,8 @@ export default function CategoriesPage() {
     }
   }
 
-  function startCreate() { setEditing(null); setFormName(""); setFormDesc(""); setFormErr(""); setCreating(true); }
-  function startEdit(c: AdminCategory) { setCreating(false); setEditing(c); setFormName(c.name); setFormDesc(c.description ?? ""); setFormErr(""); }
+  function startCreate() { setEditing(null); setFormName(""); setFormDesc(""); setFormMode("grid"); setFormErr(""); setCreating(true); }
+  function startEdit(c: AdminCategory) { setCreating(false); setEditing(c); setFormName(c.name); setFormDesc(c.description ?? ""); setFormMode(c.display_mode ?? "grid"); setFormErr(""); }
   function cancel() { setCreating(false); setEditing(null); }
 
   async function save(e: FormEvent) {
@@ -82,10 +83,10 @@ export default function CategoriesPage() {
     setSaving(true); setFormErr("");
     try {
       if (editing) {
-        const updated = await adminUpdateCategory(editing.id, { name: formName, description: formDesc || null });
+        const updated = await adminUpdateCategory(editing.id, { name: formName, description: formDesc || null, display_mode: formMode });
         setCats(prev => prev.map(c => c.id === editing.id ? { ...c, ...updated } : c));
       } else {
-        const created = await adminCreateCategory({ name: formName, description: formDesc || null });
+        const created = await adminCreateCategory({ name: formName, description: formDesc || null, display_mode: formMode });
         setCats(prev => [...prev, created]);
       }
       cancel();
@@ -167,6 +168,18 @@ export default function CategoriesPage() {
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Descripción</label>
               <input style={input} value={formDesc} onChange={e => setFormDesc(e.target.value)} />
             </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Presentación</label>
+              <select style={input} value={formMode} onChange={e => setFormMode(e.target.value as DisplayMode)}>
+                <option value="grid">Normal (en la lista del menú)</option>
+                <option value="vertical">Vertical (sección de cierre, fondo oscuro)</option>
+              </select>
+              <p style={{ fontSize: 11, color: "#9A7055", marginTop: 4 }}>
+                {formMode === "vertical"
+                  ? "No sale como pestaña: aparece al final de la carta y sus productos van apareciendo al bajar. La descripción se usa como texto de entrada."
+                  : "Aparece como pestaña y en el listado, como el resto."}
+              </p>
+            </div>
           </div>
           {formErr && <p style={{ color: "#DC2626", fontSize: 13, marginBottom: 12 }}>{formErr}</p>}
           <div style={{ display: "flex", gap: 10 }}>
@@ -243,6 +256,8 @@ export default function CategoriesPage() {
                       <button onClick={() => startEdit(cat)} style={{ fontSize: 13, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
                       {cat.slug === OTROS_SLUG ? (
                         <span style={{ fontSize: 12, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
+                      ) : (cat.display_mode === "vertical" || cat.display_mode === "horizontal") ? (
+                        <span style={{ fontSize: 12, color: "#B0A090" }} title="Tiene vitrina especial en la carta: no se puede eliminar (sí se puede mover y editar)">Protegida</span>
                       ) : (
                         <button onClick={() => del(cat)} style={{ fontSize: 13, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
                       )}

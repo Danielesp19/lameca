@@ -184,7 +184,7 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
             className="text-2xl font-bold flex-shrink-0 tabular-nums"
             style={{ fontFamily: "var(--font-serif)", color: "#C8A97E" }}
           >
-            ${item.price.toLocaleString("es-CO")}
+            {item.price.toLocaleString("es-CO")}
           </span>
         </motion.div>
 

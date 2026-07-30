@@ -368,13 +368,10 @@ function MenuCard({ item, isActive, onSelect, cardKey, hot = false, index = 0, p
             aunque el nombre ocupe 1 o 2 líneas. */}
         <div style={{ flex: 1, minHeight: 4 }} />
 
-        {/* Fila de precio con etiqueta + "Ver más →" abajo, como el diseño */}
+        {/* Precio: solo el número, sin "$" ni etiqueta. */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
-          <span style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: premium ? "rgba(247,241,229,0.55)" : "rgba(62,42,28,0.5)" }}>
-            Precio
-          </span>
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: premium ? 18 : 16, color: premium ? PREM_GOLD : CHOCO, letterSpacing: "-0.01em" }}>
-            ${item.price.toLocaleString("es-CO")}
+            {item.price.toLocaleString("es-CO")}
           </span>
         </div>
 

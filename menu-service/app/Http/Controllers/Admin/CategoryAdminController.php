@@ -24,10 +24,11 @@ class CategoryAdminController extends Controller
         // validación, una categoría repetida llegaba cruda a la BD y salía
         // como error 500 en vez de un mensaje claro.
         $data = $request->validate([
-            'name'        => 'required|string|max:255|unique:menu_categories,name',
-            'description' => 'nullable|string',
-            'sort_order'  => 'nullable|integer',
-            'is_active'   => 'nullable|boolean',
+            'name'         => 'required|string|max:255|unique:menu_categories,name',
+            'description'  => 'nullable|string',
+            'display_mode' => ['nullable', Rule::in(MenuCategory::MODOS)],
+            'sort_order'   => 'nullable|integer',
+            'is_active'    => 'nullable|boolean',
         ], [
             'name.unique' => 'Ya existe una categoría con ese nombre.',
         ]);
@@ -44,10 +45,11 @@ class CategoryAdminController extends Controller
         }
 
         $data = $request->validate([
-            'name'        => ['sometimes', 'string', 'max:255', Rule::unique('menu_categories', 'name')->ignore($category->id)],
-            'description' => 'nullable|string',
-            'sort_order'  => 'nullable|integer',
-            'is_active'   => 'nullable|boolean',
+            'name'         => ['sometimes', 'string', 'max:255', Rule::unique('menu_categories', 'name')->ignore($category->id)],
+            'description'  => 'nullable|string',
+            'display_mode' => ['nullable', Rule::in(MenuCategory::MODOS)],
+            'sort_order'   => 'nullable|integer',
+            'is_active'    => 'nullable|boolean',
         ], [
             'name.unique' => 'Ya existe una categoría con ese nombre.',
         ]);
@@ -64,6 +66,15 @@ class CategoryAdminController extends Controller
     {
         if ($category->slug === self::OTROS_SLUG) {
             return response()->json(['message' => 'La categoría "Otros" no se puede eliminar.'], 422);
+        }
+
+        // Las categorías con vitrina especial (display_mode "vertical" u
+        // "horizontal") tienen su propio diseño en la carta (fondo con foto,
+        // revelado al hacer scroll) — borrarlas por accidente se lleva ese
+        // trabajo. Sí se pueden mover y renombrar/editar normalmente, solo no
+        // eliminar.
+        if (in_array($category->display_mode, ['vertical', 'horizontal'], true)) {
+            return response()->json(['message' => 'Esta categoría tiene una vitrina especial y no se puede eliminar.'], 422);
         }
 
         $otros = MenuCategory::where('slug', self::OTROS_SLUG)->first();

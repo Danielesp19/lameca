@@ -6,6 +6,8 @@ import { MenuItem, MenuCategory } from "@/lib/menu-api";
 import { useCart } from "@/context/CartContext";
 import MenuCard from "./MenuCard";
 import ProductModal from "./ProductModal";
+import VerticalShowcase from "./VerticalShowcase";
+import HorizontalShowcase from "./HorizontalShowcase";
 
 // Paleta rediseño v2: crema cálida + chocolate + terracota + oliva
 const BG     = "#F7F1E5";
@@ -27,14 +29,22 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   const sectionRef    = useRef<HTMLElement>(null);
   const listRef       = useRef<HTMLDivElement>(null);
 
+  // Las categorías "vertical"/"horizontal" no son una parada más de la carta:
+  // son su cierre. Se sacan de los chips y del listado normal, y se pintan al
+  // final de la página (en "Todos" y también con un filtro activo), justo
+  // antes del footer — las "horizontal" primero, luego las "vertical".
+  const normales    = categories.filter(c => c.display_mode !== "vertical" && c.display_mode !== "horizontal");
+  const horizontales = categories.filter(c => c.display_mode === "horizontal");
+  const verticales  = categories.filter(c => c.display_mode === "vertical");
+
   const chips = [
     { id: "todos" as number | "todos", name: "Todos" },
-    ...categories.map(c => ({ id: c.id as number | "todos", name: c.name })),
+    ...normales.map(c => ({ id: c.id as number | "todos", name: c.name })),
   ];
 
   const groups = activeCategory === "todos"
-    ? categories
-    : categories.filter(c => c.id === activeCategory);
+    ? normales
+    : normales.filter(c => c.id === activeCategory);
 
   // Find the card whose center is closest to the viewport midpoint (both axes —
   // the rows also scroll horizontally). SOLO lee posiciones: cero escrituras de
@@ -135,6 +145,12 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     const imgs: string[] = [];
     const vids: string[] = [];
     for (const cat of categories) {
+      // Las secciones verticales viven al final de la página y sus fotos son
+      // grandes: precargarlas castigaría la carga inicial para algo que nadie
+      // ve hasta bajar del todo. Van con loading="lazy" en su componente.
+      // El filtro va DENTRO del efecto a propósito: hacerlo fuera crearía un
+      // array nuevo en cada render y el efecto se relanzaría sin parar.
+      if (cat.display_mode === "vertical") continue;
       for (const it of cat.items) {
         if (it.video_url) {
           vids.push(it.video_url);
@@ -277,12 +293,20 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
         {/* ── Sticky category chips ──
             Fondo 100% opaco: cualquier transparencia aquí "titila" cuando el
-            contenido pasa por detrás al scrollear. Sin backdrop-filter (jank). */}
+            contenido pasa por detrás al scrollear. Sin backdrop-filter (jank).
+            transform:translateZ(0) + willChange:transform: promueve la barra
+            a su propia capa de composición. Sin esto, en algunos celulares
+            (sobre todo con el ancestro #menu en overflow-x:clip, que ya sabemos
+            que interactúa mal con sticky) el navegador repinta la barra en el
+            hilo principal en cada frame de scroll en vez de dejárselo al
+            compositor, y eso se ve como una vibración/parpadeo de la barra. */}
         <div style={{
           position: "sticky", top: 0, zIndex: 8,
           background: BG,
           borderBottom: "1px solid rgba(62,42,28,0.08)",
           boxShadow: "0 8px 18px -14px rgba(62,42,28,0.28)",
+          transform: "translateZ(0)",
+          willChange: "transform",
         }}>
           <div
             className="cat-scroll"
@@ -317,8 +341,13 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           </div>
         </div>
 
-        {/* ── Productos: grid 2 columnas ── */}
-        <div ref={listRef} style={{ maxWidth: 480, margin: "0 auto", padding: "6px 22px 110px" }}>
+        {/* ── Productos: grid 2 columnas ──
+            Sin padding-bottom (no 110px como antes): ese aire de sobra era
+            para el botón de PDF y el texto de cierre que ya no existen. Las
+            vitrinas oscuras (Métodos, Cafés de origen) ya traen su propio
+            padding inferior, así que el footer se integra justo después sin
+            franja clara de por medio. */}
+        <div ref={listRef} style={{ maxWidth: 480, margin: "0 auto", padding: "6px 22px 0" }}>
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 26 }}>
               {Array.from({ length: 4 }).map((_, i) => (
@@ -361,13 +390,16 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
               </button>
             </div>
           ) : (
-            // key + fadeUp: al cambiar de categoría el contenido entra con un
-            // desvanecido suave en vez de saltar de golpe
+            <>
+            {/* key + fadeUp: al cambiar de categoría el contenido entra con un
+                desvanecido suave en vez de saltar de golpe */}
             <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
               {groups.map((cat, gi) => {
-                // "otros" comparte la misma vestimenta oscura que "destacados"
-                // (fondo, header claro y tarjetas premium).
-                const isFeatured = cat.slug === "destacados" || cat.slug === "otros";
+                // "Otros" vuelve a verse como una categoría normal (clara),
+                // igual que Bebidas Frías/Calientes — solo Destacados
+                // conserva la vestimenta oscura (fondo, header claro y
+                // tarjetas premium).
+                const isFeatured = cat.slug === "destacados";
                 const showHeader = activeCategory === "todos" || isFeatured;
                 const isHot = cat.name.toLowerCase().includes("calient");
                 return (
@@ -455,11 +487,20 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 </div>
                 );
               })}
-
-              <p style={{ textAlign: "center", fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", opacity: 0.4, margin: "44px 0 0" }}>
-                LA MECA · Café de origen
-              </p>
             </div>
+
+            {/* Fuera del div con `key={activeCategory}`: ese div se remonta al
+                cambiar de pestaña, y aquí eso relanzaría la animación de entrada
+                de toda la sección cada vez. El cierre de la carta va después.
+                Horizontales antes que verticales (p.ej. Métodos antes de
+                Cafés de origen). */}
+            {horizontales.map(cat => (
+              <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
+            ))}
+            {verticales.map(cat => (
+              <VerticalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
+            ))}
+            </>
           )}
         </div>
       </section>

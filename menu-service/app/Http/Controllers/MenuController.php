@@ -23,11 +23,12 @@ class MenuController extends Controller
         $menu = $categories
             ->filter(fn ($cat) => $cat->availableItems->isNotEmpty())
             ->map(fn ($cat) => [
-                'id'          => $cat->id,
-                'name'        => $cat->name,
-                'slug'        => $cat->slug,
-                'description' => $cat->description,
-                'items'       => $cat->availableItems->map(fn ($item) => $this->formatItem($item))->values(),
+                'id'           => $cat->id,
+                'name'         => $cat->name,
+                'slug'         => $cat->slug,
+                'description'  => $cat->description,
+                'display_mode' => $cat->display_mode,
+                'items'        => $cat->availableItems->map(fn ($item) => $this->formatItem($item))->values(),
             ])->values()->all();
 
         // ── Destacados (categoría sintética) ────────────────────────────────────
@@ -40,11 +41,12 @@ class MenuController extends Controller
 
         if ($featured->isNotEmpty()) {
             array_unshift($menu, [
-                'id'          => -1, // id sintético; no choca con categorías reales
-                'name'        => 'Destacados',
-                'slug'        => 'destacados',
-                'description' => 'La promoción del día',
-                'items'       => $featured->map(fn ($item) => $this->formatItem($item))->values(),
+                'id'           => -1, // id sintético; no choca con categorías reales
+                'name'         => 'Destacados',
+                'slug'         => 'destacados',
+                'description'  => 'La promoción del día',
+                'display_mode' => 'grid',
+                'items'        => $featured->map(fn ($item) => $this->formatItem($item))->values(),
             ]);
         }
 
