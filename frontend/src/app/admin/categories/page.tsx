@@ -173,10 +173,13 @@ export default function CategoriesPage() {
               <select style={input} value={formMode} onChange={e => setFormMode(e.target.value as DisplayMode)}>
                 <option value="grid">Normal (en la lista del menú)</option>
                 <option value="vertical">Vertical (sección de cierre, fondo oscuro)</option>
+                <option value="horizontal">Horizontal (sección de cierre, scroll de lado)</option>
               </select>
               <p style={{ fontSize: 11, color: "#9A7055", marginTop: 4 }}>
                 {formMode === "vertical"
                   ? "No sale como pestaña: aparece al final de la carta y sus productos van apareciendo al bajar. La descripción se usa como texto de entrada."
+                  : formMode === "horizontal"
+                  ? "No sale como pestaña: aparece al final de la carta con fondo oscuro, mostrando un producto a la vez con flechitas para pasar de lado."
                   : "Aparece como pestaña y en el listado, como el resto."}
               </p>
             </div>
