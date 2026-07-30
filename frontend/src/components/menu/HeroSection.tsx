@@ -139,7 +139,13 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
             ref={videoRef}
             muted
             playsInline
-            preload="metadata"
+            // "auto" (no "metadata"): el play() lo dispara JS (más abajo, al
+            // entrar en viewport), no el atributo autoPlay — con solo
+            // "metadata" el navegador no empieza a bajar el video de verdad
+            // hasta ese primer play(), y se nota como un tartamudeo/cuadro en
+            // negro justo cuando se levanta el splash. Con "auto" ya viene
+            // precargado desde antes, aprovechando los ~3.8s del splash.
+            preload="auto"
             aria-hidden="true"
             tabIndex={-1}
             className="hero-bg-media"
