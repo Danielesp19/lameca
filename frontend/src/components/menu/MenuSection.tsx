@@ -30,12 +30,20 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   const listRef       = useRef<HTMLDivElement>(null);
 
   // Las categorías "vertical"/"horizontal" no son una parada más de la carta:
-  // son su cierre. Se sacan de los chips y del listado normal, y se pintan al
-  // final de la página (en "Todos" y también con un filtro activo), justo
-  // antes del footer — las "horizontal" primero, luego las "vertical".
+  // son su cierre. Se sacan de los chips y del listado normal — "vertical"
+  // (Cafés de origen) se pinta al final de la página, justo antes del
+  // footer; "horizontal" (Métodos) se pinta fija justo después de
+  // Destacados (ver más abajo), no al final.
   const normales    = categories.filter(c => c.display_mode !== "vertical" && c.display_mode !== "horizontal");
   const horizontales = categories.filter(c => c.display_mode === "horizontal");
   const verticales  = categories.filter(c => c.display_mode === "vertical");
+
+  // Orden fijo en "Todos": Destacados, luego Métodos (ver render), luego el
+  // resto del menú. Destacados es sintética (id -1, armada en el backend) y
+  // siempre viene primera en `categories`, pero se separa explícitamente acá
+  // para poder insertar Métodos justo después sin depender de ese orden.
+  const destacadosGroup = normales.filter(c => c.slug === "destacados");
+  const restoNormales   = normales.filter(c => c.slug !== "destacados");
 
   const chips = [
     { id: "todos" as number | "todos", name: "Todos" },
@@ -392,111 +400,40 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           ) : (
             <>
             {/* key + fadeUp: al cambiar de categoría el contenido entra con un
-                desvanecido suave en vez de saltar de golpe */}
+                desvanecido suave en vez de saltar de golpe.
+                Destacados va SOLO (Métodos se inserta justo después, ver
+                abajo); el resto del menú se pinta más abajo, después de
+                Métodos — a pedido explícito, con posición fija en la página
+                sin importar sort_order. */}
             <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
-              {groups.map((cat, gi) => {
-                // "Otros" vuelve a verse como una categoría normal (clara),
-                // igual que Bebidas Frías/Calientes — solo Destacados
-                // conserva la vestimenta oscura (fondo, header claro y
-                // tarjetas premium).
-                const isFeatured = cat.slug === "destacados";
-                const showHeader = activeCategory === "todos" || isFeatured;
-                const isHot = cat.name.toLowerCase().includes("calient");
-                return (
-                // .cat-block: SIN content-visibility (se quitó a propósito —
-                // ver globals.css — porque dejaba el carrusel un instante sin
-                // responder al tacto justo al llegar a él). El padding
-                // lateral/inferior mete la sangría del carrusel y las sombras
-                // dentro de la caja contenida; los márgenes negativos lo
-                // compensan para no mover nada.
-                // Destacados: fondo oscuro de SECCIÓN (no por tarjeta) — el bleed
-                // horizontal ya existente (margin negativo) hace que el color
-                // llegue de borde a borde en pantallas de celular. OJO: a
-                // diferencia de las categorías normales, aquí NO se cancela el
-                // padding-bottom con un margin-bottom negativo — ese truco asume
-                // un bloque transparente; con fondo real, cancelarlo hacía que la
-                // categoría siguiente se dibujara encima de esos últimos 40px.
-                <div
-                  key={cat.id}
-                  className="cat-block"
-                  style={{
-                    margin: isFeatured
-                      ? `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px 0px`
-                      : `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px -40px`,
-                    padding: isFeatured ? "28px 22px 34px" : "0 22px 40px",
-                    // Misma paleta oscura del modal "Nuestras sedes" (#1a120c → #120c08).
-                    background: isFeatured ? "linear-gradient(180deg, #1a120c 0%, #120c08 100%)" : "transparent",
-                    borderTop: isFeatured ? "1px solid rgba(244,238,227,0.1)" : "none",
-                    borderBottom: isFeatured ? "1px solid rgba(244,238,227,0.1)" : "none",
-                  }}
-                >
-                  {showHeader && (
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
-                      <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 600, fontSize: 23, margin: 0, whiteSpace: "nowrap", color: isFeatured ? PREM_CREAM : CHOCO, letterSpacing: "-0.01em" }}>
-                        {cat.name}
-                      </h2>
-                      <span style={{ flex: 1, height: 1, background: isFeatured ? "rgba(244,238,227,0.25)" : "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
-                    </div>
-                  )}
-
-                  {/* "Todos": carrusel horizontal por categoría (se desliza de lado).
-                      Categoría seleccionada: grilla estática 2 columnas con todos
-                      los productos. */}
-                  {cat.items.length > 0 ? (
-                    activeCategory === "todos" ? (
-                      <CategoryCarousel
-                        items={cat.items}
-                        catId={cat.id}
-                        isHot={isHot}
-                        isFeatured={isFeatured}
-                        activeCardKey={activeCardKey}
-                        onSelect={setSelected}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 9,
-                          padding: "4px 0 10px",
-                        }}
-                      >
-                        {cat.items.map((item, idx) => (
-                          <MenuCard
-                            key={item.id}
-                            item={item}
-                            cardKey={`${cat.id}:${item.id}`}
-                            isActive={activeCardKey === `${cat.id}:${item.id}`}
-                            onSelect={setSelected}
-                            hot={isHot}
-                            index={idx}
-                            premium={isFeatured}
-                          />
-                        ))}
-                      </div>
-                    )
-                  ) : (
-                    // Red de seguridad: el backend ya no manda categorías vacías,
-                    // así que esto no debería verse. Si alguna vez llega una (caché
-                    // viejo, backend sin actualizar), al menos el texto se lee —
-                    // sin el color explícito quedaba oscuro sobre el fondo oscuro.
-                    <p style={{ fontSize: 14, opacity: 0.5, fontStyle: "italic", color: isFeatured ? PREM_CREAM : CHOCO }}>
-                      Pronto habrá novedades aquí.
-                    </p>
-                  )}
-                </div>
-                );
-              })}
+              {(activeCategory === "todos" ? destacadosGroup : groups).map((cat, gi) => (
+                <CategoryBlock
+                  key={cat.id} cat={cat} gi={gi} activeCategory={activeCategory}
+                  activeCardKey={activeCardKey} onSelect={setSelected}
+                />
+              ))}
             </div>
 
-            {/* Fuera del div con `key={activeCategory}`: ese div se remonta al
-                cambiar de pestaña, y aquí eso relanzaría la animación de entrada
-                de toda la sección cada vez. El cierre de la carta va después.
-                Horizontales antes que verticales (p.ej. Métodos antes de
-                Cafés de origen). */}
+            {/* Métodos (horizontal) fijo justo después de Destacados. */}
             {horizontales.map(cat => (
               <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
             ))}
+
+            {activeCategory === "todos" && (
+              <div style={{ animation: "fadeUp 0.45s ease both" }}>
+                {restoNormales.map((cat, gi) => (
+                  <CategoryBlock
+                    key={cat.id} cat={cat} gi={gi} activeCategory={activeCategory}
+                    activeCardKey={activeCardKey} onSelect={setSelected}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Cafés de origen (vertical) va al final, fuera del div con
+                `key={activeCategory}`: ese div se remonta al cambiar de
+                pestaña, y aquí eso relanzaría la animación de entrada de toda
+                la sección cada vez. El cierre de la carta va después. */}
             {verticales.map(cat => (
               <VerticalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
             ))}
@@ -507,6 +444,109 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
 
       <ProductModal item={selected} onClose={() => setSelected(null)} />
     </>
+  );
+}
+
+// ── Bloque de una categoría normal (Destacados incluida) ────────────────────
+// Extraído de MenuSection para poder renderizar Destacados y "el resto del
+// menú" como dos listas separadas (con Métodos fijo en medio) sin duplicar
+// esta lógica.
+function CategoryBlock({
+  cat, gi, activeCategory, activeCardKey, onSelect,
+}: {
+  cat: MenuCategory;
+  gi: number;
+  activeCategory: number | "todos";
+  activeCardKey: string | null;
+  onSelect: (item: MenuItem) => void;
+}) {
+  // "Otros" vuelve a verse como una categoría normal (clara), igual que
+  // Bebidas Frías/Calientes — solo Destacados conserva la vestimenta oscura
+  // (fondo, header claro y tarjetas premium).
+  const isFeatured = cat.slug === "destacados";
+  const showHeader = activeCategory === "todos" || isFeatured;
+  const isHot = cat.name.toLowerCase().includes("calient");
+  return (
+    // .cat-block: SIN content-visibility (se quitó a propósito — ver
+    // globals.css — porque dejaba el carrusel un instante sin responder al
+    // tacto justo al llegar a él). El padding lateral/inferior mete la
+    // sangría del carrusel y las sombras dentro de la caja contenida; los
+    // márgenes negativos lo compensan para no mover nada.
+    // Destacados: fondo oscuro de SECCIÓN (no por tarjeta) — el bleed
+    // horizontal ya existente (margin negativo) hace que el color llegue de
+    // borde a borde en pantallas de celular. OJO: a diferencia de las
+    // categorías normales, aquí NO se cancela el padding-bottom con un
+    // margin-bottom negativo — ese truco asume un bloque transparente; con
+    // fondo real, cancelarlo hacía que la categoría siguiente se dibujara
+    // encima de esos últimos 40px.
+    <div
+      className="cat-block"
+      style={{
+        margin: isFeatured
+          ? `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px 0px`
+          : `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px -40px`,
+        padding: isFeatured ? "28px 22px 34px" : "0 22px 40px",
+        // Misma paleta oscura del modal "Nuestras sedes" (#1a120c → #120c08).
+        background: isFeatured ? "linear-gradient(180deg, #1a120c 0%, #120c08 100%)" : "transparent",
+        borderTop: isFeatured ? "1px solid rgba(244,238,227,0.1)" : "none",
+        borderBottom: isFeatured ? "1px solid rgba(244,238,227,0.1)" : "none",
+      }}
+    >
+      {showHeader && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 11, marginBottom: 14, animation: "fadeUp 0.6s ease both" }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 600, fontSize: 23, margin: 0, whiteSpace: "nowrap", color: isFeatured ? PREM_CREAM : CHOCO, letterSpacing: "-0.01em" }}>
+            {cat.name}
+          </h2>
+          <span style={{ flex: 1, height: 1, background: isFeatured ? "rgba(244,238,227,0.25)" : "rgba(62,42,28,0.14)", display: "block", transformOrigin: "left", animation: "lineGrow 0.9s cubic-bezier(0.2,0.7,0.2,1) 0.25s both" }} />
+        </div>
+      )}
+
+      {/* "Todos": carrusel horizontal por categoría (se desliza de lado).
+          Categoría seleccionada: grilla estática 2 columnas con todos
+          los productos. */}
+      {cat.items.length > 0 ? (
+        activeCategory === "todos" ? (
+          <CategoryCarousel
+            items={cat.items}
+            catId={cat.id}
+            isHot={isHot}
+            isFeatured={isFeatured}
+            activeCardKey={activeCardKey}
+            onSelect={onSelect}
+          />
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 9,
+              padding: "4px 0 10px",
+            }}
+          >
+            {cat.items.map((item, idx) => (
+              <MenuCard
+                key={item.id}
+                item={item}
+                cardKey={`${cat.id}:${item.id}`}
+                isActive={activeCardKey === `${cat.id}:${item.id}`}
+                onSelect={onSelect}
+                hot={isHot}
+                index={idx}
+                premium={isFeatured}
+              />
+            ))}
+          </div>
+        )
+      ) : (
+        // Red de seguridad: el backend ya no manda categorías vacías, así
+        // que esto no debería verse. Si alguna vez llega una (caché viejo,
+        // backend sin actualizar), al menos el texto se lee — sin el color
+        // explícito quedaba oscuro sobre el fondo oscuro.
+        <p style={{ fontSize: 14, opacity: 0.5, fontStyle: "italic", color: isFeatured ? PREM_CREAM : CHOCO }}>
+          Pronto habrá novedades aquí.
+        </p>
+      )}
+    </div>
   );
 }
 

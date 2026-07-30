@@ -113,8 +113,9 @@ function Fila({ item, invertida, onSelect }: {
         // Mucho aire entre filas, a propósito: si caben varias en pantalla
         // aparecen juntas y se pierde la sensación de ir descubriéndolas una a
         // una al bajar. Con este alto, en un celular solo cabe una en la banda
-        // de revelado.
-        padding: "52px 0",
+        // de revelado. (42px, no 52px: un poco más cortito a pedido, sin
+        // perder ese efecto de "una a la vez").
+        padding: "42px 0",
         opacity: visible ? 1 : 0,
       }}
     >
@@ -190,17 +191,25 @@ export default function VerticalShowcase({ categoria, onSelect }: {
     <section
       ref={seccion}
       // El margen negativo lleva el fondo de borde a borde en celular, igual
-      // que hace Destacados. margin-top 130px (no 34px): la barra de chips es
-      // sticky y mide ~62px — con un margen apenas un poco más alto que la
-      // barra (72px probado), en el peor punto de scroll solo asoman ~10px,
-      // casi imperceptibles. Con 130px quedan siempre ~68px cómodamente
-      // visibles por debajo de la barra, sin importar el punto de scroll.
-      style={{ position: "relative", margin: "130px -22px 0" }}
+      // que hace Destacados. Volvió a 34px: el margen de 130px era para
+      // cuando Cafés de origen venía justo después de Métodos (dos secciones
+      // oscuras seguidas — la barra sticky podía tapar ese hueco clarito
+      // entero y parecía que se "fusionaban"). Ahora Cafés de origen viene
+      // después de una categoría normal (clara, como Otros), así que ese
+      // riesgo no existe: la transición clara→oscura ya se nota sola.
+      style={{ position: "relative", margin: "34px -22px 0" }}
     >
       {/* Foto de fondo a pantalla completa, pineada durante TODA la sección
           — nunca cae a un color plano, siempre es la foto. "corta": si la
           sección midiera menos que el viewport (pocos ítems), cubre el 100%
-          de la sección en vez de pinear — ver el comentario en HorizontalShowcase. */}
+          de la sección en vez de pinear — ver el comentario en HorizontalShowcase.
+          +120px en "antes"/"después" (no en "durante", que va fixed y no lo
+          necesita): estos dos estados se mueven con el scroll normal, no están
+          pineados, así que dependen de que el estado de React ya se haya
+          actualizado. El scroll listener está debounced a un frame (rAF), y
+          en ese frame de retraso el fondo puede quedar unos píxeles corrido
+          respecto al scroll real — sin este colchón se veía un parpadeo
+          blanco justo en el borde inferior al entrar/salir del pineado. */}
       <div
         aria-hidden="true"
         style={{
@@ -208,7 +217,7 @@ export default function VerticalShowcase({ categoria, onSelect }: {
           top: pin === "despues" ? "auto" : 0,
           bottom: pin === "despues" ? 0 : "auto",
           left: 0, right: 0,
-          height: pin === "corta" ? "100%" : "100svh",
+          height: pin === "corta" ? "100%" : pin === "durante" ? "100svh" : "calc(100svh + 120px)",
           zIndex: 0,
         }}
       >

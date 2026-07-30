@@ -146,12 +146,13 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
   return (
     <section
       ref={seccion}
-      // Mismo bleed de borde a borde que las demás secciones oscuras. Este
-      // margen (el de ANTES de Métodos, viniendo de una categoría normal)
-      // nunca tuvo el bug de la barra sticky tapándolo — ese era el margen
-      // de DESPUÉS (entre Métodos y Cafés de origen, en VerticalShowcase),
-      // así que aquí se queda el valor normal.
-      style={{ position: "relative", margin: "34px -22px 0" }}
+      // Mismo bleed de borde a borde que las demás secciones oscuras.
+      // margin-top 65px (mitad de 130px, a pedido). OJO: la barra de
+      // categorías sticky mide ~62px — con 65px, en el peor punto de scroll
+      // solo quedan ~3px visibles del margen (ver el mismo problema que ya
+      // se dio con 72px). Puede volver a sentirse como que Destacados y
+      // Métodos se pegan en cierto punto del scroll.
+      style={{ position: "relative", margin: "65px -22px 0" }}
     >
       {/* Foto de fondo — mismo comportamiento que Cafés de origen (ver
           useShowcaseBgPin), con la foto del estante de equipos de la barra.
@@ -159,7 +160,10 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
           que la pantalla, así que el fondo simplemente cubre el 100% de la
           sección en vez de pinearse (pinear con height:100svh en una sección
           más baja que el viewport hacía que oscilara entre estados en cada
-          scroll — el "margen que aparece y desaparece" reportado). */}
+          scroll — el "margen que aparece y desaparece" reportado).
+          +120px en "antes"/"después": ver el comentario en VerticalShowcase
+          (colchón contra el parpadeo blanco por el frame de retraso del
+          scroll listener). */}
       <div
         aria-hidden="true"
         style={{
@@ -167,7 +171,7 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
           top: pin === "despues" ? "auto" : 0,
           bottom: pin === "despues" ? 0 : "auto",
           left: 0, right: 0,
-          height: pin === "corta" ? "100%" : "100svh",
+          height: pin === "corta" ? "100%" : pin === "durante" ? "100svh" : "calc(100svh + 120px)",
           zIndex: 0,
         }}
       >
