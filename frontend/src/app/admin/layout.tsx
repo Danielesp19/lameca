@@ -6,11 +6,17 @@ import Link from "next/link";
 import { AdminSedeProvider } from "@/context/AdminSedeContext";
 import SedeSwitcher from "@/components/admin/SedeSwitcher";
 
+// "Productos" se unió a Categorías: cada categoría se expande ahí mismo
+// para ordenar/crear/editar/borrar sus productos, así que no hace falta una
+// sección aparte en la navegación.
+//
+// "Pedidos" y "Mesas" deshabilitados TEMPORALMENTE (a pedido del cliente,
+// que por ahora solo quiere usar la carta digital, sin pedidos por mesa con
+// QR propio) — se sacan de la navegación pero las páginas y sus datos
+// siguen intactos, listos para reactivarse el día que hagan falta: basta
+// con volver a agregarlos acá.
 const NAV = [
-  { href: "/admin/orders",     label: "Pedidos",     icon: "🧾" },
-  { href: "/admin/items",      label: "Productos",   icon: "🍽" },
   { href: "/admin/categories", label: "Categorías",  icon: "📂" },
-  { href: "/admin/tables",     label: "Mesas",       icon: "🪑" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

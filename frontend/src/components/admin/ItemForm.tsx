@@ -211,7 +211,7 @@ function ImageRow({
 }
 
 // ─── Main form ────────────────────────────────────────────────────────────────
-export default function ItemForm({ item }: { item?: AdminItem }) {
+export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem; defaultCategoryId?: number }) {
   const router      = useRouter();
   const isEdit      = Boolean(item);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -224,7 +224,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
   const [name,        setName]        = useState(item?.name        ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
   const [price,       setPrice]       = useState(String(item?.price ?? ""));
-  const [categoryId,  setCategoryId]  = useState(String(item?.menu_category_id ?? ""));
+  const [categoryId,  setCategoryId]  = useState(String(item?.menu_category_id ?? defaultCategoryId ?? ""));
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true);
   const [isFeatured,  setIsFeatured]  = useState(item?.is_featured  ?? false);
   const [caffeine,    setCaffeine]    = useState<string>(item?.caffeine_level != null ? String(item.caffeine_level) : "");
@@ -345,7 +345,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
       if (animFile)   fd.append("video", animFile);
 
       isEdit ? await adminUpdateItem(item!.id, fd) : await adminCreateItem(fd);
-      router.push("/admin/items");
+      router.push("/admin/categories");
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -644,7 +644,7 @@ export default function ItemForm({ item }: { item?: AdminItem }) {
         </button>
         <button
           type="button"
-          onClick={() => router.push("/admin/items")}
+          onClick={() => router.push("/admin/categories")}
           style={{
             padding: "12px 20px", borderRadius: 10,
             border: "1.5px solid #E8E0D8", background: "none",

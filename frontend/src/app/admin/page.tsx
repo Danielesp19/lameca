@@ -1,2 +1,2 @@
 import { redirect } from "next/navigation";
-export default function AdminRoot() { redirect("/admin/items"); }
+export default function AdminRoot() { redirect("/admin/categories"); }

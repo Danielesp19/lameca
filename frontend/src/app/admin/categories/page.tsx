@@ -5,13 +5,22 @@ import Link from "next/link";
 import {
   adminGetCategories, adminCreateCategory,
   adminUpdateCategory, adminDeleteCategory, adminReorderCategories, AdminCategory,
-  adminGetItems, adminReorderItems, AdminItem, DisplayMode,
+  adminGetItems, adminReorderItems, adminDeleteItem, AdminItem, DisplayMode,
 } from "@/lib/admin-api";
 
 // Categoría protegida: destino de productos huérfanos. No se puede
 // renombrar ni borrar (el backend también lo bloquea; esto solo evita
 // mostrar controles que fallarían igual).
 const OTROS_SLUG = "otros";
+
+// Categorías con vitrina especial (Cafés de origen, Métodos): tienen una
+// posición fija en la carta (Métodos justo después de Destacados, Cafés de
+// origen al final) que no depende de su sort_order acá — moverlas en este
+// panel no cambiaría nada en la carta real, así que se ocultan las flechas
+// para no sugerir que sí se puede, y se destacan visualmente en la lista.
+function esVitrinaEspecial(cat: AdminCategory): boolean {
+  return cat.display_mode === "vertical" || cat.display_mode === "horizontal";
+}
 
 const input: React.CSSProperties = {
   padding: "9px 13px", borderRadius: 9,
@@ -72,6 +81,18 @@ export default function CategoriesPage() {
     } finally {
       setReorderingCatId(null);
     }
+  }
+
+  async function delItem(item: AdminItem) {
+    if (!confirm(`¿Eliminar "${item.name}"?`)) return;
+    setItemsErr("");
+    try {
+      await adminDeleteItem(item.id);
+      setItems(prev => prev.filter(i => i.id !== item.id));
+      setCats(prev => prev.map(c => c.id === item.menu_category_id
+        ? { ...c, items_count: Math.max(0, (c.items_count ?? 1) - 1) }
+        : c));
+    } catch (e) { setItemsErr((e as Error).message); }
   }
 
   function startCreate() { setEditing(null); setFormName(""); setFormDesc(""); setFormMode("grid"); setFormErr(""); setCreating(true); }
@@ -210,10 +231,18 @@ export default function CategoriesPage() {
               </tr>
             </thead>
             <tbody>
-              {cats.map((cat, i) => (
+              {cats.map((cat, i) => {
+                const especial = esVitrinaEspecial(cat);
+                return (
                 <Fragment key={cat.id}>
-                <tr style={{ borderTop: i === 0 ? "none" : "1px solid #F9F5F2" }}>
+                <tr style={{
+                  borderTop: i === 0 ? "none" : "1px solid #F9F5F2",
+                  background: especial ? "#FBF3E7" : "transparent",
+                }}>
                   <td style={{ padding: "14px 20px" }}>
+                    {especial ? (
+                      <span title="Posición fija en la carta: no se puede mover" style={{ fontSize: 11, color: "#B0895E" }}>🔒 fija</span>
+                    ) : (
                     <div style={{ display: "flex", gap: 4 }}>
                       <button
                         onClick={() => move(i, -1)}
@@ -238,8 +267,19 @@ export default function CategoriesPage() {
                         }}
                       >↓</button>
                     </div>
+                    )}
                   </td>
-                  <td style={{ padding: "14px 20px", fontWeight: 600, color: "#1C0F05" }}>{cat.name}</td>
+                  <td style={{ padding: "14px 20px", fontWeight: 600, color: "#1C0F05" }}>
+                    {cat.name}
+                    {especial && (
+                      <span style={{
+                        marginLeft: 8, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+                        color: "#9A5B21", background: "#F3DFC1", padding: "2px 8px", borderRadius: 999,
+                      }}>
+                        {cat.display_mode === "vertical" ? "Vitrina vertical" : "Vitrina horizontal"}
+                      </span>
+                    )}
+                  </td>
                   <td style={{ padding: "14px 20px", color: "#6B5744" }}>{cat.description ?? "—"}</td>
                   <td style={{ padding: "14px 20px" }}>
                     <button
@@ -259,8 +299,8 @@ export default function CategoriesPage() {
                       <button onClick={() => startEdit(cat)} style={{ fontSize: 13, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
                       {cat.slug === OTROS_SLUG ? (
                         <span style={{ fontSize: 12, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
-                      ) : (cat.display_mode === "vertical" || cat.display_mode === "horizontal") ? (
-                        <span style={{ fontSize: 12, color: "#B0A090" }} title="Tiene vitrina especial en la carta: no se puede eliminar (sí se puede mover y editar)">Protegida</span>
+                      ) : especial ? (
+                        <span style={{ fontSize: 12, color: "#B0A090" }} title="Tiene vitrina especial en la carta, con posición fija: no se puede eliminar ni mover (sí se puede editar)">Protegida</span>
                       ) : (
                         <button onClick={() => del(cat)} style={{ fontSize: 13, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
                       )}
@@ -274,8 +314,13 @@ export default function CategoriesPage() {
                       <td colSpan={5} style={{ padding: "0 20px 18px", background: "#FBF8F4" }}>
                         <div style={{ border: "1.5px solid #F0EBE5", borderRadius: 12, overflow: "hidden", background: "#FFFFFF" }}>
                           <p style={{ fontSize: 12, fontWeight: 600, color: "#6B5744", padding: "10px 16px", margin: 0, borderBottom: "1px solid #F0EBE5", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span>Orden de productos en &quot;{cat.name}&quot;</span>
-                            {reorderingCatId === cat.id && <span style={{ fontSize: 11, color: "#9A7055", textTransform: "none", fontWeight: 500 }}>Guardando…</span>}
+                            <span>Productos de &quot;{cat.name}&quot;</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              {reorderingCatId === cat.id && <span style={{ fontSize: 11, color: "#9A7055", textTransform: "none", fontWeight: 500 }}>Guardando…</span>}
+                              <Link href={`/admin/items/new?category=${cat.id}`} style={{ fontSize: 12, color: "#6F4E37", textDecoration: "none", fontWeight: 600, textTransform: "none", letterSpacing: "normal" }}>
+                                + Nuevo producto
+                              </Link>
+                            </span>
                           </p>
                           {itemsErr && expandedId === cat.id && (
                             <p style={{ fontSize: 12, color: "#DC2626", padding: "8px 16px 0", margin: 0 }}>{itemsErr}</p>
@@ -324,6 +369,9 @@ export default function CategoriesPage() {
                                   <Link href={`/admin/items/${item.id}/edit`} style={{ fontSize: 12, color: "#6F4E37", textDecoration: "none", fontWeight: 500 }}>
                                     Editar
                                   </Link>
+                                  <button onClick={() => delItem(item)} style={{ fontSize: 12, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>
+                                    Eliminar
+                                  </button>
                                 </div>
                               ))}
                             </div>
@@ -334,7 +382,8 @@ export default function CategoriesPage() {
                   );
                 })()}
                 </Fragment>
-              ))}
+                );
+              })}
               {cats.length === 0 && (
                 <tr><td colSpan={5} style={{ padding: "48px 20px", textAlign: "center", color: "#B0A090", fontSize: 14 }}>No hay categorías.</td></tr>
               )}
