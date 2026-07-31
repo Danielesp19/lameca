@@ -197,7 +197,14 @@ export default function VerticalShowcase({ categoria, onSelect }: {
       // entero y parecía que se "fusionaban"). Ahora Cafés de origen viene
       // después de una categoría normal (clara, como Otros), así que ese
       // riesgo no existe: la transición clara→oscura ya se nota sola.
-      style={{ position: "relative", margin: "34px -22px 0" }}
+      // background sólido de base: la foto de fondo (abajo) va en un div
+      // aparte cuya posición depende del scroll (fixed/absolute según `pin`,
+      // recalculada con 1 frame de retraso — ver el comentario más abajo). Si
+      // ese cálculo llega a quedar un frame detrás del scroll real, sin este
+      // color de base se veía la sección clara de ANTES (p.ej. "Otros")
+      // asomando por el margen — con el mismo oscuro puesto acá abajo, ese
+      // margen pasa inadvertido en vez de verse como un parpadeo de color.
+      style={{ position: "relative", margin: "34px -22px 0", background: DARK_BOT }}
     >
       {/* Foto de fondo a pantalla completa, pineada durante TODA la sección
           — nunca cae a un color plano, siempre es la foto. "corta": si la
@@ -224,7 +231,7 @@ export default function VerticalShowcase({ categoria, onSelect }: {
         <div
           style={{
             position: "absolute", inset: 0,
-            background: `linear-gradient(180deg, rgba(20,18,15,0.82) 0%, rgba(20,18,15,0.88) 40%, ${DARK_BOT} 100%), url(/image.png) center/cover no-repeat`,
+            background: `linear-gradient(180deg, rgba(20,18,15,0.82) 0%, rgba(20,18,15,0.88) 40%, ${DARK_BOT} 100%), url(/image.webp) center/cover no-repeat`,
             filter: "grayscale(0.3) saturate(0.85) brightness(0.85)",
           }}
         />

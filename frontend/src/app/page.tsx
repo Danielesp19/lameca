@@ -27,6 +27,17 @@ export default async function HomePage() {
   return (
     <CartRoot>
     <main>
+      {/* Fondos de las vitrinas de cierre (Cafés de origen, Métodos): viven al
+          final de una carta que puede ser larga, pero son fotos pesadas (foto
+          completa a pantalla) — si el navegador recién las pide cuando el CSS
+          background-image las necesita, puede no alcanzar a tenerlas listas
+          justo cuando el usuario llega ahí, y se nota como el fondo estático
+          "atrasándose" un instante. fetchPriority="low": arrancan a bajar
+          desde ya pero sin competir por ancho de banda con el video/fotos del
+          hero, que sí importan para el primer pantallazo. */}
+      <link rel="preload" as="image" href="/image.webp" fetchPriority="low" />
+      <link rel="preload" as="image" href="/metodos.jpg" fetchPriority="low" />
+
       {/* Splash de entrada: cubre la pantalla ~3.5s; el video del hero carga y
           se reproduce detrás y queda visible al levantarse el splash. */}
       <SplashIntro />

@@ -152,7 +152,11 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
       // solo quedan ~3px visibles del margen (ver el mismo problema que ya
       // se dio con 72px). Puede volver a sentirse como que Destacados y
       // Métodos se pegan en cierto punto del scroll.
-      style={{ position: "relative", margin: "65px -22px 0" }}
+      // background sólido de base: ver el mismo comentario en
+      // VerticalShowcase — cubre el frame de retraso del cálculo de `pin`
+      // sin dejar asomar la sección clara vecina (Destacados ya es oscura,
+      // pero la que sigue después de Métodos no).
+      style={{ position: "relative", margin: "65px -22px 0", background: DARK_BOT }}
     >
       {/* Foto de fondo — mismo comportamiento que Cafés de origen (ver
           useShowcaseBgPin), con la foto del estante de equipos de la barra.
