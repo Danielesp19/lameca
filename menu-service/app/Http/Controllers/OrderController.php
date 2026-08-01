@@ -65,6 +65,8 @@ class OrderController extends Controller
                 'name'           => $s->name,
                 'whatsapp_phone' => $s->whatsapp_phone,
                 'address'        => $s->address,
+                'address_note'   => $s->address_note,
+                'opening_hours'  => $s->opening_hours,
             ]);
     }
 

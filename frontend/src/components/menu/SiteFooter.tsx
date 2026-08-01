@@ -74,7 +74,11 @@ export default function SiteFooter() {
               {sedes.map(s => (
                 <div key={s.id} style={{ fontSize: 13, lineHeight: 1.5 }}>
                   <span style={{ fontWeight: 600 }}>{s.name}</span>
-                  {s.address && <span style={{ display: "block", opacity: 0.65 }}>{s.address}</span>}
+                  {s.address      && <span style={{ display: "block", opacity: 0.65 }}>{s.address}</span>}
+                  {s.address_note && <span style={{ display: "block", opacity: 0.5 }}>{s.address_note}</span>}
+                  {s.opening_hours && (
+                    <span style={{ display: "block", opacity: 0.5, marginTop: 3 }}>{s.opening_hours}</span>
+                  )}
                 </div>
               ))}
             </div>

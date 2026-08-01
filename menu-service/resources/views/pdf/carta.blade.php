@@ -150,8 +150,12 @@
     <footer>
         @if ($sedes->isNotEmpty())
             <div class="sedes">
+                {{-- Dirección sí, horarios no: este pie se repite en TODAS las
+                     páginas y los horarios (sobre todo los de Centro, con tres
+                     tramos) lo harían crecer a varias líneas. El horario
+                     completo está en la carta digital, en "Nuestras sedes". --}}
                 @foreach ($sedes as $sede)
-                    {{ $sede->name }}@if ($sede->whatsapp_phone) &middot; WhatsApp +{{ $sede->whatsapp_phone }}@endif
+                    {{ $sede->name }}@if ($sede->address) &middot; {{ $sede->address }}@endif@if ($sede->whatsapp_phone) &middot; WhatsApp +{{ $sede->whatsapp_phone }}@endif
                     @if (! $loop->last) &nbsp;&nbsp;|&nbsp;&nbsp; @endif
                 @endforeach
             </div>

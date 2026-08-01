@@ -165,10 +165,20 @@ export default function SedesModal({ open, onClose }: { open: boolean; onClose: 
                       </p>
                     </div>
 
-                    {/* Datos de contacto (reales, vienen del panel admin) */}
+                    {/* Datos de contacto (reales, vienen de la base) */}
                     {active.address && (
-                      <div style={{ fontSize: 13, lineHeight: 1.5, opacity: 0.75, marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, lineHeight: 1.5, opacity: 0.75, marginBottom: 10 }}>
                         📍 {active.address}
+                        {active.address_note && (
+                          <span style={{ display: "block", paddingLeft: 20, opacity: 0.75 }}>
+                            {active.address_note}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {active.opening_hours && (
+                      <div style={{ fontSize: 13, lineHeight: 1.5, opacity: 0.75, marginBottom: 12 }}>
+                        🕒 {active.opening_hours}
                       </div>
                     )}
                     {active.whatsapp_phone && (

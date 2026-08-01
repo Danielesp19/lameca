@@ -13,6 +13,8 @@ class Sede extends Model
         'slug',
         'whatsapp_phone',
         'address',
+        'address_note',
+        'opening_hours',
         'is_active',
         'sort_order',
     ];

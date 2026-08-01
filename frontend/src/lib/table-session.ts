@@ -10,6 +10,10 @@ export interface SedeInfo {
   name: string;
   whatsapp_phone: string | null;
   address?: string | null;
+  /** Referencia de ubicación ("Cerca de las instalaciones Rumbambú"). */
+  address_note?: string | null;
+  /** Horario de atención ya redactado para mostrar tal cual. */
+  opening_hours?: string | null;
 }
 
 // Para mostrar en pantalla: quita el indicativo de país (57) — el número
