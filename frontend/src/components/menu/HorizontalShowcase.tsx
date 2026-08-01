@@ -125,17 +125,10 @@ function MetodoSlide({ item, canLeft, canRight, onPrev, onNext }: {
               Foto próximamente
             </div>
           )}
-          {hasVideo && (
-            <span style={{
-              position: "absolute", top: 8, left: 8,
-              display: "inline-flex", alignItems: "center",
-              padding: "3px 8px", borderRadius: 999,
-              background: "rgba(0,0,0,0.55)", color: CREAM,
-              fontSize: 9, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase",
-            }}>
-              ▶ Video
-            </span>
-          )}
+          {/* Sin distintivo "▶ Video": los Métodos van SIEMPRE con video (el
+              formulario del admin ni siquiera ofrece subirles fotos), así que
+              la etiqueta estaba en todos por igual — no distinguía nada y solo
+              ensuciaba la esquina de la foto. */}
         </div>
 
         {canRight ? <ChevronButton dir="right" onClick={onNext} /> : <div style={{ flex: "0 0 40px" }} />}
