@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { PEDIDOS_HABILITADOS } from "@/lib/features";
 import { getSedes } from "@/lib/orders-api";
 import type { SedeInfo } from "@/lib/table-session";
 
@@ -43,7 +44,12 @@ export default function WhatsAppButton() {
   // Se muestra sin sesión de QR válida (público o caducada) Y con el carrito
   // vacío: cuando hay productos, el carrito flotante toma su lugar y el envío
   // por WhatsApp sale desde ahí con el pedido armado.
-  if (hasSession || count > 0) return null;
+  //
+  // Con los pedidos apagados eso no aplica y el botón va SIEMPRE: el carrito
+  // flotante ya no se pinta, así que si alguien llega con un carrito viejo
+  // guardado en el navegador (count > 0) o con una sesión de mesa vieja, se
+  // quedaría sin ningún botón de contacto. Ver features.ts.
+  if (PEDIDOS_HABILITADOS && (hasSession || count > 0)) return null;
 
   function go(sede: SedeInfo) {
     window.open(waLink(sede.whatsapp_phone ?? FALLBACK_PHONE), "_blank", "noopener");
@@ -110,23 +116,35 @@ export default function WhatsAppButton() {
               <h2 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 22, margin: "6px 0 4px" }}>¿A cuál sede?</h2>
               <p style={{ fontSize: 13, opacity: 0.65, margin: "0 0 16px" }}>Elige el local con el que quieres coordinar tu pedido.</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {sedes.map(s => (
-                  <button
+                {/* Cada sede con la misma vestimenta del botón flotante: verde
+                    oliva y el aro que late. El retardo escalonado evita que
+                    todas pulsen al unísono, que se siente mecánico. */}
+                {sedes.map((s, i) => (
+                  <motion.button
                     key={s.id}
                     onClick={() => go(s)}
+                    whileTap={{ scale: 0.97 }}
                     style={{
+                      position: "relative", overflow: "hidden",
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                       padding: "14px 16px", borderRadius: 14, cursor: "pointer",
-                      border: "1px solid rgba(62,42,28,0.14)", background: "#FFFCF5", color: DARK,
+                      border: "none", background: OLIVE, color: "#FBF7EC",
                       fontSize: 14.5, fontWeight: 600, textAlign: "left",
+                      boxShadow: "0 12px 26px -14px rgba(110,139,78,0.9)",
                     }}
                   >
+                    <span aria-hidden="true" style={{
+                      position: "absolute", inset: 0, borderRadius: 14,
+                      border: "2px solid rgba(251,247,236,0.55)",
+                      animation: `pulseRingWide 2.2s ease-out ${i * 0.45}s infinite`,
+                      pointerEvents: "none",
+                    }} />
                     <span>
                       {s.name}
-                      {s.address && <span style={{ display: "block", fontSize: 12, fontWeight: 400, opacity: 0.6, marginTop: 2 }}>{s.address}</span>}
+                      {s.address && <span style={{ display: "block", fontSize: 12, fontWeight: 400, opacity: 0.75, marginTop: 2 }}>{s.address}</span>}
                     </span>
-                    <span style={{ color: OLIVE, display: "flex" }}><WaIcon size={20} /></span>
-                  </button>
+                    <span style={{ display: "flex", flexShrink: 0 }}><WaIcon size={20} /></span>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
