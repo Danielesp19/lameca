@@ -110,21 +110,23 @@ function ImageRow({
   const previewSrc = slot.kind === "new_file" ? slot.preview : slot.url;
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12,
+    <div className="flex flex-wrap sm:flex-nowrap items-center gap-3" style={{
       padding: "10px 14px", borderRadius: 10,
       background: isNew ? "#F0FDF4" : "#FDFAF7",
       border: `1.5px solid ${isNew ? "#BBF7D0" : isPortada ? "#BFDBFE" : "#F0EBE5"}`,
       transition: "background 150ms",
     }}>
 
-      {/* Thumbnail: grande para poder revisar encuadre/calidad antes de publicar */}
+      {/* Thumbnail: grande para poder revisar encuadre/calidad antes de publicar.
+          Más chica en celular angosto para que quepa junto a los controles sin
+          forzar scroll horizontal. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={previewSrc}
         alt=""
+        className="w-[110px] h-[82px] sm:w-[156px] sm:h-[117px]"
         style={{
-          width: 156, height: 117, objectFit: "cover",
+          objectFit: "cover",
           borderRadius: 10, flexShrink: 0,
           border: "1px solid rgba(0,0,0,0.08)",
         }}
@@ -228,7 +230,7 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true);
   const [isFeatured,  setIsFeatured]  = useState(item?.is_featured  ?? false);
   const [caffeine,    setCaffeine]    = useState<string>(item?.caffeine_level != null ? String(item.caffeine_level) : "");
-  const [hasSugar,    setHasSugar]    = useState(item?.has_sugar_option ?? true);
+  const [hasSugar,    setHasSugar]    = useState(item?.has_sugar_option ?? false);
 
   // Image list state
   const [imgList, setImgList] = useState<ImgSlot[]>(() => {
@@ -250,6 +252,20 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
   useEffect(() => {
     adminGetCategories().then(setCats).catch(() => {});
   }, []);
+
+  // Métodos y Cafés de origen (vitrinas de cierre): no son bebidas con
+  // opción de azúcar ni tiene sentido "destacarlos" (esa vitrina ya es su
+  // propio destaque en la carta) — Destacados solo debe llevar productos
+  // normales. Sus casillas se ocultan más abajo; el valor real que se manda
+  // al guardar se fuerza a false en el submit (ver featuredToSend/hasSugarToSend),
+  // sin necesidad de sincronizar el estado con un efecto.
+  const selectedCategory = cats.find(c => String(c.id) === categoryId);
+  const isVitrina = selectedCategory?.display_mode === "vertical" || selectedCategory?.display_mode === "horizontal";
+  // Métodos ("horizontal"): su vitrina en la carta muestra el video en bucle,
+  // y la miniatura de respaldo (para el PDF y mientras el video carga) la saca
+  // el backend del propio video — no hace falta subir fotos aparte, así que el
+  // bloque de fotos se oculta y el video pasa a ser el medio principal.
+  const esMetodos = selectedCategory?.display_mode === "horizontal";
 
   // ── Image list ops ────────────────────────────────────────────────────────
   async function addFiles(files: FileList | null) {
@@ -311,8 +327,8 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
       fd.append("price",            price);
       fd.append("menu_category_id", categoryId);
       fd.append("is_available",     isAvailable ? "1" : "0");
-      fd.append("is_featured",      isFeatured  ? "1" : "0");
-      fd.append("has_sugar_option", hasSugar    ? "1" : "0");
+      fd.append("is_featured",      (isFeatured && !isVitrina) ? "1" : "0");
+      fd.append("has_sugar_option", (hasSugar    && !isVitrina) ? "1" : "0");
       if (caffeine !== "") fd.append("caffeine_level", caffeine);
 
       // ── Images ─────────────────────────────────────────────────────────────
@@ -373,7 +389,7 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
             <label style={lbl}>Descripción</label>
             <textarea style={{ ...inp, minHeight: 80, resize: "vertical" }} value={description} onChange={e => setDescription(e.target.value)} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label style={lbl}>Precio (COP) *</label>
               <input type="number" min="0" step="100" style={inp} value={price} onChange={e => setPrice(e.target.value)} required />
@@ -402,8 +418,8 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
         </div>
       </div>
 
-      {/* ── Fotos ── */}
-      <div style={card}>
+      {/* ── Fotos (no aplica a Métodos: ver `esMetodos`) ── */}
+      <div style={{ ...card, display: esMetodos ? "none" : undefined }}>
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -508,10 +524,19 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
           }}
         />
 
-        <div style={cardTitle}>Video del producto</div>
+        <div style={cardTitle}>{esMetodos ? "Video del método" : "Video del producto"}</div>
         <p style={{ fontSize: 13, color: "#9A7055", marginBottom: 16, lineHeight: 1.6 }}>
           Se reproduce automáticamente al hacer scroll. Sube un <strong>video corto MP4 o WebM</strong> (3–8 segundos en loop), <strong>máx {MAX_VIDEO_MB} MB</strong>.
         </p>
+        {esMetodos && (
+          <p style={{
+            fontSize: 12.5, color: "#9A5B21", background: "#FBF3E7", border: "1px solid #F3DFC1",
+            borderRadius: 10, padding: "10px 13px", marginBottom: 16, lineHeight: 1.6,
+          }}>
+            Los <strong>Métodos</strong> se muestran solo con video: no hace falta subir fotos.
+            La miniatura para la carta en PDF se saca automáticamente del video.
+          </p>
+        )}
 
         {/* Current animation */}
         {hasAnim && !animFile && !deleteAnim && (
@@ -606,8 +631,12 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
         <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
           {([
             ["Disponible en carta", isAvailable, setIsAvailable],
-            ["Marcar como destacado ★", isFeatured, setIsFeatured],
-            ["Permitir elegir azúcar 🍬", hasSugar, setHasSugar],
+            // Ocultas para Métodos/Cafés de origen: ver el useEffect que fuerza
+            // ambas a false más arriba.
+            ...(isVitrina ? [] : [
+              ["Marcar como destacado ★", isFeatured, setIsFeatured],
+              ["Permitir elegir azúcar 🍬", hasSugar, setHasSugar],
+            ]),
           ] as [string, boolean, (v: boolean) => void][]).map(([l, val, set]) => (
             <label key={l} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 14, color: "#1C0F05" }}>
               <input
