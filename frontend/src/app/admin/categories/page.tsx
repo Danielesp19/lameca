@@ -13,13 +13,20 @@ import {
 // mostrar controles que fallarían igual).
 const OTROS_SLUG = "otros";
 
-// Categorías con vitrina especial (Cafés de origen, Métodos): tienen una
-// posición fija en la carta (Métodos justo después de Destacados, Cafés de
-// origen al final) que no depende de su sort_order acá — moverlas en este
-// panel no cambiaría nada en la carta real, así que se ocultan las flechas
-// para no sugerir que sí se puede, y se destacan visualmente en la lista.
+// Categorías con vitrina especial (Cafés de origen, Métodos): en la carta se
+// pintan a pantalla completa con fondo oscuro en vez de como lista, y no
+// salen como pestaña del filtro. No se pueden eliminar, y se destacan
+// visualmente en esta lista.
 function esVitrinaEspecial(cat: AdminCategory): boolean {
   return cat.display_mode === "vertical" || cat.display_mode === "horizontal";
+}
+
+// Cafés de origen ("vertical") es el cierre de la carta: va siempre al final,
+// pase lo que pase con su sort_order, así que moverla acá no cambiaría nada y
+// se le ocultan las flechas. Métodos ("horizontal") SÍ se ordena entre las
+// demás por sort_order y se mueve normalmente.
+function tienePosicionFija(cat: AdminCategory): boolean {
+  return cat.display_mode === "vertical";
 }
 
 // ─── Controles de orden (↑↓) reutilizados en categorías y productos ───────────
@@ -277,6 +284,7 @@ export default function CategoriesPage() {
 
           {cats.map((cat, i) => {
             const especial = esVitrinaEspecial(cat);
+            const fija     = tienePosicionFija(cat);
             const expanded = expandedId === cat.id;
             const toggle = () => { setExpandedId(expanded ? null : cat.id); setItemsErr(""); };
             return (
@@ -318,8 +326,8 @@ export default function CategoriesPage() {
                           dos a la vista se presta a mover la categoría creyendo
                           que se mueve un producto. Mover categorías se hace con
                           las demás filas cerradas. */}
-                      {expanded ? null : especial ? (
-                        <span title="Posición fija en la carta: no se puede mover" style={{ fontSize: 11, color: "#B0895E" }}>🔒 fija</span>
+                      {expanded ? null : fija ? (
+                        <span title="Cierra la carta: va siempre al final, no se puede mover" style={{ fontSize: 11, color: "#B0895E" }}>🔒 fija</span>
                       ) : (
                         <OrderButtons
                           onUp={() => move(i, -1)} onDown={() => move(i, 1)}
@@ -381,7 +389,9 @@ export default function CategoriesPage() {
                     {cat.slug === OTROS_SLUG ? (
                       <span style={{ fontSize: 13, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
                     ) : especial ? (
-                      <span style={{ fontSize: 13, color: "#B0A090" }} title="Tiene vitrina especial en la carta, con posición fija: no se puede eliminar ni mover (sí se puede editar)">Protegida</span>
+                      <span style={{ fontSize: 13, color: "#B0A090" }} title={fija
+                        ? "Tiene vitrina especial y cierra la carta: no se puede eliminar ni mover (sí se puede editar)"
+                        : "Tiene vitrina especial en la carta: no se puede eliminar (sí se puede mover y editar)"}>Protegida</span>
                     ) : (
                       <button onClick={() => del(cat)} style={{ fontSize: 14, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
                     )}

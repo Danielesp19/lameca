@@ -29,21 +29,19 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   const sectionRef    = useRef<HTMLElement>(null);
   const listRef       = useRef<HTMLDivElement>(null);
 
-  // Las categorías "vertical"/"horizontal" no son una parada más de la carta:
-  // son su cierre. Se sacan de los chips y del listado normal — "vertical"
-  // (Cafés de origen) se pinta al final de la página, justo antes del
-  // footer; "horizontal" (Métodos) se pinta fija justo después de
-  // Destacados (ver más abajo), no al final.
+  // "vertical" (Cafés de origen) es el cierre de la carta: siempre va al
+  // final, después de todo. "horizontal" (Métodos) ya NO tiene posición fija:
+  // se ordena entre las demás por su sort_order, como una categoría más — se
+  // mueve desde el panel admin con las flechas. Ninguna de las dos sale como
+  // pestaña: son vitrinas, no paradas del filtro.
   const normales    = categories.filter(c => c.display_mode !== "vertical" && c.display_mode !== "horizontal");
   const horizontales = categories.filter(c => c.display_mode === "horizontal");
   const verticales  = categories.filter(c => c.display_mode === "vertical");
 
-  // Orden fijo en "Todos": Destacados, luego Métodos (ver render), luego el
-  // resto del menú. Destacados es sintética (id -1, armada en el backend) y
-  // siempre viene primera en `categories`, pero se separa explícitamente acá
-  // para poder insertar Métodos justo después sin depender de ese orden.
-  const destacadosGroup = normales.filter(c => c.slug === "destacados");
-  const restoNormales   = normales.filter(c => c.slug !== "destacados");
+  // Flujo de "Todos": normales + vitrinas horizontales, en el orden que ya
+  // trae el backend (sort_order). Cada una se pinta con su componente según
+  // display_mode (ver el render).
+  const flujo = categories.filter(c => c.display_mode !== "vertical");
 
   const chips = [
     { id: "todos" as number | "todos", name: "Todos" },
@@ -454,34 +452,28 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
             <>
             {/* key + fadeUp: al cambiar de categoría el contenido entra con un
                 desvanecido suave en vez de saltar de golpe.
-                Destacados va SOLO (Métodos se inserta justo después, ver
-                abajo); el resto del menú se pinta más abajo, después de
-                Métodos — a pedido explícito, con posición fija en la página
-                sin importar sort_order. */}
+                En "Todos" se recorre el flujo completo respetando sort_order,
+                y cada categoría se pinta según su display_mode: las
+                horizontales como vitrina, el resto como bloque normal. Con un
+                filtro activo solo se pinta esa categoría, y las vitrinas
+                quedan detrás (abajo) porque no son parte del filtro. */}
             <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
-              {(activeCategory === "todos" ? destacadosGroup : groups).map((cat, gi) => (
-                <CategoryBlock
-                  key={cat.id} cat={cat} gi={gi} activeCategory={activeCategory}
-                  activeCardKey={activeCardKey} onSelect={setSelected}
-                />
+              {(activeCategory === "todos" ? flujo : groups).map((cat, gi) => (
+                cat.display_mode === "horizontal"
+                  ? <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
+                  : <CategoryBlock
+                      key={cat.id} cat={cat} gi={gi} activeCategory={activeCategory}
+                      activeCardKey={activeCardKey} onSelect={setSelected}
+                    />
               ))}
             </div>
 
-            {/* Métodos (horizontal) fijo justo después de Destacados. */}
-            {horizontales.map(cat => (
+            {/* Con un filtro activo las vitrinas horizontales no entran en el
+                flujo de arriba (ese solo tiene la categoría elegida), así que
+                se pintan acá para que el cierre de la carta siga completo. */}
+            {activeCategory !== "todos" && horizontales.map(cat => (
               <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
             ))}
-
-            {activeCategory === "todos" && (
-              <div style={{ animation: "fadeUp 0.45s ease both" }}>
-                {restoNormales.map((cat, gi) => (
-                  <CategoryBlock
-                    key={cat.id} cat={cat} gi={gi} activeCategory={activeCategory}
-                    activeCardKey={activeCardKey} onSelect={setSelected}
-                  />
-                ))}
-              </div>
-            )}
 
             {/* Cafés de origen (vertical) va al final, fuera del div con
                 `key={activeCategory}`: ese div se remonta al cambiar de

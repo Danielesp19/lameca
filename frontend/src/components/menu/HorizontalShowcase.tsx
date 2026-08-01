@@ -195,17 +195,18 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
   return (
     <section
       ref={seccion}
-      // Mismo bleed de borde a borde que las demás secciones oscuras.
-      // margin-top 65px (mitad de 130px, a pedido). OJO: la barra de
-      // categorías sticky mide ~62px — con 65px, en el peor punto de scroll
-      // solo quedan ~3px visibles del margen (ver el mismo problema que ya
-      // se dio con 72px). Puede volver a sentirse como que Destacados y
-      // Métodos se pegan en cierto punto del scroll.
+      // Mismo bleed de borde a borde que las demás secciones oscuras, y el
+      // mismo margen corto (34px) que VerticalShowcase: esta vitrina ya no
+      // está clavada después de Destacados, se ordena entre las categorías
+      // normales, y contra una sección clara la transición se nota sola sin
+      // necesidad de un hueco grande. OJO si alguna vez queda pegada justo
+      // debajo de Destacados (también oscura): la barra de chips sticky mide
+      // ~62px y puede tapar este margen entero en cierto punto del scroll,
+      // con lo que las dos secciones oscuras parecerían una sola.
       // background sólido de base: ver el mismo comentario en
       // VerticalShowcase — cubre el frame de retraso del cálculo de `pin`
-      // sin dejar asomar la sección clara vecina (Destacados ya es oscura,
-      // pero la que sigue después de Métodos no).
-      style={{ position: "relative", margin: "65px -22px 0", background: DARK_BOT }}
+      // sin dejar asomar la sección clara vecina.
+      style={{ position: "relative", margin: "34px -22px 0", background: DARK_BOT }}
     >
       {/* Foto de fondo — mismo comportamiento que Cafés de origen (ver
           useShowcaseBgPin), con la foto del estante de equipos de la barra.
