@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MenuItem, SUGAR_OPTIONS, DEFAULT_SUGAR, caffeineInfo } from "@/lib/menu-api";
 import LevelIcons from "@/components/menu/LevelIcons";
 import { useCart } from "@/context/CartContext";
+import { PEDIDOS_HABILITADOS } from "@/lib/features";
 
 // Paleta rediseño v2
 const BG    = "#F7F1E5";
@@ -272,8 +273,10 @@ export default function ProductModal({ item, onClose }: Props) {
                   </div>
                 )}
 
-                {/* ── Selector de nivel de azúcar (modo QR y modo público) ── */}
-                {item.has_sugar_option && (
+                {/* ── Selector de nivel de azúcar (modo QR y modo público) ──
+                    Solo alimenta el pedido: sin pedidos no elige nada, así que
+                    se oculta junto con el botón. */}
+                {item.has_sugar_option && PEDIDOS_HABILITADOS && (
                   <div style={{ marginTop: 22, animation: "fadeUp 0.5s ease 0.45s both" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                       <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
@@ -316,6 +319,9 @@ export default function ProductModal({ item, onClose }: Props) {
                   </div>
                 )}
 
+                {/* Con los pedidos apagados la carta es solo de consulta: el
+                    botón y el aviso de WhatsApp se ocultan (ver features.ts). */}
+                {PEDIDOS_HABILITADOS && <>
                 <button
                     onClick={handleAdd}
                     disabled={added}
@@ -345,6 +351,7 @@ export default function ProductModal({ item, onClose }: Props) {
                     Tu pedido se enviará como mensaje de <strong>WhatsApp</strong> al finalizar.
                   </p>
                 )}
+                </>}
               </div>
             </div>
           </motion.div>

@@ -6,6 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { createOrder, getSedes, SessionExpiredError } from "@/lib/orders-api";
 import type { SedeInfo } from "@/lib/table-session";
 import Turnstile, { turnstileEnabled } from "./Turnstile";
+import { PEDIDOS_HABILITADOS } from "@/lib/features";
 
 // Paleta rediseño v2
 const DARK = "#3E2A1C";
@@ -97,6 +98,12 @@ export default function FloatingCart() {
       setSending(false);
     }
   }
+
+  // Con los pedidos apagados no hay forma de agregar nada, pero un carrito
+  // viejo guardado en el navegador (de antes del cambio) sí podría seguir
+  // apareciendo y dejando enviar el pedido: por eso se corta acá y no solo en
+  // el botón de agregar. Ver features.ts.
+  if (!PEDIDOS_HABILITADOS) return null;
 
   return (
     <>
