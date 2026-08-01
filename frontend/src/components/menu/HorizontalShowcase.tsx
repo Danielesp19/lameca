@@ -35,6 +35,12 @@ function ChevronButton({ dir, onClick }: { dir: "left" | "right"; onClick: () =>
   );
 }
 
+// Mínimo recorrido horizontal (px) para contar como swipe, y cuánto más
+// horizontal que vertical debe ser el gesto. Sin la segunda condición, bajar
+// por la carta con el dedo apenas inclinado cambiaría de método sin querer.
+const SWIPE_MIN_PX = 45;
+const SWIPE_RATIO  = 1.4;
+
 function MetodoSlide({ item, canLeft, canRight, onPrev, onNext }: {
   item: MenuItem;
   canLeft: boolean;
@@ -43,11 +49,53 @@ function MetodoSlide({ item, canLeft, canRight, onPrev, onNext }: {
   onNext: () => void;
 }) {
   const hasVideo = Boolean(item.video_url);
+  // Pointer events (no touch events): cubren dedo, mouse y lápiz con un solo
+  // handler, y —clave acá— no se pierden cuando el navegador evalúa si el
+  // gesto era un scroll. Con touchstart/touchend, un arrastre horizontal sobre
+  // una página que scrollea vertical suele terminar en `touchcancel`, así que
+  // el handler de fin nunca corría y el swipe "no hacía nada".
+  const inicio = useRef<{ x: number; y: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    inicio.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const desde = inicio.current;
+    inicio.current = null;
+    if (!desde) return;
+    const dx = e.clientX - desde.x;
+    const dy = e.clientY - desde.y;
+    if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+    // Arrastrar hacia la izquierda avanza al siguiente (como pasar una hoja).
+    if (dx < 0 && canRight) onNext();
+    else if (dx > 0 && canLeft) onPrev();
+  };
 
   return (
     // Reentra con un desvanecido suave cada vez que cambia el ítem (key en el
     // padre), en vez de saltar de golpe de una foto/texto a otra.
-    <div style={{ textAlign: "center", animation: "fadeUp 0.5s ease both" }}>
+    // El swipe se escucha en todo el bloque (foto + texto), no solo en la foto:
+    // es el área que el dedo busca naturalmente para pasar de método.
+    <div
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => { inicio.current = null; }}
+      // Arrastrar sobre una imagen dispara el drag-and-drop nativo del
+      // navegador, que se queda el gesto y cancela la secuencia de pointer a
+      // mitad de camino: el pointerup nunca llega y el swipe "no hace nada".
+      // (Mismo motivo por el que MenuCard pone draggable={false}.)
+      onDragStart={e => e.preventDefault()}
+      style={{
+        textAlign: "center", animation: "fadeUp 0.5s ease both",
+        // pan-y: el scroll vertical de la carta sigue siendo del navegador,
+        // pero el movimiento horizontal queda para nosotros — sin esto el
+        // navegador puede quedarse el gesto y cancelar el pointer a mitad.
+        touchAction: "pan-y",
+        // Sin esto, arrastrar sobre el nombre/descripción selecciona texto en
+        // vez de pasar de método.
+        userSelect: "none", WebkitUserSelect: "none",
+      }}
+    >
       {/* Foto/video + flechitas A SUS COSTADOS: fila con las flechas como
           columnas fijas de 40px a cada lado y la imagen centrada entre ellas
           — así las flechas quedan a la altura de la foto, no de todo el
@@ -67,10 +115,11 @@ function MetodoSlide({ item, canLeft, canRight, onPrev, onNext }: {
               src={item.video_url ?? undefined}
               poster={item.video_poster_url ?? item.image_url ?? undefined}
               autoPlay muted loop playsInline
+              draggable={false}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
           ) : item.image_url ? (
-            <Image src={item.image_url} alt={item.name} fill sizes="210px" style={{ objectFit: "cover" }} />
+            <Image src={item.image_url} alt={item.name} fill sizes="210px" draggable={false} style={{ objectFit: "cover" }} />
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(244,238,227,0.4)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Foto próximamente
@@ -230,6 +279,14 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
         {categoria.items.length > 1 && (
           <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, letterSpacing: "0.14em", color: "rgba(244,238,227,0.45)" }}>
             {activeIdx + 1} / {categoria.items.length}
+            {/* El swipe no se ve; sin decirlo, mucha gente solo usaría las
+                flechitas. Se muestra únicamente hasta el primer cambio de
+                método: después ya quedó claro cómo se pasa. */}
+            {activeIdx === 0 && (
+              <span style={{ display: "block", marginTop: 7, fontSize: 10, letterSpacing: "0.1em", opacity: 0.75 }}>
+                ‹ desliza ›
+              </span>
+            )}
           </div>
         )}
       </div>
