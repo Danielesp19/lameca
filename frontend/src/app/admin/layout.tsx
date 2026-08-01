@@ -34,19 +34,50 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (isLogin) return <>{children}</>;
   if (!ready)  return null;
 
+  const pdfHref = `${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`;
+  const logout  = () => { sessionStorage.removeItem("admin_token"); router.push("/admin/login"); };
+
   return (
     <AdminSedeProvider>
-    <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0EB", fontFamily: "var(--font-sans)" }}>
-      {/* Sidebar */}
-      <aside style={{
-        width: 220,
+    <div style={{ minHeight: "100vh", background: "#F5F0EB", fontFamily: "var(--font-sans)" }}>
+      {/* Barra superior — solo en móvil (<768px): la sidebar de escritorio no
+          cabe en una pantalla angosta, así que se reemplaza por una franja
+          horizontal fija arriba con lo mismo (marca, navegación, PDF, salir)
+          en un formato compacto. Sticky: con una lista de categorías larga,
+          que la navegación siga alcanzable sin volver a subir del todo. */}
+      <div className="flex md:hidden items-center justify-between gap-2 sticky top-0 z-20 bg-white border-b border-[#E8E0D8] px-4 py-2.5">
+        <img src="/logo.png" alt="La Meca" className="h-7 w-auto object-contain shrink-0" />
+        <nav className="flex items-center gap-1 overflow-x-auto">
+          {NAV.map(({ href, label, icon }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link key={href} href={href} className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px]" style={{
+                fontWeight: active ? 600 : 400,
+                color:      active ? "#6F4E37" : "#6B5744",
+                background: active ? "#F5EDE5"  : "transparent",
+              }}>
+                <span>{icon}</span>{label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="flex items-center gap-1 shrink-0">
+          <a href={pdfHref} download="carta-la-meca.pdf" title="Descargar carta (PDF)"
+             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E8E0D8] text-[#6B5744] text-[15px]">
+            ⬇
+          </a>
+          <button onClick={logout} title="Cerrar sesión"
+             className="flex h-8 w-8 items-center justify-center rounded-lg text-[#B0A090] text-[13px] bg-transparent border-none cursor-pointer">
+            ⎋
+          </button>
+        </div>
+      </div>
+
+      {/* Sidebar — solo en escritorio (≥768px) */}
+      <aside className="hidden md:flex md:fixed md:inset-y-0 md:left-0 md:w-[220px] flex-col" style={{
         background: "#FFFFFF",
         borderRight: "1px solid #E8E0D8",
-        display: "flex",
-        flexDirection: "column",
         padding: "24px 16px",
-        position: "fixed",
-        top: 0, left: 0, bottom: 0,
       }}>
         {/* Brand */}
         <div style={{ marginBottom: 32, paddingLeft: 8 }}>
@@ -83,7 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Descarga de la carta en PDF (misma que ven los clientes en el menú) */}
         <a
-          href={`${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`}
+          href={pdfHref}
           download="carta-la-meca.pdf"
           style={{
             display: "flex",
@@ -104,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Logout */}
         <button
-          onClick={() => { sessionStorage.removeItem("admin_token"); router.push("/admin/login"); }}
+          onClick={logout}
           style={{
             textAlign: "left",
             padding: "8px 12px",
@@ -121,7 +152,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Content */}
-      <main style={{ marginLeft: 220, flex: 1, padding: "40px 48px" }}>
+      <main className="md:ml-[220px] px-4 py-6 md:px-12 md:py-10">
         {/* El selector de sede solo aplica a pedidos y mesas; productos y categorías son compartidos */}
         {(pathname.startsWith("/admin/orders") || pathname.startsWith("/admin/tables")) && <SedeSwitcher />}
         {children}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, FormEvent, Fragment } from "react";
+import { useEffect, useState, useCallback, FormEvent } from "react";
 import Link from "next/link";
 import {
   adminGetCategories, adminCreateCategory,
@@ -20,6 +20,37 @@ const OTROS_SLUG = "otros";
 // para no sugerir que sí se puede, y se destacan visualmente en la lista.
 function esVitrinaEspecial(cat: AdminCategory): boolean {
   return cat.display_mode === "vertical" || cat.display_mode === "horizontal";
+}
+
+// ─── Controles de orden (↑↓) reutilizados en categorías y productos ───────────
+// Antes eran dos cuadraditos sueltos lado a lado; esta versión los agrupa en
+// una sola píldora con flechitas más finas (SVG, no el carácter ↑↓ que varía
+// de grosor según la fuente del sistema) — se ve más como un control y menos
+// como dos botones desperdigados.
+function ChevronIcon({ dir }: { dir: "up" | "down" }) {
+  return (
+    <svg width="11" height="7" viewBox="0 0 11 7" fill="none" aria-hidden="true">
+      <path d={dir === "up" ? "M1 6L5.5 1.5L10 6" : "M1 1L5.5 5.5L10 1"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function OrderButtons({ onUp, onDown, upDisabled, downDisabled, className = "" }: {
+  onUp: () => void; onDown: () => void; upDisabled: boolean; downDisabled: boolean; className?: string;
+}) {
+  const btnClass = "w-9 h-9 md:w-7 md:h-7 flex items-center justify-center bg-[#FDFAF7] hover:enabled:bg-[#F3EAE0] transition-colors";
+  return (
+    <div className={`inline-flex flex-col rounded-lg overflow-hidden border border-[#E8E0D8] ${className}`}>
+      <button type="button" onClick={onUp} disabled={upDisabled} title="Subir" className={btnClass}
+        style={{ color: upDisabled ? "#D4C4B4" : "#6B5744", cursor: upDisabled ? "default" : "pointer" }}>
+        <ChevronIcon dir="up" />
+      </button>
+      <div className="h-px bg-[#E8E0D8]" />
+      <button type="button" onClick={onDown} disabled={downDisabled} title="Bajar" className={btnClass}
+        style={{ color: downDisabled ? "#D4C4B4" : "#6B5744", cursor: downDisabled ? "default" : "pointer" }}>
+        <ChevronIcon dir="down" />
+      </button>
+    </div>
+  );
 }
 
 const input: React.CSSProperties = {
@@ -151,7 +182,7 @@ export default function CategoriesPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1C0F05", fontFamily: "var(--font-serif)", margin: 0 }}>Categorías</h2>
           <p style={{ fontSize: 13, color: "#9A7055", marginTop: 4 }}>
@@ -171,7 +202,7 @@ export default function CategoriesPage() {
           <p style={{ fontSize: 14, fontWeight: 600, color: "#6F4E37", marginBottom: 18 }}>
             {editing ? `Editando: ${editing.name}` : "Nueva categoría"}
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ marginBottom: 16 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Nombre *</label>
               <input
@@ -193,8 +224,17 @@ export default function CategoriesPage() {
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Presentación</label>
               <select style={input} value={formMode} onChange={e => setFormMode(e.target.value as DisplayMode)}>
                 <option value="grid">Normal (en la lista del menú)</option>
-                <option value="vertical">Vertical (sección de cierre, fondo oscuro)</option>
-                <option value="horizontal">Horizontal (sección de cierre, scroll de lado)</option>
+                {/* Vertical/Horizontal (Cafés de origen, Métodos) ya no se ofrecen
+                    para categorías nuevas — no se esperan más vitrinas de cierre a
+                    futuro. Solo aparecen acá al editar una de las dos que ya
+                    existen, para no dejar el selector vacío/inconsistente con su
+                    valor real. */}
+                {editing && (editing.display_mode === "vertical" || editing.display_mode === "horizontal") && (
+                  <>
+                    <option value="vertical">Vertical (sección de cierre, fondo oscuro)</option>
+                    <option value="horizontal">Horizontal (sección de cierre, scroll de lado)</option>
+                  </>
+                )}
               </select>
               <p style={{ fontSize: 11, color: "#9A7055", marginTop: 4 }}>
                 {formMode === "vertical"
@@ -220,175 +260,235 @@ export default function CategoriesPage() {
       {loading && <p style={{ color: "#9A7055", fontSize: 14 }}>Cargando…</p>}
       {error   && <p style={{ color: "#DC2626", fontSize: 14 }}>{error}</p>}
 
+      {/* En móvil el contenedor no pinta nada: cada categoría es su propia
+          tarjeta blanca separada (ver el wrapper de cada fila más abajo), y si
+          el contenedor fuera blanco todas se fundirían en un solo bloque
+          continuo. En escritorio sí es una sola tarjeta con filas adentro. */}
       {!loading && !error && (
-        <div style={{ background: "#FFFFFF", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #F0EBE5" }}>
-                {["Orden", "Nombre", "Descripción", "Productos", ""].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "12px 20px", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0A090" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {cats.map((cat, i) => {
-                const especial = esVitrinaEspecial(cat);
-                return (
-                <Fragment key={cat.id}>
-                <tr style={{
-                  borderTop: i === 0 ? "none" : "1px solid #F9F5F2",
-                  background: especial ? "#FBF3E7" : "transparent",
-                }}>
-                  <td style={{ padding: "14px 20px" }}>
-                    {especial ? (
-                      <span title="Posición fija en la carta: no se puede mover" style={{ fontSize: 11, color: "#B0895E" }}>🔒 fija</span>
-                    ) : (
-                    <div style={{ display: "flex", gap: 4 }}>
-                      <button
-                        onClick={() => move(i, -1)}
-                        disabled={i === 0 || reordering}
-                        title="Subir"
-                        style={{
-                          width: 28, height: 28, borderRadius: 6, border: "1px solid #E8E0D8",
-                          background: "none", cursor: i === 0 || reordering ? "default" : "pointer",
-                          fontSize: 13, color: i === 0 ? "#D4C4B4" : "#6B5744",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}
-                      >↑</button>
-                      <button
-                        onClick={() => move(i, 1)}
-                        disabled={i === cats.length - 1 || reordering}
-                        title="Bajar"
-                        style={{
-                          width: 28, height: 28, borderRadius: 6, border: "1px solid #E8E0D8",
-                          background: "none", cursor: i === cats.length - 1 || reordering ? "default" : "pointer",
-                          fontSize: 13, color: i === cats.length - 1 ? "#D4C4B4" : "#6B5744",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}
-                      >↓</button>
-                    </div>
-                    )}
-                  </td>
-                  <td style={{ padding: "14px 20px", fontWeight: 600, color: "#1C0F05" }}>
-                    {cat.name}
-                    {especial && (
-                      <span style={{
-                        marginLeft: 8, fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-                        color: "#9A5B21", background: "#F3DFC1", padding: "2px 8px", borderRadius: 999,
-                      }}>
-                        {cat.display_mode === "vertical" ? "Vitrina vertical" : "Vitrina horizontal"}
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: "14px 20px", color: "#6B5744" }}>{cat.description ?? "—"}</td>
-                  <td style={{ padding: "14px 20px" }}>
-                    <button
-                      onClick={() => { setExpandedId(expandedId === cat.id ? null : cat.id); setItemsErr(""); }}
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: 6,
-                        background: "none", border: "none", cursor: "pointer",
-                        fontSize: 13, color: "#9A7055", fontWeight: 500, padding: 0,
-                      }}
-                    >
-                      {cat.items_count ?? 0} · ordenar
-                      <span style={{ fontSize: 10, transform: expandedId === cat.id ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>▼</span>
-                    </button>
-                  </td>
-                  <td style={{ padding: "14px 20px" }}>
-                    <div style={{ display: "flex", gap: 16 }}>
-                      <button onClick={() => startEdit(cat)} style={{ fontSize: 13, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
-                      {cat.slug === OTROS_SLUG ? (
-                        <span style={{ fontSize: 12, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
-                      ) : especial ? (
-                        <span style={{ fontSize: 12, color: "#B0A090" }} title="Tiene vitrina especial en la carta, con posición fija: no se puede eliminar ni mover (sí se puede editar)">Protegida</span>
+        <div className="bg-transparent shadow-none rounded-none md:bg-white md:rounded-2xl md:overflow-hidden md:shadow-[0_1px_3px_rgba(0,0,0,0.06)]" style={{ fontSize: 15 }}>
+          {/* Encabezado de columnas: solo en escritorio — en móvil cada fila es
+              una tarjeta y los rótulos van pegados a cada dato, no hace falta
+              una cabecera aparte. */}
+          <div className="hidden md:grid md:grid-cols-[72px_1fr_190px_130px] md:items-center gap-4 px-5 py-3 border-b border-[#F0EBE5]">
+            {["Orden", "Categoría", "Productos", ""].map(h => (
+              <span key={h} className={h === "Productos" ? "text-center" : ""} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0A090" }}>{h}</span>
+            ))}
+          </div>
+
+          {cats.map((cat, i) => {
+            const especial = esVitrinaEspecial(cat);
+            const expanded = expandedId === cat.id;
+            const toggle = () => { setExpandedId(expanded ? null : cat.id); setItemsErr(""); };
+            return (
+              // md:contents → en escritorio este wrapper desaparece del layout
+              // y sus hijos siguen siendo celdas directas de la tarjeta común.
+              // En móvil es la tarjeta individual de la categoría, con su
+              // separación del resto.
+              <div key={cat.id} className="md:contents mb-3 rounded-2xl overflow-hidden bg-white shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
+                {/* Toda la fila es el "botón" de expandir/colapsar productos —
+                    antes solo el texto "· ordenar" lo hacía, un target chico y
+                    poco obvio, sobre todo con el dedo. Los controles de orden y
+                    las acciones cortan la propagación del click para no
+                    disparar el toggle sin querer al usarlos. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={toggle}
+                  onKeyDown={e => {
+                    if (e.target !== e.currentTarget) return; // ya lo maneja el control enfocado
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+                  }}
+                  className="flex flex-col gap-2.5 md:grid md:grid-cols-[72px_1fr_190px_130px] md:items-center gap-x-4 px-4 py-3.5 md:px-5 md:py-3.5 cursor-pointer hover:bg-[#FBF8F4] transition-colors md:border-t"
+                  style={{
+                    // El separador entre filas es cosa de escritorio: en móvil
+                    // las tarjetas ya se separan solas con el margen.
+                    borderTopColor: i === 0 ? "transparent" : "#F9F5F2",
+                    background: expanded ? "#FBF8F4" : especial ? "#FBF3E7" : "transparent",
+                  }}
+                >
+                  {/* En móvil, orden y nombre van juntos en una misma línea
+                      (flechas a la izquierda, con aire); en escritorio este
+                      wrapper se disuelve con md:contents y cada uno vuelve a
+                      ser su propia celda del grid. */}
+                  <div className="order-1 flex items-center gap-4 md:contents">
+                    {/* Orden (↑↓) */}
+                    <div className="md:order-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      {/* Con la categoría abierta se ocultan sus flechas: abajo ya
+                          hay otras flechas (las de ordenar productos) y tener las
+                          dos a la vista se presta a mover la categoría creyendo
+                          que se mueve un producto. Mover categorías se hace con
+                          las demás filas cerradas. */}
+                      {expanded ? null : especial ? (
+                        <span title="Posición fija en la carta: no se puede mover" style={{ fontSize: 11, color: "#B0895E" }}>🔒 fija</span>
                       ) : (
-                        <button onClick={() => del(cat)} style={{ fontSize: 13, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
+                        <OrderButtons
+                          onUp={() => move(i, -1)} onDown={() => move(i, 1)}
+                          upDisabled={i === 0 || reordering} downDisabled={i === cats.length - 1 || reordering}
+                        />
                       )}
                     </div>
-                  </td>
-                </tr>
-                {expandedId === cat.id && (() => {
+
+                    {/* Nombre + badge, con la descripción debajo en chiquito: ya
+                        no es una columna propia — se comía ancho que le sirve
+                        más a "Productos", y para categorías sin descripción
+                        (p.ej. "Otros") dejaba un hueco raro en la fila. */}
+                    <div className="md:order-2 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap" style={{ fontSize: 16.5, fontWeight: 600, color: "#1C0F05" }}>
+                        {cat.name}
+                        {especial && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+                            color: "#9A5B21", background: "#F3DFC1", padding: "2px 8px", borderRadius: 999,
+                          }}>
+                            {cat.display_mode === "vertical" ? "Vitrina vertical" : "Vitrina horizontal"}
+                          </span>
+                        )}
+                        {/* En móvil esta flecha es lo único que anuncia que la
+                            tarjeta se despliega (no hay columna "Productos" con
+                            su propia flecha, como en escritorio), así que va
+                            grande y en el café fuerte del panel. */}
+                        <span className="md:hidden ml-auto" style={{ fontSize: 19, lineHeight: 1, color: "#6F4E37", transform: expanded ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>▾</span>
+                      </div>
+                      {cat.description && (
+                        <div className="line-clamp-1 mt-0.5" style={{ fontSize: 12.5, color: "#A89684" }}>
+                          {cat.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Productos: el dato con más protagonismo de la fila — es lo
+                      que se viene a consultar y lo que anticipa el despliegue.
+                      En escritorio va centrado en su columna, con la flecha
+                      grande al lado; en móvil la flecha ya va junto al nombre. */}
+                  <div className="order-3 md:order-3 hidden md:flex items-center justify-center gap-2.5" style={{ fontSize: 19, fontWeight: 700, color: "#6F4E37" }}>
+                    {cat.items_count ?? 0}
+                    <span style={{ fontSize: 14, fontWeight: 400, color: "#9A7055" }}>
+                      producto{(cat.items_count ?? 0) !== 1 ? "s" : ""}
+                    </span>
+                    <span style={{ fontSize: 15, color: "#6F4E37", transform: expanded ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>▼</span>
+                  </div>
+                  <div className="order-3 md:hidden" style={{ fontSize: 16, fontWeight: 700, color: "#6F4E37" }}>
+                    {cat.items_count ?? 0}
+                    <span style={{ fontSize: 14, fontWeight: 400, color: "#9A7055" }}>
+                      {" "}producto{(cat.items_count ?? 0) !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="order-4 md:order-4" onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 18 }}>
+                    <button onClick={() => startEdit(cat)} style={{ fontSize: 14, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
+                    {cat.slug === OTROS_SLUG ? (
+                      <span style={{ fontSize: 13, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
+                    ) : especial ? (
+                      <span style={{ fontSize: 13, color: "#B0A090" }} title="Tiene vitrina especial en la carta, con posición fija: no se puede eliminar ni mover (sí se puede editar)">Protegida</span>
+                    ) : (
+                      <button onClick={() => del(cat)} style={{ fontSize: 14, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
+                    )}
+                  </div>
+                </div>
+
+                {expanded && (() => {
                   const catItems = items.filter(it => it.menu_category_id === cat.id);
                   return (
-                    <tr>
-                      <td colSpan={5} style={{ padding: "0 20px 18px", background: "#FBF8F4" }}>
-                        <div style={{ border: "1.5px solid #F0EBE5", borderRadius: 12, overflow: "hidden", background: "#FFFFFF" }}>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6B5744", padding: "10px 16px", margin: 0, borderBottom: "1px solid #F0EBE5", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span>Productos de &quot;{cat.name}&quot;</span>
-                            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              {reorderingCatId === cat.id && <span style={{ fontSize: 11, color: "#9A7055", textTransform: "none", fontWeight: 500 }}>Guardando…</span>}
-                              <Link href={`/admin/items/new?category=${cat.id}`} style={{ fontSize: 12, color: "#6F4E37", textDecoration: "none", fontWeight: 600, textTransform: "none", letterSpacing: "normal" }}>
-                                + Nuevo producto
-                              </Link>
-                            </span>
-                          </p>
-                          {itemsErr && expandedId === cat.id && (
-                            <p style={{ fontSize: 12, color: "#DC2626", padding: "8px 16px 0", margin: 0 }}>{itemsErr}</p>
-                          )}
-                          {catItems.length === 0 ? (
-                            <p style={{ padding: "16px", fontSize: 13, color: "#B0A090", margin: 0 }}>Esta categoría no tiene productos.</p>
-                          ) : (
-                            <div>
-                              {catItems.map((item, ii) => (
-                                <div
-                                  key={item.id}
-                                  style={{
-                                    display: "flex", alignItems: "center", gap: 14,
-                                    padding: "10px 16px",
-                                    borderTop: ii === 0 ? "none" : "1px solid #F9F5F2",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", gap: 4 }}>
-                                    <button
-                                      onClick={() => moveItem(cat.id, ii, -1)}
-                                      disabled={ii === 0 || reorderingCatId !== null}
-                                      title="Subir"
-                                      style={{
-                                        width: 30, height: 30, borderRadius: 6, border: "1px solid #E8E0D8",
-                                        background: "none", cursor: ii === 0 || reorderingCatId !== null ? "default" : "pointer",
-                                        fontSize: 14, color: ii === 0 ? "#D4C4B4" : "#6B5744",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                      }}
-                                    >↑</button>
-                                    <button
-                                      onClick={() => moveItem(cat.id, ii, 1)}
-                                      disabled={ii === catItems.length - 1 || reorderingCatId !== null}
-                                      title="Bajar"
-                                      style={{
-                                        width: 30, height: 30, borderRadius: 6, border: "1px solid #E8E0D8",
-                                        background: "none", cursor: ii === catItems.length - 1 || reorderingCatId !== null ? "default" : "pointer",
-                                        fontSize: 14, color: ii === catItems.length - 1 ? "#D4C4B4" : "#6B5744",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                      }}
-                                    >↓</button>
-                                  </div>
-                                  <span style={{ fontSize: 13, fontWeight: 500, color: "#1C0F05", flex: 1 }}>{item.name}</span>
-                                  {item.is_featured && (
-                                    <span style={{ fontSize: 11, color: "#9A7055" }}>★ Destacado</span>
-                                  )}
-                                  <Link href={`/admin/items/${item.id}/edit`} style={{ fontSize: 12, color: "#6F4E37", textDecoration: "none", fontWeight: 500 }}>
-                                    Editar
-                                  </Link>
-                                  <button onClick={() => delItem(item)} style={{ fontSize: 12, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>
-                                    Eliminar
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                    <div className="px-4 pb-4 md:px-5 md:pb-[18px]" style={{ background: "#FBF8F4" }}>
+                      <div style={{ border: "1.5px solid #F0EBE5", borderRadius: 12, overflow: "hidden", background: "#FFFFFF" }}>
+                        <div className="flex flex-wrap items-center justify-between gap-3" style={{ padding: "12px 18px", borderBottom: "1px solid #F0EBE5" }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "#6B5744", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Productos de &quot;{cat.name}&quot;
+                          </span>
+                          <span className="flex items-center gap-3">
+                            {reorderingCatId === cat.id && <span style={{ fontSize: 12, color: "#9A7055", fontWeight: 500 }}>Guardando…</span>}
+                            {/* Azul (no el café del resto del panel): es la acción
+                                principal de esta caja y se busca de un vistazo —
+                                el contraste con la paleta cálida la hace evidente. */}
+                            <Link
+                              href={`/admin/items/new?category=${cat.id}`}
+                              className="hover:bg-[#1D4ED8] transition-colors"
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 6,
+                                fontSize: 14.5, fontWeight: 600, color: "#FFFFFF",
+                                background: "#2563EB", padding: "10px 18px",
+                                borderRadius: 10, textDecoration: "none",
+                                boxShadow: "0 1px 3px rgba(37,99,235,0.35)",
+                              }}
+                            >
+                              + Nuevo producto
+                            </Link>
+                          </span>
                         </div>
-                      </td>
-                    </tr>
+                        {itemsErr && (
+                          <p style={{ fontSize: 13, color: "#DC2626", padding: "8px 18px 0", margin: 0 }}>{itemsErr}</p>
+                        )}
+                        {catItems.length === 0 ? (
+                          <p style={{ padding: "18px", fontSize: 14, color: "#B0A090", margin: 0 }}>Esta categoría no tiene productos.</p>
+                        ) : (
+                          <div>
+                            {catItems.map((item, ii) => (
+                              <div
+                                key={item.id}
+                                className="flex flex-wrap items-center gap-3 md:gap-4"
+                                style={{
+                                  padding: "14px 18px",
+                                  borderTop: ii === 0 ? "none" : "1px solid #F9F5F2",
+                                }}
+                              >
+                                <OrderButtons
+                                  onUp={() => moveItem(cat.id, ii, -1)} onDown={() => moveItem(cat.id, ii, 1)}
+                                  upDisabled={ii === 0 || reorderingCatId !== null}
+                                  downDisabled={ii === catItems.length - 1 || reorderingCatId !== null}
+                                />
+                                {/* Nombre del producto: la fila principal de lo que
+                                    el admin más necesita leer rápido — más grande y
+                                    con más peso que el resto de los datos de la fila. */}
+                                <span style={{ fontSize: 16.5, fontWeight: 600, color: "#1C0F05", flex: "1 1 140px" }}>{item.name}</span>
+                                {item.is_featured && (
+                                  <span style={{
+                                    display: "inline-flex", alignItems: "center", gap: 4,
+                                    fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
+                                    color: "#9A5B21", background: "#F3DFC1", padding: "4px 10px", borderRadius: 999,
+                                  }}>
+                                    ★ Destacado
+                                  </span>
+                                )}
+                                <Link href={`/admin/items/${item.id}/edit`} style={{ fontSize: 14, color: "#6F4E37", textDecoration: "none", fontWeight: 500 }}>
+                                  Editar
+                                </Link>
+                                <button onClick={() => delItem(item)} style={{ fontSize: 14, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>
+                                  Eliminar
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Cerrar sin tener que volver a subir hasta la fila de
+                            la categoría — con una lista larga de productos esa
+                            fila queda fuera de pantalla. */}
+                        <div style={{ borderTop: "1px solid #F0EBE5", padding: "12px 18px" }}>
+                          <button
+                            onClick={toggle}
+                            className="hover:bg-[#EFF6FF] transition-colors"
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 7,
+                              fontSize: 14.5, fontWeight: 600, color: "#2563EB",
+                              background: "none", border: "1.5px solid #2563EB",
+                              padding: "9px 18px", borderRadius: 10, cursor: "pointer",
+                            }}
+                          >
+                            <span style={{ fontSize: 12 }}>▲</span> Ver menos
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })()}
-                </Fragment>
-                );
-              })}
-              {cats.length === 0 && (
-                <tr><td colSpan={5} style={{ padding: "48px 20px", textAlign: "center", color: "#B0A090", fontSize: 14 }}>No hay categorías.</td></tr>
-              )}
-            </tbody>
-          </table>
+              </div>
+            );
+          })}
+          {cats.length === 0 && (
+            <p style={{ padding: "48px 20px", textAlign: "center", color: "#B0A090", fontSize: 14 }}>No hay categorías.</p>
+          )}
         </div>
       )}
     </div>

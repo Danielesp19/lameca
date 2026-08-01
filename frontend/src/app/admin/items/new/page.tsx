@@ -11,7 +11,7 @@ export default async function NewItemPage({
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
         <Link href="/admin/categories" style={{ fontSize: 13, color: "#6F4E37", textDecoration: "none" }}>
           ← Categorías
         </Link>
