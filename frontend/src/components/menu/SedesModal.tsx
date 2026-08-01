@@ -35,6 +35,28 @@ export default function SedesModal({ open, onClose }: { open: boolean; onClose: 
     }
   }, [open, sedes.length]);
 
+  // Con el modal abierto, la carta de atrás no se mueve: sin esto, arrastrar
+  // sobre el fondo oscuro (o seguir arrastrando dentro del modal una vez que
+  // llegó a su tope) sigue corriendo la página detrás, y al cerrar aparecés en
+  // otro punto de la carta.
+  useEffect(() => {
+    if (!open) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const previo = { html: html.style.overflow, body: body.style.overflow, pad: body.style.paddingRight };
+    // En escritorio, esconder la barra de scroll ensancha la página y todo
+    // salta unos píxeles hacia la derecha: se compensa con un padding igual.
+    const anchoBarra = window.innerWidth - html.clientWidth;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    if (anchoBarra > 0) body.style.paddingRight = `${anchoBarra}px`;
+    return () => {
+      html.style.overflow = previo.html;
+      body.style.overflow = previo.body;
+      body.style.paddingRight = previo.pad;
+    };
+  }, [open]);
+
   const active = sedes[activeIdx] ?? null;
   const content = SEDE_CONTENT[activeIdx];
 
@@ -60,7 +82,9 @@ export default function SedesModal({ open, onClose }: { open: boolean; onClose: 
           >
             <div style={{
               pointerEvents: "auto", width: "100%", maxWidth: 460, maxHeight: "90dvh",
-              overflowY: "auto", borderRadius: 24,
+              // overscroll-behavior: contain → al llegar al final del modal, el
+              // gesto no "encadena" con el scroll de la página de atrás.
+              overflowY: "auto", overscrollBehavior: "contain", borderRadius: 24,
               background: "linear-gradient(180deg, #1a120c 0%, #120c08 100%)",
               border: "1px solid rgba(244,238,227,0.1)",
               fontFamily: "var(--font-sans)", color: CREAM,

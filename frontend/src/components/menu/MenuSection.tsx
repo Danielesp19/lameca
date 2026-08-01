@@ -222,6 +222,13 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     };
   }, [categories]);
 
+  // Volver al hero. `scroll-behavior: smooth` global (globals.css) ya haría el
+  // suavizado, pero se pide explícito por si el navegador lo ignora al venir de
+  // un elemento sticky.
+  function irArriba() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function handleCategoryChange(id: number | "todos") {
     setActiveCardKey(null);
     setActiveCategory(id);
@@ -257,15 +264,24 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           background: BAND,
           borderBottom: "1px solid rgba(62,42,28,0.1)",
         }}>
-          <span style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 44, height: 44, borderRadius: "50%",
-            background: "#FFFCF5",
-            boxShadow: "0 6px 16px -6px rgba(62,42,28,0.35)",
-          }}>
+          {/* También vuelve arriba: es el logo más grande y visible de la
+              carta, así que es el que la mano busca primero — dejarlo inerte
+              mientras el de la barra sticky sí responde se siente roto. */}
+          <button
+            type="button"
+            onClick={irArriba}
+            aria-label="Volver al inicio"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 44, height: 44, borderRadius: "50%", padding: 0,
+              border: "none", cursor: "pointer",
+              background: "#FFFCF5",
+              boxShadow: "0 6px 16px -6px rgba(62,42,28,0.35)",
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="La Meca" style={{ width: 34, height: 34, objectFit: "contain" }} />
-          </span>
+          </button>
           {table && (
             <span style={{
               position: "absolute", right: 20,
@@ -316,12 +332,48 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           transform: "translateZ(0)",
           willChange: "transform",
         }}>
+          <div style={{ display: "flex", alignItems: "center", maxWidth: 480, margin: "0 auto" }}>
+          {/* Logo fijo a la izquierda: vuelve arriba del todo (al hero) de un
+              toque, sin tener que scrollear toda la carta a mano. Queda FUERA
+              del carrusel de chips para que no se lo lleve el scroll horizontal.
+              El separador a la derecha marca dónde termina el logo y empiezan
+              los chips que sí se deslizan. */}
+          <button
+            type="button"
+            onClick={irArriba}
+            aria-label="Volver al inicio"
+            style={{
+              flexShrink: 0, display: "flex", alignItems: "center",
+              // Padding chico a propósito: el disco creció a 46px y este
+              // padding es lo que mantiene la barra en sus ~56px de siempre
+              // (varios márgenes de las vitrinas están calculados contra esa
+              // altura — ver los comentarios de HorizontalShowcase).
+              padding: "5px 12px 5px 22px", border: "none", background: "transparent",
+              cursor: "pointer", animation: "fadeUp 0.6s ease 0.45s both",
+            }}
+          >
+            {/* Círculo crema como el logo de la banda de arriba: el PNG es un
+                trazo negro con ~14% de padding transparente propio, así que
+                suelto y en chico se veía desvaído — sobre el disco claro
+                recupera el peso visual que tiene en el resto de la carta. */}
+            <span style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 46, height: 46, borderRadius: "50%",
+              background: "#FFFCF5",
+              boxShadow: "0 4px 12px -5px rgba(62,42,28,0.4)",
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="La Meca" style={{ width: 40, height: 40, objectFit: "contain", display: "block" }} />
+            </span>
+          </button>
+          <div style={{ flexShrink: 0, width: 1, height: 22, background: "rgba(62,42,28,0.14)", marginRight: 12 }} />
+
           <div
             className="cat-scroll"
             style={{
               display: "flex", gap: 9, overflowX: "auto", scrollbarWidth: "none",
               touchAction: "pan-x pan-y",
-              padding: "14px 22px 10px", maxWidth: 480, margin: "0 auto",
+              padding: "14px 22px 10px 0", flex: 1, minWidth: 0,
               animation: "fadeUp 0.6s ease 0.45s both",
             }}
           >
@@ -346,6 +398,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 </button>
               );
             })}
+          </div>
           </div>
         </div>
 

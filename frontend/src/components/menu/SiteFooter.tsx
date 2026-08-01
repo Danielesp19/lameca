@@ -15,8 +15,7 @@ const DARK  = "#060402";
 // TODO(cliente): reemplazar Facebook/TikTok por los enlaces reales cuando existan.
 const SOCIALS: { label: string; url: string; icon: "ig" | "fb" | "tt" }[] = [
   { label: "Instagram", url: "https://www.instagram.com/cafelameca/", icon: "ig" },
-  { label: "Facebook",  url: "https://www.facebook.com/",             icon: "fb" },
-  { label: "TikTok",    url: "https://www.tiktok.com/",               icon: "tt" },
+  { label: "Facebook",  url: "https://www.facebook.com/cafelamecapitalito/",             icon: "fb" },
 ];
 
 function SocialIcon({ icon }: { icon: "ig" | "fb" | "tt" }) {

@@ -180,7 +180,7 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
               <img src="/logo.png" alt="La Meca" style={{ width: "99%", height: "99%", objectFit: "contain", display: "block" }} />
             </span>
             <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(13px,3.4vw,16px)", lineHeight: 1.35, opacity: 0.92, maxWidth: 190 }}>
-              Tostado en casa, servido con calma
+              LA MECA
             </span>
           </a>
 
