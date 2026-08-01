@@ -28,7 +28,7 @@ class MenuPdfController extends Controller
      * archivo cacheado, y sin eso el servidor seguiría entregando el PDF viejo
      * hasta que alguien editara un producto.
      */
-    private const DISENO = 3;
+    private const DISENO = 5;
 
     public function __invoke()
     {
@@ -69,6 +69,19 @@ class MenuPdfController extends Controller
                 'fecha'      => now()->timezone(config('coffee.timezone', 'America/Bogota'))
                                      ->locale('es')->isoFormat('MMMM [de] YYYY'),
             ])->setPaper('a4');
+
+            // El pie va en `position:fixed` y dompdf lo pinta SIEMPRE al final,
+            // por encima de todo — ni el z-index de la cubierta lo tapa. Como
+            // en la portada no pinta nada (es una cubierta limpia), se repinta
+            // la franja inferior del color del fondo solo en la página 1.
+            // Coordenadas en puntos (A4 = 595.28 x 841.89) y color #F7F1E5.
+            // render() va ANTES a propósito: el canvas definitivo se crea
+            // durante el renderizado, así que registrar el script sobre el
+            // canvas previo no tendría efecto (se pierde al reemplazarse).
+            $pdf->render();
+            $pdf->getDomPDF()->getCanvas()->page_script(
+                'if ($PAGE_NUM == 1) { $pdf->filled_rectangle(0, 770, 595.28, 72, array(0.969, 0.945, 0.898)); }'
+            );
 
             // Una sola versión viva: al regenerar se limpian las anteriores.
             foreach ($disk->files('carta') as $old) {
