@@ -44,7 +44,13 @@ export default function SiteFooter() {
     <footer style={{
       background: DARK, color: CREAM,
       fontFamily: "var(--font-sans)",
-      padding: "clamp(36px,5vw,56px) clamp(22px,5vw,68px) 26px",
+      // Aire generoso arriba: cuando la carta va filtrada por una categoría no
+      // hay vitrina oscura antes del pie, así que el negro arranca justo
+      // después del fondo claro y con poco margen la marca quedaba pegada al
+      // borde. Encima, las categorías normales traen un margin-bottom negativo
+      // (ver .cat-block en MenuSection) que se come otros 40px. En "Todos" no
+      // se nota: ahí lo de arriba ya es oscuro y este espacio se funde.
+      padding: "clamp(64px,10vw,96px) clamp(22px,5vw,68px) 26px",
     }}>
       <div style={{
         maxWidth: 920, margin: "0 auto",
