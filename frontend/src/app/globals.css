@@ -23,6 +23,16 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
+/* Recorte del sangrado horizontal (secciones con margin negativo, carruseles)
+   EN LA RAÍZ, no en #menu: `clip` no crea un contenedor de scroll, pero WebKit
+   (iOS Safari) tiene bugs conocidos con `position: sticky` dentro de un
+   ancestro con overflow clip — la barra de categorías re-posicionaba con
+   retraso en cada frame y se veía TEMBLAR al scrollear en iPhone. En la raíz
+   el sticky queda anclado directo al viewport y lo lleva el compositor.
+   (Es el mismo bug por el que los fondos de las vitrinas usan pin por JS en
+   vez de sticky — ver useShowcaseBgPin.) */
+html, body { overflow-x: clip; }
+
 /* "Scroll anchoring" del navegador desactivado: por defecto, si algo arriba
    de lo que estás viendo cambia de tamaño mientras scrolleas (el video del
    hero terminando de cargar, una categoría creciendo mientras llegan sus

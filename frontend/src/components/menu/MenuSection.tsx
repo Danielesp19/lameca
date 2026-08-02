@@ -250,7 +250,11 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           background: BG, color: CHOCO,
           fontFamily: "var(--font-sans)",
           boxShadow: "0 -24px 60px rgba(62,42,28,0.35)",
-          overflowX: "clip",
+          // SIN overflowX: "clip" acá — se movió a html/body (globals.css).
+          // Con el clip en este ancestro, la barra de categorías sticky
+          // temblaba al scrollear en iOS (bug de WebKit con sticky dentro de
+          // overflow clip). #menu ocupa todo el ancho, así que recortar en la
+          // raíz produce exactamente el mismo resultado visual.
         }}
       >
         {/* ── Banda de header: logo centrado + mesa ── */}
