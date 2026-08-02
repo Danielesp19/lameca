@@ -108,8 +108,19 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
     );
 
     observer.observe(outer);
+
+    // iOS con ahorro de batería bloquea incluso el autoplay silenciado: el
+    // play() devuelve NotAllowedError y el video queda en el poster para
+    // siempre. Un gesto del usuario SÍ desbloquea la reproducción, así que al
+    // primer toque en la página se reintenta una vez.
+    const reintentar = () => {
+      if (!done && v && v.paused) v.play().catch(() => {});
+    };
+    document.addEventListener("touchend", reintentar, { once: true, passive: true });
+
     return () => {
       observer.disconnect();
+      document.removeEventListener("touchend", reintentar);
       v?.removeEventListener("ended", onEnded);
     };
   }, [bgGifOrImg]);
@@ -139,12 +150,19 @@ export default function HeroSection({ initialHero }: { initialHero?: HeroData | 
             ref={videoRef}
             muted
             playsInline
-            // "auto" (no "metadata"): el play() lo dispara JS (más abajo, al
-            // entrar en viewport), no el atributo autoPlay — con solo
-            // "metadata" el navegador no empieza a bajar el video de verdad
-            // hasta ese primer play(), y se nota como un tartamudeo/cuadro en
-            // negro justo cuando se levanta el splash. Con "auto" ya viene
-            // precargado desde antes, aprovechando los ~3.8s del splash.
+            // autoPlay ADEMÁS del play() por JS: iOS Safari ignora
+            // preload="auto" (política de ahorro de datos) y no descarga NADA
+            // hasta que algo dispara la reproducción — con solo el play() del
+            // JS, en iPhone el video ni siquiera empezaba a bajar durante el
+            // splash y quedaba el fondo vacío un buen rato. Con autoplay
+            // (muted + playsInline) Safari sí arranca la descarga y la
+            // reproducción por su cuenta apenas puede.
+            autoPlay
+            // El poster tapa el hueco mientras llegan los primeros frames (o
+            // si el autoplay está bloqueado del todo, p.ej. ahorro de
+            // batería): es un fotograma real del video, así el arranque se ve
+            // como "la imagen cobra vida" y no como un salto.
+            poster="/videos/hero-coffee-poster.jpg"
             preload="auto"
             aria-hidden="true"
             tabIndex={-1}

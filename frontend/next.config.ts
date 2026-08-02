@@ -49,6 +49,19 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Video y poster del hero: sin esto salían con max-age=0 y cada visita
+      // re-descargaba el video completo — en datos móviles eso es la
+      // diferencia entre "el fondo aparece al instante" y "no carga". Un día
+      // de caché: el archivo casi nunca cambia, y si cambia, en un día rota.
+      {
+        source: "/videos/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
     ];
   },
   images: {
