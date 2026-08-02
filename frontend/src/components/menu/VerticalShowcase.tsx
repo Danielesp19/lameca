@@ -231,8 +231,11 @@ export default function VerticalShowcase({ categoria, onSelect }: {
         <div
           style={{
             position: "absolute", inset: 0,
+            // Sin `filter` CSS: el desaturado/oscurecido que llevaba acá está
+            // HORNEADO en image.webp. Un filter sobre una capa a pantalla
+            // completa obliga a la GPU a re-renderizarla en cada frame de
+            // scroll — en iPhone se sentía como scroll pesado/trabado.
             background: `linear-gradient(180deg, rgba(20,18,15,0.82) 0%, rgba(20,18,15,0.88) 40%, ${DARK_BOT} 100%), url(/image.webp) center/cover no-repeat`,
-            filter: "grayscale(0.3) saturate(0.85) brightness(0.85)",
           }}
         />
         <div style={{ position: "absolute", inset: 0, boxShadow: `inset 0 0 120px 30px ${DARK_BOT}` }} />

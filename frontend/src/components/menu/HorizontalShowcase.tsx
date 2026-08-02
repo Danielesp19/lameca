@@ -225,8 +225,10 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
         <div
           style={{
             position: "absolute", inset: 0,
+            // Sin `filter` CSS: el ajuste está horneado en metodos.jpg — ver
+            // el mismo comentario en VerticalShowcase (costo por frame en la
+            // GPU del celular).
             background: `linear-gradient(180deg, rgba(20,18,15,0.75) 0%, rgba(20,18,15,0.85) 45%, ${DARK_BOT} 100%), url(/metodos.jpg) center 38%/cover no-repeat`,
-            filter: "saturate(0.9) brightness(0.85)",
           }}
         />
         <div style={{ position: "absolute", inset: 0, boxShadow: `inset 0 0 120px 30px ${DARK_BOT}` }} />
