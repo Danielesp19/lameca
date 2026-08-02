@@ -35,7 +35,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   // mueve desde el panel admin con las flechas. Ninguna de las dos sale como
   // pestaña: son vitrinas, no paradas del filtro.
   const normales    = categories.filter(c => c.display_mode !== "vertical" && c.display_mode !== "horizontal");
-  const horizontales = categories.filter(c => c.display_mode === "horizontal");
   const verticales  = categories.filter(c => c.display_mode === "vertical");
 
   // Flujo de "Todos": normales + vitrinas horizontales, en el orden que ya
@@ -454,9 +453,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
                 desvanecido suave en vez de saltar de golpe.
                 En "Todos" se recorre el flujo completo respetando sort_order,
                 y cada categoría se pinta según su display_mode: las
-                horizontales como vitrina, el resto como bloque normal. Con un
-                filtro activo solo se pinta esa categoría, y las vitrinas
-                quedan detrás (abajo) porque no son parte del filtro. */}
+                horizontales como vitrina, el resto como bloque normal. */}
             <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
               {(activeCategory === "todos" ? flujo : groups).map((cat, gi) => (
                 cat.display_mode === "horizontal"
@@ -468,18 +465,15 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
               ))}
             </div>
 
-            {/* Con un filtro activo las vitrinas horizontales no entran en el
-                flujo de arriba (ese solo tiene la categoría elegida), así que
-                se pintan acá para que el cierre de la carta siga completo. */}
-            {activeCategory !== "todos" && horizontales.map(cat => (
-              <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
-            ))}
-
-            {/* Cafés de origen (vertical) va al final, fuera del div con
-                `key={activeCategory}`: ese div se remonta al cambiar de
-                pestaña, y aquí eso relanzaría la animación de entrada de toda
-                la sección cada vez. El cierre de la carta va después. */}
-            {verticales.map(cat => (
+            {/* Cafés de origen (vertical) cierra la carta, pero SOLO en
+                "Todos": con un filtro activo la persona pidió ver una
+                categoría concreta, y seguir pintando las vitrinas debajo
+                hacía que "Métodos" y "Cafés de origen" aparecieran igual en
+                todas las pestañas, como si el filtro no hubiera hecho nada.
+                Va fuera del div con `key={activeCategory}` porque ese div se
+                remonta al cambiar de pestaña, y aquí eso relanzaría la
+                animación de entrada de toda la sección cada vez. */}
+            {activeCategory === "todos" && verticales.map(cat => (
               <VerticalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
             ))}
             </>
