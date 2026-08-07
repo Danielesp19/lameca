@@ -241,10 +241,12 @@ export default function VerticalShowcase({ categoria, onSelect }: {
         <div style={{ position: "absolute", inset: 0, boxShadow: `inset 0 0 120px 30px ${DARK_BOT}` }} />
       </div>
 
-      {/* menu-col: en pantalla grande las filas se estirarían a todo lo ancho
-          y la foto quedaría lejísimos de su texto. El fondo sí sigue ocupando
-          la pantalla completa — lo que se acota es el contenido. */}
-      <div className="menu-col" style={{ position: "relative", zIndex: 1, padding: "40px 22px 54px", borderTop: "1px solid rgba(244,238,227,0.1)" }}>
+      {/* menu-col-wide (no menu-col): en pantalla grande las filas se
+          estirarían a todo lo ancho y la foto quedaría lejísimos de su texto,
+          pero en celular NO se toca nada — este bloque siempre ocupó el ancho
+          completo de su sección. El fondo sigue a pantalla completa en ambos
+          casos; lo que se acota es el contenido. */}
+      <div className="menu-col-wide" style={{ position: "relative", zIndex: 1, padding: "40px 22px 54px", borderTop: "1px solid rgba(244,238,227,0.1)" }}>
         <div
           ref={cabecera}
           style={{

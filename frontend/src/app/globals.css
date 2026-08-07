@@ -261,6 +261,14 @@ body {
 @media (min-width: 768px)  { .menu-col { max-width: 720px; } }
 @media (min-width: 1120px) { .menu-col { max-width: 940px; } }
 
+/* Variante SIN tope en celular: para bloques que hoy ocupan todo el ancho de
+   su sección (la vitrina vertical). Con .menu-col a secas, un teléfono ancho
+   (>436px) habría empezado a recortarlos — y la consigna es que por debajo de
+   768px no cambie absolutamente nada. */
+.menu-col-wide { margin-left: auto; margin-right: auto; }
+@media (min-width: 768px)  { .menu-col-wide { max-width: 720px; } }
+@media (min-width: 1120px) { .menu-col-wide { max-width: 940px; } }
+
 /* Grilla de productos (vista con una categoría filtrada). En celular sigue
    siendo de 2 columnas, igual que antes; en pantallas grandes crece a 3 y 4
    para no dejar tarjetas gigantes. */
