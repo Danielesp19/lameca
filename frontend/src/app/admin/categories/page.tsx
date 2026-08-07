@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   adminGetCategories, adminCreateCategory,
   adminUpdateCategory, adminDeleteCategory, adminReorderCategories, AdminCategory,
-  adminGetItems, adminReorderItems, adminDeleteItem, AdminItem, DisplayMode,
+  adminGetItems, adminReorderItems, adminDeleteItem, AdminItem,
 } from "@/lib/admin-api";
 import { getSedes } from "@/lib/orders-api";
 import SedeLinks from "@/components/admin/SedeLinks";
@@ -78,7 +78,6 @@ export default function CategoriesPage() {
   const [creating, setCreating] = useState(false);
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");
-  const [formMode, setFormMode] = useState<DisplayMode>("grid");
   const [saving,   setSaving]   = useState(false);
   const [formErr,  setFormErr]  = useState("");
   const [reordering, setReordering] = useState(false);
@@ -138,8 +137,8 @@ export default function CategoriesPage() {
     } catch (e) { setItemsErr((e as Error).message); }
   }
 
-  function startCreate() { setEditing(null); setFormName(""); setFormDesc(""); setFormMode("grid"); setFormErr(""); setCreating(true); }
-  function startEdit(c: AdminCategory) { setCreating(false); setEditing(c); setFormName(c.name); setFormDesc(c.description ?? ""); setFormMode(c.display_mode ?? "grid"); setFormErr(""); }
+  function startCreate() { setEditing(null); setFormName(""); setFormDesc(""); setFormErr(""); setCreating(true); }
+  function startEdit(c: AdminCategory) { setCreating(false); setEditing(c); setFormName(c.name); setFormDesc(c.description ?? ""); setFormErr(""); }
   function cancel() { setCreating(false); setEditing(null); }
 
   async function save(e: FormEvent) {
@@ -147,10 +146,10 @@ export default function CategoriesPage() {
     setSaving(true); setFormErr("");
     try {
       if (editing) {
-        const updated = await adminUpdateCategory(editing.id, { name: formName, description: formDesc || null, display_mode: formMode });
+        const updated = await adminUpdateCategory(editing.id, { name: formName, description: formDesc || null });
         setCats(prev => prev.map(c => c.id === editing.id ? { ...c, ...updated } : c));
       } else {
-        const created = await adminCreateCategory({ name: formName, description: formDesc || null, display_mode: formMode });
+        const created = await adminCreateCategory({ name: formName, description: formDesc || null });
         setCats(prev => [...prev, created]);
       }
       cancel();
@@ -234,25 +233,26 @@ export default function CategoriesPage() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#6B5744", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Presentación</label>
-              <select style={input} value={formMode} onChange={e => setFormMode(e.target.value as DisplayMode)}>
-                <option value="grid">Normal (en la lista del menú)</option>
-                {/* Vertical/Horizontal (Cafés de origen, Métodos) ya no se ofrecen
-                    para categorías nuevas — no se esperan más vitrinas de cierre a
-                    futuro. Solo aparecen acá al editar una de las dos que ya
-                    existen, para no dejar el selector vacío/inconsistente con su
-                    valor real. */}
-                {editing && (editing.display_mode === "vertical" || editing.display_mode === "horizontal") && (
-                  <>
-                    <option value="vertical">Vertical (sección de cierre, fondo oscuro)</option>
-                    <option value="horizontal">Horizontal (sección de cierre, scroll de lado)</option>
-                  </>
-                )}
-              </select>
+              {/* Dato, no control: la presentación no se elige ni se cambia.
+                  Las dos vitrinas son piezas de diseño concretas de la carta
+                  (Cafés de origen vertical, Métodos horizontal — cada una con
+                  su foto de fondo y su animación), no un formato genérico
+                  aplicable a cualquier categoría. El backend también ignora el
+                  campo, así que esto no es solo un candado de pantalla. */}
+              <div style={{
+                ...input,
+                display: "flex", alignItems: "center", gap: 8,
+                background: "#F9F5F2", color: "#6B5744", cursor: "default",
+              }}>
+                {editing?.display_mode === "vertical" ? "🔒 Vitrina vertical"
+                  : editing?.display_mode === "horizontal" ? "🔒 Vitrina horizontal"
+                  : "Normal (en la lista del menú)"}
+              </div>
               <p style={{ fontSize: 11, color: "#9A7055", marginTop: 4 }}>
-                {formMode === "vertical"
-                  ? "No sale como pestaña: aparece al final de la carta y sus productos van apareciendo al bajar. La descripción se usa como texto de entrada."
-                  : formMode === "horizontal"
-                  ? "No sale como pestaña: aparece al final de la carta con fondo oscuro, mostrando un producto a la vez con flechitas para pasar de lado."
+                {editing?.display_mode === "vertical"
+                  ? "Cierra la carta con su vitrina de fondo oscuro. No se puede cambiar."
+                  : editing?.display_mode === "horizontal"
+                  ? "Se muestra como vitrina, un producto a la vez. No se puede cambiar."
                   : "Aparece como pestaña y en el listado, como el resto."}
               </p>
             </div>

@@ -26,12 +26,19 @@ class CategoryAdminController extends Controller
         $data = $request->validate([
             'name'         => 'required|string|max:255|unique:menu_categories,name',
             'description'  => 'nullable|string',
-            'display_mode' => ['nullable', Rule::in(MenuCategory::MODOS)],
             'sort_order'   => 'nullable|integer',
             'is_active'    => 'nullable|boolean',
         ], [
             'name.unique' => 'Ya existe una categoría con ese nombre.',
         ]);
+
+        // La presentación NO se elige: las dos vitrinas especiales son piezas
+        // de diseño concretas de la carta (Cafés de origen vertical, Métodos
+        // horizontal, cada una con su foto de fondo y su animación), no un
+        // formato genérico que sirva para cualquier categoría. Toda categoría
+        // nueva es normal.
+        $data['display_mode'] = 'grid';
+
         return response()->json(MenuCategory::create($data), 201);
     }
 
@@ -44,10 +51,14 @@ class CategoryAdminController extends Controller
             return response()->json(['message' => 'La categoría "Otros" no se puede renombrar.'], 422);
         }
 
+        // display_mode queda FUERA a propósito: no se puede cambiar la
+        // presentación de una categoría existente. Cafés de origen es siempre
+        // la vitrina vertical y Métodos la horizontal — cambiarlas rompe el
+        // cierre de la carta, y volver una categoría normal en vitrina la
+        // dejaría sin la foto de fondo que ese diseño da por hecha.
         $data = $request->validate([
             'name'         => ['sometimes', 'string', 'max:255', Rule::unique('menu_categories', 'name')->ignore($category->id)],
             'description'  => 'nullable|string',
-            'display_mode' => ['nullable', Rule::in(MenuCategory::MODOS)],
             'sort_order'   => 'nullable|integer',
             'is_active'    => 'nullable|boolean',
         ], [
