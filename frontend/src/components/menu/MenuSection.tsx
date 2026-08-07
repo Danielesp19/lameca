@@ -305,7 +305,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
         </div>
 
         {/* ── Título con subrayado dibujado ── */}
-        <div style={{ maxWidth: 480, margin: "0 auto", padding: "26px 22px 6px" }}>
+        <div className="menu-col" style={{ padding: "26px 22px 6px" }}>
           <h2 style={{
             fontFamily: "var(--font-display)", fontWeight: 600, fontStyle: "italic",
             fontSize: 44, lineHeight: 1, margin: 0, color: CHOCO,
@@ -343,7 +343,7 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
           transform: "translateZ(0)",
           willChange: "transform",
         }}>
-          <div style={{ display: "flex", alignItems: "center", maxWidth: 480, margin: "0 auto" }}>
+          <div className="menu-col" style={{ display: "flex", alignItems: "center" }}>
           {/* Logo fijo a la izquierda: vuelve arriba del todo (al hero) de un
               toque, sin tener que scrollear toda la carta a mano. Queda FUERA
               del carrusel de chips para que no se lo lleve el scroll horizontal.
@@ -419,9 +419,9 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
             vitrinas oscuras (Métodos, Cafés de origen) ya traen su propio
             padding inferior, así que el footer se integra justo después sin
             franja clara de por medio. */}
-        <div ref={listRef} style={{ maxWidth: 480, margin: "0 auto", padding: "6px 22px 0" }}>
+        <div ref={listRef} className="menu-col" style={{ padding: "6px 22px 0" }}>
           {loading ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 26 }}>
+            <div className="menu-grid" style={{ marginTop: 26 }}>
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} style={{ background: "#FFFCF5", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(188,90,50,0.2)" }}>
                   <div className="skeleton-light" style={{ aspectRatio: "1/1.05", width: "100%" }} />
@@ -559,14 +559,7 @@ function CategoryBlock({
             onSelect={onSelect}
           />
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 9,
-              padding: "4px 0 10px",
-            }}
-          >
+          <div className="menu-grid">
             {cat.items.map((item, idx) => (
               <MenuCard
                 key={item.id}
@@ -616,6 +609,12 @@ function CategoryCarousel({
   // (eso mostraría la flecha derecha hasta en el último producto).
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  // ¿Caben todos sin scroll? En pantalla grande la columna es mucho más ancha
+  // que en celular, y una categoría con pocos productos dejaba las tarjetas
+  // pegadas a la izquierda con un vacío enorme al lado. Cuando entran todas,
+  // se centran. (Se resuelve acá y no con `justify-content: safe center` en
+  // CSS porque el compilador descarta ese valor al construir.)
+  const [cabenTodos, setCabenTodos] = useState(false);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -623,6 +622,11 @@ function CategoryCarousel({
     const check = () => {
       setCanLeft(el.scrollLeft > 4);
       setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+      // El ancho mínimo (700px) deja el celular EXACTAMENTE como estaba: ahí
+      // la columna mide ~436px y dos tarjetas ya la llenan, así que centrarlas
+      // movería el carrusel unos píxeles sin necesidad. Solo aplica cuando la
+      // columna se ensanchó de verdad (≥768px de pantalla).
+      setCabenTodos(el.clientWidth >= 700 && el.scrollWidth <= el.clientWidth + 4);
     };
     check();
     // Solo lecturas baratas (scrollLeft/scrollWidth/clientWidth, sin
@@ -657,6 +661,7 @@ function CategoryCarousel({
           WebkitOverflowScrolling: "touch",
           scrollbarWidth: "none",
           padding: "4px 0 10px",
+          justifyContent: cabenTodos ? "center" : "flex-start",
         }}
       >
         {items.map((item, idx) => (
