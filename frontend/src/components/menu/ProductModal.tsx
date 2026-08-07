@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MenuItem, SUGAR_OPTIONS, DEFAULT_SUGAR, caffeineInfo } from "@/lib/menu-api";
+import { MenuItem, caffeineInfo } from "@/lib/menu-api";
 import LevelIcons from "@/components/menu/LevelIcons";
 import { useCart } from "@/context/CartContext";
 import { PEDIDOS_HABILITADOS } from "@/lib/features";
@@ -27,18 +27,16 @@ interface Props {
 export default function ProductModal({ item, onClose }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [added, setAdded] = useState(false);
-  const [sugar, setSugar] = useState<string>(DEFAULT_SUGAR);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { add, hasSession } = useCart();
 
   useEffect(() => {
-    if (item) { setActiveIdx(0); setAdded(false); setSugar(DEFAULT_SUGAR); }
+    if (item) { setActiveIdx(0); setAdded(false); }
   }, [item]);
 
   function handleAdd() {
     if (!item) return;
-    const sugarLevel = item.has_sugar_option ? sugar : undefined;
-    add({ id: item.id, name: item.name, price: item.price, image_url: item.image_url }, 1, sugarLevel);
+    add({ id: item.id, name: item.name, price: item.price, image_url: item.image_url }, 1);
     setAdded(true);
     setTimeout(onClose, 550);
   }
@@ -269,52 +267,6 @@ export default function ProductModal({ item, onClose }: Props) {
                     }}>
                       <LevelIcons level={caffeine.beans} icon="☕" size={16} />
                       <span style={{ fontSize: 12.5, fontWeight: 500, color: CHOCO }}>{caffeine.label}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Selector de nivel de azúcar (modo QR y modo público) ──
-                    Solo alimenta el pedido: sin pedidos no elige nada, así que
-                    se oculta junto con el botón. */}
-                {item.has_sugar_option && PEDIDOS_HABILITADOS && (
-                  <div style={{ marginTop: 22, animation: "fadeUp 0.5s ease 0.45s both" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                      <span style={{ width: 28, height: 1, background: OLIVE, display: "block" }} />
-                      <span style={{ fontSize: 10, letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.5 }}>
-                        Nivel de azúcar
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {SUGAR_OPTIONS.map(opt => {
-                        const active = sugar === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setSugar(opt.value)}
-                            style={{
-                              display: "inline-flex", alignItems: "center", gap: 6,
-                              padding: "9px 14px", borderRadius: 999, cursor: "pointer",
-                              fontFamily: "var(--font-sans)", fontSize: 12.5, fontWeight: 500,
-                              border: `1.5px solid ${active ? CHOCO : "rgba(62,42,28,0.25)"}`,
-                              background: active ? CHOCO : "transparent",
-                              color: active ? BG : CHOCO,
-                              transition: "all .18s",
-                            }}
-                          >
-                            {/* Número en vez de emoji: se lee mejor y es más consistente */}
-                            <span style={{
-                              display: "inline-flex", alignItems: "center", justifyContent: "center",
-                              width: 18, height: 18, borderRadius: "50%", flexShrink: 0,
-                              border: "1.5px solid currentColor",
-                              fontSize: 10, fontWeight: 700,
-                            }}>
-                              {opt.level}
-                            </span>
-                            {opt.value}
-                          </button>
-                        );
-                      })}
                     </div>
                   </div>
                 )}

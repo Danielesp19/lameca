@@ -232,7 +232,6 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true);
   const [isFeatured,  setIsFeatured]  = useState(item?.is_featured  ?? false);
   const [caffeine,    setCaffeine]    = useState<string>(item?.caffeine_level != null ? String(item.caffeine_level) : "");
-  const [hasSugar,    setHasSugar]    = useState(item?.has_sugar_option ?? false);
   // Sedes donde se ofrece. Al crear se marcan TODAS por defecto: lo habitual
   // es que un producto esté en ambas, y así el caso común no pide trabajo.
   // (Se rellenan de verdad al llegar la lista de sedes, más abajo.)
@@ -345,7 +344,10 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
       fd.append("menu_category_id", categoryId);
       fd.append("is_available",     isAvailable ? "1" : "0");
       fd.append("is_featured",      (isFeatured && !isVitrina) ? "1" : "0");
-      fd.append("has_sugar_option", (hasSugar    && !isVitrina) ? "1" : "0");
+      // "Permitir elegir azúcar" se retiró del panel: el local no lo usa. Se
+      // sigue mandando en 0 para apagarlo también en los productos viejos que
+      // lo tenían encendido.
+      fd.append("has_sugar_option", "0");
       sedeIds.forEach(id => fd.append("sede_ids[]", String(id)));
       if (caffeine !== "") fd.append("caffeine_level", caffeine);
 
@@ -732,7 +734,6 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
             // ambas a false más arriba.
             ...(isVitrina ? [] : [
               ["Marcar como destacado ★", isFeatured, setIsFeatured],
-              ["Permitir elegir azúcar 🍬", hasSugar, setHasSugar],
             ]),
           ] as [string, boolean, (v: boolean) => void][]).map(([l, val, set]) => (
             <label key={l} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontSize: 14, color: "#1C0F05" }}>
