@@ -7,6 +7,9 @@ import {
   adminUpdateCategory, adminDeleteCategory, adminReorderCategories, AdminCategory,
   adminGetItems, adminReorderItems, adminDeleteItem, AdminItem, DisplayMode,
 } from "@/lib/admin-api";
+import { getSedes } from "@/lib/orders-api";
+import SedeLinks from "@/components/admin/SedeLinks";
+import type { SedeInfo } from "@/lib/table-session";
 
 // Categoría protegida: destino de productos huérfanos. No se puede
 // renombrar ni borrar (el backend también lo bloquea; esto solo evita
@@ -81,6 +84,7 @@ export default function CategoriesPage() {
   const [reordering, setReordering] = useState(false);
 
   const [items, setItems] = useState<AdminItem[]>([]);
+  const [sedes, setSedes] = useState<SedeInfo[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [reorderingCatId, setReorderingCatId] = useState<number | null>(null);
   const [itemsErr, setItemsErr] = useState("");
@@ -97,6 +101,7 @@ export default function CategoriesPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { getSedes().then(setSedes).catch(() => {}); }, []);
 
   // Mueve un producto hacia arriba/abajo DENTRO de su categoría y persiste el nuevo orden.
   // reorderingCatId se limita a ESTA categoría: mover productos de una no bloquea las demás.
@@ -189,6 +194,8 @@ export default function CategoriesPage() {
 
   return (
     <div>
+      <SedeLinks />
+
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1C0F05", fontFamily: "var(--font-serif)", margin: 0 }}>Categorías</h2>
@@ -459,6 +466,20 @@ export default function CategoriesPage() {
                                     color: "#9A5B21", background: "#F3DFC1", padding: "4px 10px", borderRadius: 999,
                                   }}>
                                     ★ Destacado
+                                  </span>
+                                )}
+                                {/* Solo se avisa cuando el producto NO está en
+                                    todas las sedes: marcar "está en las dos"
+                                    en cada fila sería ruido, porque es el caso
+                                    normal. */}
+                                {sedes.length > 1 && item.sede_ids && item.sede_ids.length > 0
+                                  && item.sede_ids.length < sedes.length && (
+                                  <span style={{
+                                    display: "inline-flex", alignItems: "center", gap: 4,
+                                    fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
+                                    color: "#1D4ED8", background: "#DBEAFE", padding: "4px 10px", borderRadius: 999,
+                                  }}>
+                                    Solo {sedes.filter(x => item.sede_ids!.includes(x.id)).map(x => x.name).join(", ")}
                                   </span>
                                 )}
                                 <Link href={`/admin/items/${item.id}/edit`} style={{ fontSize: 14, color: "#6F4E37", textDecoration: "none", fontWeight: 500 }}>

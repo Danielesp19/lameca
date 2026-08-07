@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MenuItem;
+use App\Models\Sede;
 use App\Support\ImageOptimizer;
 use App\Support\VideoOptimizer;
 use App\Support\VideoPoster;
@@ -15,7 +16,7 @@ class ItemAdminController extends Controller
 {
     public function index()
     {
-        return MenuItem::with(['category:id,name', 'extraImages'])
+        return MenuItem::with(['category:id,name', 'extraImages', 'sedes:id'])
             ->orderBy('menu_category_id')
             ->orderBy('sort_order')
             ->get()
@@ -37,7 +38,16 @@ class ItemAdminController extends Controller
             'is_available'     => 'nullable|boolean',
             'is_featured'      => 'nullable|boolean',
             'sort_order'       => 'nullable|integer',
+            // Sedes donde se ofrece. Al menos una: un producto sin sede no
+            // aparecería en ninguna carta y sería un fantasma imposible de
+            // notar desde el panel.
+            'sede_ids'         => 'sometimes|array|min:1',
+            'sede_ids.*'       => 'integer|exists:sedes,id',
         ], $this->validationMessages());
+
+        // No es columna de menu_items: se guarda aparte, en la tabla pivote.
+        $sedeIds = $data['sede_ids'] ?? null;
+        unset($data['sede_ids']);
 
         if ($request->hasFile('video')) {
             $data['video']        = VideoOptimizer::store($request->file('video'), 'menu-items/videos');
@@ -45,6 +55,11 @@ class ItemAdminController extends Controller
         }
 
         $item = MenuItem::create($data);
+
+        // Sin sedes explícitas (formulario viejo, o API sin el campo): se
+        // ofrece en todas. Es el comportamiento previo a esta feature, y deja
+        // el producto visible en vez de invisible en todas partes.
+        $item->sedes()->sync($sedeIds ?? Sede::pluck('id')->all());
 
         // All uploaded images: first = cover (image column), rest = extras
         if ($request->hasFile('new_images')) {
@@ -59,7 +74,7 @@ class ItemAdminController extends Controller
             }
         }
 
-        return response()->json($this->fmt($item->load('extraImages')), 201);
+        return response()->json($this->fmt($item->load('extraImages', 'sedes')), 201);
     }
 
     public function update(Request $request, MenuItem $item)
@@ -77,7 +92,16 @@ class ItemAdminController extends Controller
             'is_available'     => 'nullable|boolean',
             'is_featured'      => 'nullable|boolean',
             'sort_order'       => 'nullable|integer',
+            // Sedes donde se ofrece. Al menos una: un producto sin sede no
+            // aparecería en ninguna carta y sería un fantasma imposible de
+            // notar desde el panel.
+            'sede_ids'         => 'sometimes|array|min:1',
+            'sede_ids.*'       => 'integer|exists:sedes,id',
         ], $this->validationMessages());
+
+        // No es columna de menu_items: se guarda aparte, en la tabla pivote.
+        $sedeIds = $data['sede_ids'] ?? null;
+        unset($data['sede_ids']);
 
         // ── Video ─────────────────────────────────────────────────────────────
         if ($request->input('delete_anim') === '1') {
@@ -97,7 +121,14 @@ class ItemAdminController extends Controller
         }
 
         $item->update($data);
-        return response()->json($this->fmt($item->fresh(['extraImages'])));
+
+        // Solo si vinieron en la petición: un PATCH parcial que no menciona
+        // sedes no debe reasignarlas.
+        if ($sedeIds !== null) {
+            $item->sedes()->sync($sedeIds);
+        }
+
+        return response()->json($this->fmt($item->fresh(['extraImages', 'sedes'])));
     }
 
     public function destroy(MenuItem $item)
@@ -139,7 +170,7 @@ class ItemAdminController extends Controller
             }
         });
 
-        return MenuItem::with(['category:id,name', 'extraImages'])
+        return MenuItem::with(['category:id,name', 'extraImages', 'sedes:id'])
             ->where('menu_category_id', $categoryId)
             ->orderBy('sort_order')
             ->get()
@@ -254,6 +285,8 @@ class ItemAdminController extends Controller
                 'id'  => $img->id,
                 'url' => asset('storage/'.$img->path),
             ])->values()->all(),
+            'sede_ids'         => ($item->relationLoaded('sedes') ? $item->sedes : $item->sedes()->get())
+                                    ->pluck('id')->values()->all(),
             'is_available'     => (bool) $item->is_available,
             'is_featured'      => (bool) $item->is_featured,
             'sort_order'       => $item->sort_order,

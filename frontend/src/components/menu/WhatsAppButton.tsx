@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { PEDIDOS_HABILITADOS } from "@/lib/features";
+import { useSede } from "@/context/SedeContext";
 import { getSedes } from "@/lib/orders-api";
 import type { SedeInfo } from "@/lib/table-session";
 
@@ -34,6 +35,7 @@ function WaIcon({ size = 26 }: { size?: number }) {
 
 export default function WhatsAppButton() {
   const { hasSession, count } = useCart();
+  const { sede } = useSede();
   const [sedes, setSedes] = useState<SedeInfo[]>([]);
   const [pick, setPick] = useState(false);
 
@@ -57,7 +59,12 @@ export default function WhatsAppButton() {
   }
 
   function onClick() {
-    if (sedes.length > 1) setPick(true);
+    // Si el cliente ya está en la carta de una sede (llegó por su QR o la
+    // eligió), se escribe a ESA: preguntarle de nuevo a cuál sede quiere
+    // escribir, cuando acaba de decirlo, es un paso de más.
+    const activa = sede && sedes.find(s => s.id === sede.id);
+    if (activa) go(activa);
+    else if (sedes.length > 1) setPick(true);
     else if (sedes.length === 1) go(sedes[0]);
     else window.open(waLink(FALLBACK_PHONE), "_blank", "noopener");
   }

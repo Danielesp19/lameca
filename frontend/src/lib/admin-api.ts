@@ -43,6 +43,8 @@ export interface AdminItem {
   is_available: boolean;
   is_featured: boolean;
   sort_order: number;
+  /** Sedes donde se ofrece. Vacío/ausente = backend viejo → se asume en todas. */
+  sede_ids?: number[];
 }
 
 function token(): string {

@@ -5,6 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { AdminSedeProvider } from "@/context/AdminSedeContext";
 import SedeSwitcher from "@/components/admin/SedeSwitcher";
+import { getSedes } from "@/lib/orders-api";
+import type { SedeInfo } from "@/lib/table-session";
 
 // "Productos" se unió a Categorías: cada categoría se expande ahí mismo
 // para ordenar/crear/editar/borrar sus productos, así que no hace falta una
@@ -24,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const isLogin  = pathname === "/admin/login";
   const [ready, setReady] = useState(isLogin);
+  const [sedes, setSedes] = useState<SedeInfo[]>([]);
 
   useEffect(() => {
     if (isLogin) { setReady(true); return; }
@@ -31,11 +34,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setReady(true);
   }, [isLogin, router]);
 
+  useEffect(() => {
+    if (isLogin) return;
+    getSedes().then(setSedes).catch(() => {});
+  }, [isLogin]);
+
   if (isLogin) return <>{children}</>;
   if (!ready)  return null;
 
-  const pdfHref = `${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`;
+  const pdfBase = `${process.env.NEXT_PUBLIC_MENU_API ?? "/api-menu"}/menu/pdf`;
   const logout  = () => { sessionStorage.removeItem("admin_token"); router.push("/admin/login"); };
+
+  // Con varias sedes, cada una tiene su propia carta (solo sus productos), así
+  // que hay una descarga por sede en vez de una sola con todo mezclado.
+  const pdfs = sedes.length > 1
+    ? sedes.map(s => ({
+        href: `${pdfBase}?sede=${s.slug}`,
+        file: `carta-la-meca-${s.slug}.pdf`,
+        label: `Carta ${s.name} (PDF)`,
+      }))
+    : [{ href: pdfBase, file: "carta-la-meca.pdf", label: "Descargar carta (PDF)" }];
 
   return (
     <AdminSedeProvider>
@@ -62,10 +80,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
         <div className="flex items-center gap-1 shrink-0">
-          <a href={pdfHref} download="carta-la-meca.pdf" title="Descargar carta (PDF)"
-             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E8E0D8] text-[#6B5744] text-[15px]">
-            ⬇
-          </a>
+          {pdfs.map(p => (
+            <a key={p.href} href={p.href} download={p.file} title={p.label}
+               className="flex h-8 items-center justify-center gap-1 rounded-lg border border-[#E8E0D8] px-2 text-[#6B5744] text-[13px] whitespace-nowrap">
+              ⬇{pdfs.length > 1 && <span className="text-[11px]">{p.label.replace(/^Carta (Meca )?| \(PDF\)$/g, "")}</span>}
+            </a>
+          ))}
           <button onClick={logout} title="Cerrar sesión"
              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#B0A090] text-[13px] bg-transparent border-none cursor-pointer">
             ⎋
@@ -113,25 +133,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Descarga de la carta en PDF (misma que ven los clientes en el menú) */}
-        <a
-          href={pdfHref}
-          download="carta-la-meca.pdf"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "9px 12px",
-            marginBottom: 6,
-            borderRadius: 8,
-            fontSize: 13.5,
-            color: "#6B5744",
-            textDecoration: "none",
-            border: "1px solid #E8E0D8",
-          }}
-        >
-          <span style={{ fontSize: 15 }}>⬇</span>
-          Descargar carta (PDF)
-        </a>
+        {pdfs.map(p => (
+          <a
+            key={p.href}
+            href={p.href}
+            download={p.file}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "9px 12px",
+              marginBottom: 6,
+              borderRadius: 8,
+              fontSize: 13.5,
+              color: "#6B5744",
+              textDecoration: "none",
+              border: "1px solid #E8E0D8",
+            }}
+          >
+            <span style={{ fontSize: 15 }}>⬇</span>
+            {p.label}
+          </a>
+        ))}
 
         {/* Logout */}
         <button

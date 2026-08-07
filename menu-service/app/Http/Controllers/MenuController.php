@@ -10,8 +10,12 @@ class MenuController extends Controller
 {
     public function index()
     {
+        // sedes:id — solo para armar sede_ids en el payload. El filtrado por
+        // sede lo hace el FRONTEND: así una sola respuesta cacheada (ISR/CDN)
+        // sirve a las cartas de todas las sedes en vez de una variante por
+        // sede pegándole al backend.
         $categories = MenuCategory::where('is_active', true)
-            ->with(['availableItems.extraImages'])
+            ->with(['availableItems.extraImages', 'availableItems.sedes:id'])
             ->orderBy('sort_order')
             ->get();
 
@@ -100,6 +104,12 @@ class MenuController extends Controller
                                     ->values()
                                     ->all(),
             'is_featured'      => $item->is_featured,
+            // En qué sedes se ofrece. Lista vacía = producto sin marcar en
+            // ninguna sede (no debería pasar: el admin exige al menos una) —
+            // el frontend lo trata como "en todas" para no esconder nada por
+            // un dato a medias.
+            'sede_ids'         => ($item->relationLoaded('sedes') ? $item->sedes : $item->sedes()->get())
+                                    ->pluck('id')->values()->all(),
         ];
 
         if ($detailed) {

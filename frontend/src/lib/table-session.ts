@@ -7,6 +7,8 @@
 
 export interface SedeInfo {
   id: number;
+  /** Identificador en la URL de los QR de cada local (?sede=campestre). */
+  slug?: string;
   name: string;
   whatsapp_phone: string | null;
   address?: string | null;

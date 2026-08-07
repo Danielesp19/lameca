@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getSedes } from "@/lib/orders-api";
 import { localPhone, type SedeInfo } from "@/lib/table-session";
+import { useSede } from "@/context/SedeContext";
 
 const CREAM = "#F7F1E5";
 // Un poco más oscuro que el negro con el que terminan las vitrinas (Cafés de
@@ -35,6 +36,7 @@ function SocialIcon({ icon }: { icon: "ig" | "fb" | "tt" }) {
 // Dirección y teléfonos salen de las sedes configuradas en el admin.
 export default function SiteFooter() {
   const [sedes, setSedes] = useState<SedeInfo[]>([]);
+  const { sede: activa, limpiarSede } = useSede();
 
   useEffect(() => {
     getSedes().then(setSedes).catch(() => {});
@@ -78,8 +80,19 @@ export default function SiteFooter() {
           {sedes.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {sedes.map(s => (
-                <div key={s.id} style={{ fontSize: 13, lineHeight: 1.5 }}>
-                  <span style={{ fontWeight: 600 }}>{s.name}</span>
+                <div key={s.id} style={{ fontSize: 13, lineHeight: 1.5, opacity: activa && activa.id !== s.id ? 0.45 : 1 }}>
+                  <span style={{ fontWeight: 600 }}>
+                    {s.name}
+                    {activa?.id === s.id && (
+                      <span style={{
+                        marginLeft: 8, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em",
+                        textTransform: "uppercase", color: "#0B0703",
+                        background: "#C8A97E", padding: "2px 7px", borderRadius: 999,
+                      }}>
+                        Estás aquí
+                      </span>
+                    )}
+                  </span>
                   {s.address      && <span style={{ display: "block", opacity: 0.65 }}>{s.address}</span>}
                   {s.address_note && <span style={{ display: "block", opacity: 0.5 }}>{s.address_note}</span>}
                   {s.opening_hours && (
@@ -90,6 +103,22 @@ export default function SiteFooter() {
             </div>
           ) : (
             <p style={{ fontSize: 13, opacity: 0.65, margin: 0 }}>La Meca · Café de origen</p>
+          )}
+          {/* Única salida para quien eligió mal la sede o se cambió de local:
+              la elección queda recordada en el navegador, así que sin esto
+              tendría que borrar datos del sitio para volver a preguntar. */}
+          {activa && sedes.length > 1 && (
+            <button
+              onClick={limpiarSede}
+              style={{
+                marginTop: 14, padding: "8px 15px", borderRadius: 999,
+                border: "1px solid rgba(247,241,229,0.35)", background: "transparent",
+                color: CREAM, fontFamily: "inherit", fontSize: 12, cursor: "pointer",
+                letterSpacing: "0.04em",
+              }}
+            >
+              Cambiar de sede
+            </button>
           )}
         </div>
 

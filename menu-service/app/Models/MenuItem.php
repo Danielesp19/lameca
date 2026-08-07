@@ -39,4 +39,10 @@ class MenuItem extends Model
     {
         return $this->hasMany(MenuItemImage::class)->orderBy('sort_order');
     }
+
+    /** Sedes donde este producto se ofrece (tabla menu_item_sede). */
+    public function sedes()
+    {
+        return $this->belongsToMany(Sede::class, 'menu_item_sede');
+    }
 }

@@ -13,6 +13,9 @@ export interface MenuItem {
   category?: string;
   caffeine_level: number | null;   // 0–3, null = no mostrar
   has_sugar_option: boolean;       // el cliente puede elegir nivel de azúcar
+  /** Sedes donde se ofrece. Ausente o vacío (backend sin desplegar, dato a
+   *  medias) = se muestra en todas: mejor de más que esconder productos. */
+  sede_ids?: number[];
 }
 
 // ── Nivel de azúcar (lo elige el cliente al pedir) ───────────────────────────

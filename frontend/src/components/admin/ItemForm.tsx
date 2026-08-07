@@ -6,6 +6,8 @@ import {
   AdminItem, AdminCategory,
   adminGetCategories, adminCreateItem, adminUpdateItem,
 } from "@/lib/admin-api";
+import { getSedes } from "@/lib/orders-api";
+import type { SedeInfo } from "@/lib/table-session";
 
 // Tope de peso para el video del producto. Un clip de menú comprimido (480–720p,
 // sin audio) pesa unos cientos de KB; 15 MB deja margen de sobra y evita subir
@@ -231,6 +233,11 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
   const [isFeatured,  setIsFeatured]  = useState(item?.is_featured  ?? false);
   const [caffeine,    setCaffeine]    = useState<string>(item?.caffeine_level != null ? String(item.caffeine_level) : "");
   const [hasSugar,    setHasSugar]    = useState(item?.has_sugar_option ?? false);
+  // Sedes donde se ofrece. Al crear se marcan TODAS por defecto: lo habitual
+  // es que un producto esté en ambas, y así el caso común no pide trabajo.
+  // (Se rellenan de verdad al llegar la lista de sedes, más abajo.)
+  const [sedes,       setSedes]       = useState<SedeInfo[]>([]);
+  const [sedeIds,     setSedeIds]     = useState<number[]>(item?.sede_ids ?? []);
 
   // Image list state
   const [imgList, setImgList] = useState<ImgSlot[]>(() => {
@@ -251,6 +258,16 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
 
   useEffect(() => {
     adminGetCategories().then(setCats).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    getSedes().then(lista => {
+      setSedes(lista);
+      // Producto nuevo (o uno viejo sin sedes asignadas, de antes de esta
+      // función): se marcan todas. El backend hace lo mismo si no recibe el
+      // campo, así que la casilla refleja lo que va a pasar de verdad.
+      setSedeIds(prev => (prev.length ? prev : lista.map(x => x.id)));
+    }).catch(() => {});
   }, []);
 
   // Métodos y Cafés de origen (vitrinas de cierre): no son bebidas con
@@ -329,6 +346,7 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
       fd.append("is_available",     isAvailable ? "1" : "0");
       fd.append("is_featured",      (isFeatured && !isVitrina) ? "1" : "0");
       fd.append("has_sugar_option", (hasSugar    && !isVitrina) ? "1" : "0");
+      sedeIds.forEach(id => fd.append("sede_ids[]", String(id)));
       if (caffeine !== "") fd.append("caffeine_level", caffeine);
 
       // ── Images ─────────────────────────────────────────────────────────────
@@ -624,6 +642,85 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
           </button>
         ) : null}
       </div>
+
+      {/* ── Sedes ── */}
+      {sedes.length > 1 && (
+        <div style={card}>
+          <div style={cardTitle}>¿Dónde se vende?</div>
+          {sedes.length === 2 ? (
+            // Con dos sedes las combinaciones posibles son solo tres, y
+            // enunciarlas ("solo en A", "solo en B", "en ambas") se lee de un
+            // golpe. Con dos casillas sueltas hay que deducir qué significa
+            // cada combinación, y "ninguna marcada" es un estado inválido que
+            // ni siquiera existe acá.
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { ids: [sedes[0].id],              label: `Solo en ${sedes[0].name}` },
+                { ids: [sedes[1].id],              label: `Solo en ${sedes[1].name}` },
+                { ids: sedes.map(x => x.id),       label: "En ambas sedes" },
+              ].map(opt => {
+                const activa = opt.ids.length === sedeIds.length
+                  && opt.ids.every(id => sedeIds.includes(id));
+                return (
+                  <label
+                    key={opt.label}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "14px 16px", borderRadius: 12,
+                      border: `1.5px solid ${activa ? "#2563EB" : "#F0EBE5"}`,
+                      background: activa ? "#EFF6FF" : "#FDFAF7",
+                      cursor: "pointer",
+                      fontSize: 14.5, fontWeight: activa ? 600 : 500, color: "#1C0F05",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="sedes"
+                      checked={activa}
+                      onChange={() => setSedeIds(opt.ids)}
+                      style={{ accentColor: "#2563EB", width: 18, height: 18 }}
+                    />
+                    {opt.label}
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            // Con una cantidad distinta de sedes las tres opciones de arriba no
+            // alcanzan (no cubren combinaciones parciales): casillas sueltas.
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {sedes.map(s2 => {
+                const marcada = sedeIds.includes(s2.id);
+                const ultima = marcada && sedeIds.length === 1;
+                return (
+                  <label
+                    key={s2.id}
+                    title={ultima ? "Debe venderse al menos en una sede" : undefined}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "13px 15px", borderRadius: 12,
+                      border: `1.5px solid ${marcada ? "#BFDBFE" : "#F0EBE5"}`,
+                      background: marcada ? "#EFF6FF" : "#FDFAF7",
+                      cursor: ultima ? "not-allowed" : "pointer",
+                      fontSize: 14.5, fontWeight: 600, color: "#1C0F05",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcada}
+                      disabled={ultima}
+                      onChange={e => setSedeIds(prev =>
+                        e.target.checked ? [...prev, s2.id] : prev.filter(x => x !== s2.id))}
+                      style={{ accentColor: "#2563EB", width: 18, height: 18 }}
+                    />
+                    {s2.name}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Opciones ── */}
       <div style={card}>

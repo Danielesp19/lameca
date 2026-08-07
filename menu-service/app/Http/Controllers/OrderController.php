@@ -62,6 +62,9 @@ class OrderController extends Controller
             ->get()
             ->map(fn (Sede $s) => [
                 'id'             => $s->id,
+                // El slug viaja en la URL de los QR (?sede=campestre) — es la
+                // llave con la que la carta identifica la sede activa.
+                'slug'           => $s->slug,
                 'name'           => $s->name,
                 'whatsapp_phone' => $s->whatsapp_phone,
                 'address'        => $s->address,

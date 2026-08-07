@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMenu } from "@/hooks/useMenu";
 import { MenuItem, MenuCategory } from "@/lib/menu-api";
 import { useCart } from "@/context/CartContext";
+import { useSede, seVendeEn } from "@/context/SedeContext";
 import MenuCard from "./MenuCard";
 import ProductModal from "./ProductModal";
 import VerticalShowcase from "./VerticalShowcase";
@@ -18,8 +19,19 @@ const BAND   = "#EADCC3";
 const PREM_CREAM = "#F4EEE3"; // Destacados: misma paleta oscura del modal "Nuestras sedes"
 
 export default function MenuSection({ initialCategories }: { initialCategories?: MenuCategory[] }) {
-  const { categories, loading, error, retry } = useMenu(initialCategories);
+  const { categories: todasLasCategorias, loading, error, retry } = useMenu(initialCategories);
   const { table } = useCart();
+  const { sede } = useSede();
+
+  // La carta se filtra por sede AQUÍ, no en el backend: así una sola respuesta
+  // cacheada (ISR + CDN) sirve a todas las sedes en vez de una variante por
+  // sede pegándole al backend en cada escaneo de QR.
+  const categories = useMemo(() => {
+    if (!sede) return todasLasCategorias;
+    return todasLasCategorias
+      .map(c => ({ ...c, items: c.items.filter(i => seVendeEn(i.sede_ids, sede.id)) }))
+      .filter(c => c.items.length > 0);
+  }, [todasLasCategorias, sede]);
   const [activeCategory, setActiveCategory] = useState<number | "todos">("todos");
   // Clave por INSTANCIA de tarjeta (categoría:producto): un mismo producto puede
   // aparecer en dos filas (p.ej. Destacados) y solo debe activarse una copia.

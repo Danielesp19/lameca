@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MenuCategory;
 use App\Models\Sede;
+use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -28,28 +29,53 @@ class MenuPdfController extends Controller
      * archivo cacheado, y sin eso el servidor seguiría entregando el PDF viejo
      * hasta que alguien editara un producto.
      */
-    private const DISENO = 6;
+    private const DISENO = 7;
 
-    public function __invoke()
+    public function __invoke(Request $request)
     {
+        // ?sede=campestre → carta de esa sede (los productos que no se ofrecen
+        // ahí no salen). Sin el parámetro: carta completa, como siempre.
+        $sede = $request->query('sede')
+            ? Sede::where('slug', $request->query('sede'))->where('is_active', true)->first()
+            : null;
+
         $categories = MenuCategory::where('is_active', true)
-            ->with('availableItems')
+            ->with(['availableItems.sedes:id'])
             ->orderBy('sort_order')
-            ->get()
+            ->get();
+
+        if ($sede) {
+            // No se puede filtrar la relación en la consulta y quedarse con la
+            // colección ya cargada: se filtra en memoria y se reasigna, que a
+            // esta escala (decenas de productos) no cuesta nada.
+            $categories->each(fn ($cat) => $cat->setRelation(
+                'availableItems',
+                $cat->availableItems->filter(fn ($i) => $i->sedes->contains('id', $sede->id))->values()
+            ));
+        }
+
+        $categories = $categories
             ->filter(fn ($cat) => $cat->availableItems->isNotEmpty())
             ->values();
 
-        $sedes = Sede::where('is_active', true)->orderBy('sort_order')->get();
+        // El pie lleva solo la sede de la carta cuando está filtrada.
+        $sedes = $sede
+            ? collect([$sede])
+            : Sede::where('is_active', true)->orderBy('sort_order')->get();
 
         $version = md5(
-            'd' . self::DISENO . '#'
+            'd' . self::DISENO . '#s' . ($sede->slug ?? 'todas') . '#'
             . $categories->map(fn ($cat) => $cat->id . ':' . $cat->updated_at
                 . '|' . $cat->availableItems->map(fn ($i) => $i->id . ':' . $i->updated_at)->implode(','))->implode(';')
             . '#' . $sedes->map(fn ($s) => $s->id . ':' . $s->updated_at)->implode(',')
         );
 
+        // El nombre lleva el ámbito (sede o "todas") porque abajo se limpian
+        // las versiones viejas: sin distinguirlo, generar la carta de una sede
+        // borraría la de la otra y cada descarga re-generaría el PDF entero.
+        $ambito = $sede->slug ?? 'todas';
         $disk = Storage::disk('local');
-        $file = "carta/carta-{$version}.pdf";
+        $file = "carta/carta-{$ambito}-{$version}.pdf";
 
         if (! $disk->exists($file)) {
             $thumbs = [];
@@ -83,9 +109,11 @@ class MenuPdfController extends Controller
                 'if ($PAGE_NUM == 1) { $pdf->filled_rectangle(0, 770, 595.28, 72, array(0.969, 0.945, 0.898)); }'
             );
 
-            // Una sola versión viva: al regenerar se limpian las anteriores.
+            // Una sola versión viva POR ÁMBITO: al regenerar la carta de una
+            // sede se limpian sus versiones anteriores, sin tocar las de las
+            // otras sedes ni la carta completa.
             foreach ($disk->files('carta') as $old) {
-                if ($old !== $file) {
+                if ($old !== $file && str_starts_with(basename($old), "carta-{$ambito}-")) {
                     $disk->delete($old);
                 }
             }
@@ -95,7 +123,8 @@ class MenuPdfController extends Controller
 
         return response()->file($disk->path($file), [
             'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="carta-la-meca.pdf"',
+            'Content-Disposition' => 'attachment; filename="carta-la-meca'
+                                     . ($sede ? '-' . $sede->slug : '') . '.pdf"',
             // El CDN puede servirla un rato sin pegar al backend.
             'Cache-Control'       => 'public, max-age=300, s-maxage=600',
         ]);
