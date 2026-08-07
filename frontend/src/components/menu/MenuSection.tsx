@@ -41,18 +41,15 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
   const sectionRef    = useRef<HTMLElement>(null);
   const listRef       = useRef<HTMLDivElement>(null);
 
-  // "vertical" (Cafés de origen) es el cierre de la carta: siempre va al
-  // final, después de todo. "horizontal" (Métodos) ya NO tiene posición fija:
-  // se ordena entre las demás por su sort_order, como una categoría más — se
-  // mueve desde el panel admin con las flechas. Ninguna de las dos sale como
-  // pestaña: son vitrinas, no paradas del filtro.
-  const normales    = categories.filter(c => c.display_mode !== "vertical" && c.display_mode !== "horizontal");
-  const verticales  = categories.filter(c => c.display_mode === "vertical");
+  // Ninguna vitrina tiene ya posición fija: tanto Métodos ("horizontal") como
+  // Cafés de origen ("vertical") se ordenan entre las demás por su sort_order
+  // y se mueven con las flechas del panel. Lo que sí siguen sin ser es una
+  // parada del filtro: son vitrinas, no pestañas.
+  const normales = categories.filter(c => c.display_mode !== "vertical" && c.display_mode !== "horizontal");
 
-  // Flujo de "Todos": normales + vitrinas horizontales, en el orden que ya
-  // trae el backend (sort_order). Cada una se pinta con su componente según
-  // display_mode (ver el render).
-  const flujo = categories.filter(c => c.display_mode !== "vertical");
+  // Flujo de "Todos": TODAS las categorías en el orden que ya trae el backend
+  // (sort_order). Cada una se pinta con su componente según display_mode.
+  const flujo = categories;
 
   const chips = [
     { id: "todos" as number | "todos", name: "Todos" },
@@ -162,9 +159,10 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
     const imgs: string[] = [];
     const vids: string[] = [];
     for (const cat of categories) {
-      // Las secciones verticales viven al final de la página y sus fotos son
-      // grandes: precargarlas castigaría la carga inicial para algo que nadie
-      // ve hasta bajar del todo. Van con loading="lazy" en su componente.
+      // Las fotos de la vitrina vertical son grandes y su componente ya las
+      // pide con loading="lazy": precargarlas de golpe castigaría la carga
+      // inicial. (Aunque ahora la vitrina puede ir en cualquier posición, la
+      // decisión no cambia — es por el peso de las fotos, no por dónde está.)
       // El filtro va DENTRO del efecto a propósito: hacerlo fuera crearía un
       // array nuevo en cada render y el efecto se relanzaría sin parar.
       if (cat.display_mode === "vertical") continue;
@@ -474,6 +472,8 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
               {(activeCategory === "todos" ? flujo : groups).map((cat, gi) => (
                 cat.display_mode === "horizontal"
                   ? <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
+                  : cat.display_mode === "vertical"
+                  ? <VerticalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
                   : <CategoryBlock
                       key={cat.id} cat={cat} gi={gi} activeCategory={activeCategory}
                       activeCardKey={activeCardKey} onSelect={setSelected}
@@ -481,17 +481,6 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
               ))}
             </div>
 
-            {/* Cafés de origen (vertical) cierra la carta, pero SOLO en
-                "Todos": con un filtro activo la persona pidió ver una
-                categoría concreta, y seguir pintando las vitrinas debajo
-                hacía que "Métodos" y "Cafés de origen" aparecieran igual en
-                todas las pestañas, como si el filtro no hubiera hecho nada.
-                Va fuera del div con `key={activeCategory}` porque ese div se
-                remonta al cambiar de pestaña, y aquí eso relanzaría la
-                animación de entrada de toda la sección cada vez. */}
-            {activeCategory === "todos" && verticales.map(cat => (
-              <VerticalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
-            ))}
             </>
           )}
         </div>
