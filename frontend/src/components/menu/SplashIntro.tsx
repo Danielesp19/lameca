@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSede } from "@/context/SedeContext";
 
 const BG      = "#F7F1E5";
 const CHOCO   = "#3E2A1C";
@@ -16,13 +17,19 @@ const TOTAL_MS = 3800;
 
 export default function SplashIntro() {
   const [show, setShow] = useState(true);
+  const { debePreguntar } = useSede();
 
   useEffect(() => {
     const t = setTimeout(() => setShow(false), TOTAL_MS);
     return () => clearTimeout(t);
   }, []);
 
-  if (!show) return null;
+  // Si hay que preguntar la sede, esa pregunta manda: el splash se retira y no
+  // se le hace esperar 3.8s a alguien que todavía no puede ver su carta. El
+  // selector usa este mismo fondo crema, así que el relevo no se ve como un
+  // corte. (El temporizador sigue corriendo: al elegir sede, si aún quedaba
+  // splash por delante, ya se descartó.)
+  if (!show || debePreguntar) return null;
 
   return (
     <div

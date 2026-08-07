@@ -38,7 +38,7 @@ export default function SedeLinks() {
 
   return (
     <div style={{
-      background: "#FFFFFF", borderRadius: 16, padding: "18px 20px", marginBottom: 22,
+      background: "#FFFFFF", borderRadius: 16, padding: "18px 20px", marginTop: 26,
       boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1.5px solid #F0EBE5",
     }}>
       <div style={{ fontSize: 14.5, fontWeight: 700, color: "#1C0F05", marginBottom: 4 }}>

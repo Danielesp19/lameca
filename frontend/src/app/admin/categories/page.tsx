@@ -194,8 +194,6 @@ export default function CategoriesPage() {
 
   return (
     <div>
-      <SedeLinks />
-
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1C0F05", fontFamily: "var(--font-serif)", margin: 0 }}>Categorías</h2>
@@ -522,6 +520,11 @@ export default function CategoriesPage() {
           )}
         </div>
       )}
+
+      {/* Al final: se consulta una vez para imprimir los QR y después no se
+          vuelve a mirar — arriba solo estorbaba al trabajo diario, que es
+          editar la carta. */}
+      <SedeLinks />
     </div>
   );
 }
