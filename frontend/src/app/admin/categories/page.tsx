@@ -189,7 +189,7 @@ export default function CategoriesPage() {
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1C0F05", fontFamily: "var(--font-serif)", margin: 0 }}>Categorías</h2>
           <p style={{ fontSize: 13, color: "#9A7055", marginTop: 4 }}>
-            {cats.length} categoría{cats.length !== 1 ? "s" : ""} · usa ↑↓ para cambiar el orden en la carta
+            {cats.length} categoría{cats.length !== 1 ? "s" : ""} · toca una fila para ver sus productos · usa ↑↓ para cambiar el orden en la carta
           </p>
         </div>
         {!creating && !editing && (
@@ -274,8 +274,9 @@ export default function CategoriesPage() {
               una tarjeta y los rótulos van pegados a cada dato, no hace falta
               una cabecera aparte. */}
           <div className="hidden md:grid md:grid-cols-[72px_1fr_190px_130px] md:items-center gap-4 px-5 py-3 border-b border-[#F0EBE5]">
-            {["Orden", "Categoría", "Productos", ""].map(h => (
-              <span key={h} className={h === "Productos" ? "text-center" : ""} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0A090" }}>{h}</span>
+            {["Orden", "Categoría", "Ver productos", "Acciones"].map(h => (
+              <span key={h} className={h === "Ver productos" ? "text-center" : h === "Acciones" ? "text-right" : ""}
+                    style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0A090" }}>{h}</span>
             ))}
           </div>
 
@@ -308,6 +309,10 @@ export default function CategoriesPage() {
                     // las tarjetas ya se separan solas con el margen.
                     borderTopColor: i === 0 ? "transparent" : "#F9F5F2",
                     background: expanded ? "#FBF8F4" : especial ? "#FBF3E7" : "transparent",
+                    // Franja al costado mientras está abierta: ata la fila con
+                    // el panel de productos que aparece justo debajo, para que
+                    // se lean como una sola cosa y no como dos bloques sueltos.
+                    boxShadow: expanded ? "inset 4px 0 0 0 #6F4E37" : "none",
                   }}
                 >
                   {/* En móvil, orden y nombre van juntos en una misma línea
@@ -345,11 +350,6 @@ export default function CategoriesPage() {
                             {cat.display_mode === "vertical" ? "Vitrina vertical" : "Vitrina horizontal"}
                           </span>
                         )}
-                        {/* En móvil esta flecha es lo único que anuncia que la
-                            tarjeta se despliega (no hay columna "Productos" con
-                            su propia flecha, como en escritorio), así que va
-                            grande y en el café fuerte del panel. */}
-                        <span className="md:hidden ml-auto" style={{ fontSize: 19, lineHeight: 1, color: "#6F4E37", transform: expanded ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>▾</span>
                       </div>
                       {cat.description && (
                         <div className="line-clamp-1 mt-0.5" style={{ fontSize: 12.5, color: "#A89684" }}>
@@ -359,33 +359,61 @@ export default function CategoriesPage() {
                     </div>
                   </div>
 
-                  {/* Productos: el dato con más protagonismo de la fila — es lo
-                      que se viene a consultar y lo que anticipa el despliegue.
-                      En escritorio va centrado en su columna, con la flecha
-                      grande al lado; en móvil la flecha ya va junto al nombre. */}
-                  <div className="order-3 md:order-3 hidden md:flex items-center justify-center gap-2.5" style={{ fontSize: 19, fontWeight: 700, color: "#6F4E37" }}>
-                    {cat.items_count ?? 0}
-                    <span style={{ fontSize: 14, fontWeight: 400, color: "#9A7055" }}>
-                      producto{(cat.items_count ?? 0) !== 1 ? "s" : ""}
-                    </span>
-                    <span style={{ fontSize: 15, color: "#6F4E37", transform: expanded ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>▼</span>
-                  </div>
-                  <div className="order-3 md:hidden" style={{ fontSize: 16, fontWeight: 700, color: "#6F4E37" }}>
-                    {cat.items_count ?? 0}
-                    <span style={{ fontSize: 14, fontWeight: 400, color: "#9A7055" }}>
-                      {" "}producto{(cat.items_count ?? 0) !== 1 ? "s" : ""}
+                  {/* Productos: PÍLDORA con borde, no texto suelto. Antes el
+                      contador y su flechita se leían igual que "Editar" (todo
+                      texto plano en la misma banda), así que no se distinguía
+                      qué desplegaba la lista y qué abría el formulario. Con
+                      forma de botón, la acción de desplegar se ve. */}
+                  <div className="order-3 md:order-3 flex md:justify-center">
+                    <span
+                      className="inline-flex items-center gap-2 transition-colors"
+                      style={{
+                        padding: "7px 14px", borderRadius: 999,
+                        border: `1.5px solid ${expanded ? "#6F4E37" : "#E8E0D8"}`,
+                        background: expanded ? "#6F4E37" : "#FDFAF7",
+                        color: expanded ? "#FFFFFF" : "#6F4E37",
+                        fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap",
+                      }}
+                    >
+                      {cat.items_count ?? 0} producto{(cat.items_count ?? 0) !== 1 ? "s" : ""}
+                      <span style={{ fontSize: 11, lineHeight: 1, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 160ms" }}>▼</span>
                     </span>
                   </div>
 
-                  {/* Acciones */}
-                  <div className="order-4 md:order-4" onClick={e => e.stopPropagation()} style={{ display: "flex", gap: 18 }}>
-                    <button onClick={() => startEdit(cat)} style={{ fontSize: 14, color: "#6F4E37", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Editar</button>
+                  {/* Acciones: botones de verdad, con su propio recuadro y
+                      separados de la píldora de arriba. Eliminar queda en un
+                      tono apagado hasta que se pasa por encima: es destructivo
+                      y no debe competir por la atención con Editar. */}
+                  <div className="order-4 md:order-4 flex items-center gap-2 md:justify-end" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => startEdit(cat)}
+                      className="inline-flex items-center gap-1.5 hover:bg-[#F5EDE5] transition-colors"
+                      style={{
+                        padding: "7px 14px", borderRadius: 9, cursor: "pointer",
+                        border: "1.5px solid #E8E0D8", background: "#FFFFFF",
+                        color: "#6F4E37", fontSize: 13.5, fontWeight: 600,
+                      }}
+                    >
+                      <span aria-hidden="true">✎</span> Editar
+                    </button>
                     {cat.slug === OTROS_SLUG ? (
-                      <span style={{ fontSize: 13, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
+                      <span style={{ fontSize: 12.5, color: "#B0A090" }} title="Destino de productos huérfanos: no se puede eliminar">Protegida</span>
                     ) : especial ? (
-                      <span style={{ fontSize: 13, color: "#B0A090" }} title="Tiene vitrina especial en la carta: no se puede eliminar (sí se puede mover y editar)">Protegida</span>
+                      <span style={{ fontSize: 12.5, color: "#B0A090" }} title="Tiene vitrina especial en la carta: no se puede eliminar (sí se puede mover y editar)">Protegida</span>
                     ) : (
-                      <button onClick={() => del(cat)} style={{ fontSize: 14, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>Eliminar</button>
+                      <button
+                        onClick={() => del(cat)}
+                        title="Eliminar categoría"
+                        aria-label="Eliminar categoría"
+                        className="inline-flex items-center justify-center hover:bg-[#FEF2F2] hover:border-[#FECACA] transition-colors"
+                        style={{
+                          width: 34, height: 34, borderRadius: 9, cursor: "pointer",
+                          border: "1.5px solid #F0EBE5", background: "#FFFFFF",
+                          color: "#DC2626", fontSize: 15,
+                        }}
+                      >
+                        🗑
+                      </button>
                     )}
                   </div>
                 </div>
@@ -486,11 +514,32 @@ export default function CategoriesPage() {
                                     Solo {sedes.filter(x => item.sede_ids!.includes(x.id)).map(x => x.name).join(", ")}
                                   </span>
                                 )}
-                                <Link href={`/admin/items/${item.id}/edit`} style={{ fontSize: 14, color: "#6F4E37", textDecoration: "none", fontWeight: 500 }}>
-                                  Editar
+                                {/* Mismos botones que en la fila de categoría:
+                                    con recuadro, y el destructivo reducido a
+                                    un icono apagado para que no compita. */}
+                                <Link
+                                  href={`/admin/items/${item.id}/edit`}
+                                  className="inline-flex items-center gap-1.5 hover:bg-[#F5EDE5] transition-colors"
+                                  style={{
+                                    padding: "6px 13px", borderRadius: 9,
+                                    border: "1.5px solid #E8E0D8", background: "#FFFFFF",
+                                    color: "#6F4E37", fontSize: 13, fontWeight: 600, textDecoration: "none",
+                                  }}
+                                >
+                                  <span aria-hidden="true">✎</span> Editar
                                 </Link>
-                                <button onClick={() => delItem(item)} style={{ fontSize: 14, color: "#DC2626", background: "none", border: "none", cursor: "pointer", fontWeight: 500, padding: 0 }}>
-                                  Eliminar
+                                <button
+                                  onClick={() => delItem(item)}
+                                  title={`Eliminar ${item.name}`}
+                                  aria-label={`Eliminar ${item.name}`}
+                                  className="inline-flex items-center justify-center hover:bg-[#FEF2F2] hover:border-[#FECACA] transition-colors"
+                                  style={{
+                                    width: 32, height: 32, borderRadius: 9, cursor: "pointer",
+                                    border: "1.5px solid #F0EBE5", background: "#FFFFFF",
+                                    color: "#DC2626", fontSize: 14,
+                                  }}
+                                >
+                                  🗑
                                 </button>
                               </div>
                             ))}
