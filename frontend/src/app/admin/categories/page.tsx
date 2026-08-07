@@ -456,7 +456,26 @@ export default function CategoriesPage() {
                                 {/* Nombre del producto: la fila principal de lo que
                                     el admin más necesita leer rápido — más grande y
                                     con más peso que el resto de los datos de la fila. */}
-                                <span style={{ fontSize: 16.5, fontWeight: 600, color: "#1C0F05", flex: "1 1 140px" }}>{item.name}</span>
+                                <span style={{
+                                  fontSize: 16.5, fontWeight: 600, flex: "1 1 140px",
+                                  color: item.is_available ? "#1C0F05" : "#B0A090",
+                                  textDecoration: item.is_available ? "none" : "line-through",
+                                }}>
+                                  {item.name}
+                                </span>
+                                {/* Sin esto, apagar "Disponible en carta" hacía
+                                    desaparecer el producto de la carta sin que
+                                    la lista del panel diera ninguna pista de
+                                    por qué. */}
+                                {!item.is_available && (
+                                  <span style={{
+                                    display: "inline-flex", alignItems: "center", gap: 4,
+                                    fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
+                                    color: "#B45309", background: "#FEF3C7", padding: "4px 10px", borderRadius: 999,
+                                  }}>
+                                    Oculto en la carta
+                                  </span>
+                                )}
                                 {item.is_featured && (
                                   <span style={{
                                     display: "inline-flex", alignItems: "center", gap: 4,

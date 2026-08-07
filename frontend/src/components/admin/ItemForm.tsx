@@ -412,7 +412,18 @@ export default function ItemForm({ item, defaultCategoryId }: { item?: AdminItem
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label style={lbl}>Precio (COP) *</label>
-              <input type="number" min="0" step="100" style={inp} value={price} onChange={e => setPrice(e.target.value)} required />
+              {/* onWheel → blur: sobre un input numérico ENFOCADO, la rueda del
+                  mouse (y el gesto de dos dedos del trackpad) cambia el valor
+                  en vez de mover la página — se cambiaba el precio sin querer
+                  con solo scrollear. Al quitarle el foco, la rueda vuelve a
+                  scrollear y el valor queda intacto. */}
+              <input
+                type="number" min="0" step="100" style={inp}
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                onWheel={e => e.currentTarget.blur()}
+                required
+              />
             </div>
             <div>
               <label style={lbl}>Categoría *</label>
