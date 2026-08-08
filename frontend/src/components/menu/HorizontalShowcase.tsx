@@ -199,7 +199,8 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
       // background sólido de base: ver el mismo comentario en
       // VerticalShowcase — cubre el frame de retraso del cálculo de `pin`
       // sin dejar asomar la sección clara vecina.
-      style={{ position: "relative", margin: "34px -22px 0", background: DARK_BOT }}
+      className="showcase-bleed"
+      style={{ position: "relative", marginTop: 34, background: DARK_BOT }}
     >
       {/* Foto de fondo — mismo comportamiento que Cafés de origen (ver
           useShowcaseBgPin), con la foto del estante de equipos de la barra.
@@ -217,7 +218,8 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
           position: pin === "durante" ? "fixed" : "absolute",
           top: pin === "despues" ? "auto" : 0,
           bottom: pin === "despues" ? 0 : "auto",
-          left: 0, right: 0,
+          // Ver el mismo comentario en VerticalShowcase.
+          left: 0, width: "100vw",
           height: pin === "corta" ? "100%" : pin === "durante" ? "100svh" : "calc(100svh + 120px)",
           zIndex: 0,
         }}

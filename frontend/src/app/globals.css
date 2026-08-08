@@ -261,6 +261,19 @@ body {
 @media (min-width: 768px)  { .menu-col { max-width: 720px; } }
 @media (min-width: 1120px) { .menu-col { max-width: 940px; } }
 
+/* Vitrinas (Cafés de origen, Métodos): de borde a borde de la PANTALLA, no de
+   la columna. Su foto de fondo se fija al viewport mientras se scrollea, y un
+   elemento `fixed` siempre abarca la pantalla entera: si la sección fuera más
+   angosta, el fondo se desbordaría por los costados (en escritorio se veía la
+   franja oscura cruzando toda la pantalla con el contenido en el medio).
+   En celular esto da exactamente los -22px de siempre — la cuenta sale igual:
+   con 412px de pantalla y 368px de contenido, calc(50% - 50vw) = -22px. */
+.showcase-bleed {
+  width: 100vw;
+  margin-left:  calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
 /* Variante SIN tope en celular: para bloques que hoy ocupan todo el ancho de
    su sección (la vitrina vertical). Con .menu-col a secas, un teléfono ancho
    (>436px) habría empezado a recortarlos — y la consigna es que por debajo de

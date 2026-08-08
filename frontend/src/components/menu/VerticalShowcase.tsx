@@ -204,7 +204,8 @@ export default function VerticalShowcase({ categoria, onSelect }: {
       // color de base se veía la sección clara de ANTES (p.ej. "Otros")
       // asomando por el margen — con el mismo oscuro puesto acá abajo, ese
       // margen pasa inadvertido en vez de verse como un parpadeo de color.
-      style={{ position: "relative", margin: "34px -22px 0", background: DARK_BOT }}
+      className="showcase-bleed"
+      style={{ position: "relative", marginTop: 34, background: DARK_BOT }}
     >
       {/* Foto de fondo a pantalla completa, pineada durante TODA la sección
           — nunca cae a un color plano, siempre es la foto. "corta": si la
@@ -223,7 +224,11 @@ export default function VerticalShowcase({ categoria, onSelect }: {
           position: pin === "durante" ? "fixed" : "absolute",
           top: pin === "despues" ? "auto" : 0,
           bottom: pin === "despues" ? 0 : "auto",
-          left: 0, right: 0,
+          // width:100vw en vez de left+right: en modo "durante" este div va
+          // `fixed`, y así mide exactamente lo mismo que la sección (que
+          // también es 100vw con .showcase-bleed) — sin esto, uno se anclaba
+          // a la pantalla y la otra a la columna, y no coincidían.
+          left: 0, width: "100vw",
           height: pin === "corta" ? "100%" : pin === "durante" ? "100svh" : "calc(100svh + 120px)",
           zIndex: 0,
         }}
