@@ -463,12 +463,21 @@ export default function MenuSection({ initialCategories }: { initialCategories?:
             </div>
           ) : (
             <>
-            {/* key + fadeUp: al cambiar de categoría el contenido entra con un
-                desvanecido suave en vez de saltar de golpe.
-                En "Todos" se recorre el flujo completo respetando sort_order,
-                y cada categoría se pinta según su display_mode: las
-                horizontales como vitrina, el resto como bloque normal. */}
-            <div key={String(activeCategory)} style={{ animation: "fadeUp 0.45s ease both" }}>
+            {/* SIN `animation` en este div, a propósito. La entrada en
+                desvanecido ahora la hace cada bloque de categoría por su
+                cuenta (ver CategoryBlock).
+                Motivo: `fadeUp` anima `transform` y con fill-mode `both` deja
+                el transform aplicado PARA SIEMPRE al terminar. Un ancestro con
+                transform ≠ none deja de permitir que sus descendientes
+                `position: fixed` se anclen al viewport — se anclan a él. Las
+                vitrinas (Cafés de origen, Métodos) fijan así su foto de fondo
+                mientras se scrollea, y al quedar dentro de este div la foto se
+                desanclaba: se veía parpadear/desaparecer un instante. En iOS
+                Safari, que es estricto con esta regla, se notaba además como
+                un temblor.
+                El `key` sí se queda: es lo que remonta el contenido al cambiar
+                de pestaña. */}
+            <div key={String(activeCategory)}>
               {(activeCategory === "todos" ? flujo : groups).map((cat, gi) => (
                 cat.display_mode === "horizontal"
                   ? <HorizontalShowcase key={cat.id} categoria={cat} onSelect={setSelected} />
@@ -526,6 +535,10 @@ function CategoryBlock({
     <div
       className="cat-block"
       style={{
+        // La entrada en desvanecido vive acá y no en el contenedor de arriba:
+        // este bloque no contiene nada `position: fixed`, así que el transform
+        // que deja la animación no le rompe el anclaje a nadie.
+        animation: "fadeUp 0.45s ease both",
         margin: isFeatured
           ? `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px 0px`
           : `${gi > 0 || activeCategory === "todos" ? 26 : 0}px -22px -40px`,
