@@ -29,7 +29,7 @@ class MenuPdfController extends Controller
      * archivo cacheado, y sin eso el servidor seguiría entregando el PDF viejo
      * hasta que alguien editara un producto.
      */
-    private const DISENO = 7;
+    private const DISENO = 8;
 
     public function __invoke(Request $request)
     {

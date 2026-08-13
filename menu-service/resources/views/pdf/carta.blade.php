@@ -83,15 +83,19 @@
                 color: #a98c6a; margin-top: 11px; text-transform: uppercase; }
 
     /* ── Categoría ── */
-    /* `avoid` evita el título huérfano al pie de página con sus productos en la
-       siguiente. Aquí es seguro porque ninguna categoría es alta: con dos
-       columnas, incluso la más larga ocupa pocas filas. */
-    .cat { margin-top: 26px; page-break-inside: avoid; }
-    /* Métodos va a una sola columna y ocupa mucho más alto que las demás: si
-       se le exigiera no partirse, empujaría la categoría entera a la hoja
-       siguiente dejando medio folio en blanco. Cada método por separado sí
-       evita partirse (table.item ya lo hace). */
-    .cat-ancha { page-break-inside: auto; }
+    /* SIN `page-break-inside: avoid`. Lo tuvo, con la idea de no dejar el
+       título huérfano al pie de una página; la nota decía que era seguro
+       "porque ninguna categoría es alta". En producción eso es falso: hay
+       categorías (Sandwiches, Desayunos…) con decenas de productos, mucho más
+       altas que una hoja. Cuando a dompdf se le pide no partir un bloque que
+       NO cabe en una página, no puede cumplirlo: en vez de partirlo lo deja
+       desbordar, y los últimos productos se imprimen encima del pie y se
+       cortan contra el borde del papel.
+       El huérfano se evita ahora con page-break-after en la cabecera, que solo
+       pide que el título no quede solo — no que la categoría entera sea
+       indivisible. Cada producto por separado sigue sin partirse
+       (table.item / table.metodo). */
+    .cat { margin-top: 26px; }
 
     /* ── Métodos: una sola columna, a todo el ancho ──
        Estos rara vez llevan foto, y con el formato de dos columnas quedaba un
@@ -111,7 +115,11 @@
     td.m-guia div { border-bottom: 1px dotted #d6c2a6; height: 1px; margin-top: 15px; }
     td.m-precio { font-family: 'Jost5', sans-serif; font-size: 15px; color: #3a2417;
                   text-align: right; white-space: nowrap; width: 1%; padding-left: 10px; padding-top: 11px; }
-    table.cat-head { width: 100%; border-collapse: collapse; margin-bottom: 9px; }
+    /* El título no debe quedar solo al pie de una hoja con sus productos en la
+       siguiente. Esto pide justamente eso, sin obligar a la categoría entera a
+       caber en una página (ver la nota en .cat). */
+    table.cat-head { width: 100%; border-collapse: collapse; margin-bottom: 9px;
+                     page-break-after: avoid; }
     table.cat-head td { padding: 0; vertical-align: bottom; }
     td.cat-name { font-family: 'CormSBI', serif; font-size: 22px; color: #9a4d2e; white-space: nowrap; width: 1%; }
     td.cat-rule { padding-left: 13px; }
@@ -193,16 +201,12 @@
 
         @foreach ($categories as $cat)
             @php
-                // Partir en dos mitades: la izquierda se queda con la de más si
-                // el total es impar, que es como reparte el diseño.
                 $items = $cat->availableItems->values();
-                $corte = (int) ceil($items->count() / 2);
-                $columnas = [$items->take($corte), $items->slice($corte)];
                 // "horizontal" es Métodos: en la carta digital tiene vitrina
                 // propia y aquí también va distinto (ver la nota en el CSS).
                 $esMetodos = $cat->display_mode === 'horizontal';
             @endphp
-            <div class="cat {{ $esMetodos ? 'cat-ancha' : '' }}">
+            <div class="cat">
                 <table class="cat-head">
                     <tr>
                         <td class="cat-name">{{ $cat->name }}</td>
@@ -230,37 +234,49 @@
                         </table>
                     @endforeach
                 @else
+                {{-- Una FILA POR PAREJA de productos, no una fila única con
+                     media categoría en cada celda. Motivo: dompdf no sabe
+                     cortar limpio dentro de una celda más alta que la página —
+                     dejaba el contenido desbordar sobre el pie y cortarse
+                     contra el borde del papel. Con filas cortas, el salto de
+                     página cae entre filas y siempre respeta el margen.
+                     Efecto secundario: los productos se leen de izquierda a
+                     derecha (1-2, 3-4…) en vez de por columnas. --}}
                 <table class="cols">
-                    <tr>
-                        @foreach ($columnas as $ci => $columna)
-                            @if ($ci === 1)
-                                <td class="gap"></td>
-                            @endif
-                            <td class="col">
-                                @foreach ($columna as $item)
-                                    <table class="item">
-                                        <tr>
-                                            <td class="foto">
-                                                @if (! empty($thumbs[$item->id]))
-                                                    <img src="{{ $thumbs[$item->id] }}" alt="">
-                                                @else
-                                                    <div class="sinfoto"></div>
-                                                @endif
-                                            </td>
-                                            <td class="nombre">
-                                                {{ $item->name }}@if ($item->caffeine_level === 0) <span class="tag">Sin cafe&iacute;na</span>@endif
-                                                @if ($item->description)
-                                                    <div class="desc">{{ $item->description }}</div>
-                                                @endif
-                                            </td>
-                                            <td class="guia"><div></div></td>
-                                            <td class="precio">${{ number_format((float) $item->price, 0, ',', '.') }}</td>
-                                        </tr>
-                                    </table>
-                                @endforeach
-                            </td>
-                        @endforeach
-                    </tr>
+                    @foreach ($items->chunk(2) as $par)
+                        @php $par = $par->values(); @endphp
+                        <tr>
+                            @for ($c = 0; $c < 2; $c++)
+                                @if ($c === 1)
+                                    <td class="gap"></td>
+                                @endif
+                                <td class="col">
+                                    @if (isset($par[$c]))
+                                        @php $item = $par[$c]; @endphp
+                                        <table class="item">
+                                            <tr>
+                                                <td class="foto">
+                                                    @if (! empty($thumbs[$item->id]))
+                                                        <img src="{{ $thumbs[$item->id] }}" alt="">
+                                                    @else
+                                                        <div class="sinfoto"></div>
+                                                    @endif
+                                                </td>
+                                                <td class="nombre">
+                                                    {{ $item->name }}@if ($item->caffeine_level === 0) <span class="tag">Sin cafe&iacute;na</span>@endif
+                                                    @if ($item->description)
+                                                        <div class="desc">{{ $item->description }}</div>
+                                                    @endif
+                                                </td>
+                                                <td class="guia"><div></div></td>
+                                                <td class="precio">${{ number_format((float) $item->price, 0, ',', '.') }}</td>
+                                            </tr>
+                                        </table>
+                                    @endif
+                                </td>
+                            @endfor
+                        </tr>
+                    @endforeach
                 </table>
                 @endif
             </div>
