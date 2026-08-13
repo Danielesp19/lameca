@@ -224,6 +224,7 @@ curl -sS -o /dev/null -D - -H "Accept-Encoding: gzip" \
 cd /var/www/lameca && git pull
 cd menu-service && composer install --no-dev && php artisan migrate --force \
   && php artisan config:cache && php artisan route:cache && php artisan view:cache
+chown -R www-data:www-data storage bootstrap/cache
 systemctl reload php8.3-fpm
 cd ../frontend && npm ci && npm run build && pm2 restart lameca-front
 ```
@@ -231,3 +232,20 @@ cd ../frontend && npm ci && npm run build && pm2 restart lameca-front
 > El `reload` de php-fpm hace que opcache suelte el código viejo. Sin él, un
 > cambio en PHP puede tardar en verse (o no verse) según la configuración de
 > `opcache.validate_timestamps` del servidor.
+
+> El `chown` NO es opcional. Todo el despliegue corre como root, así que los
+> `artisan *:cache` dejan archivos de root dentro de `storage/`; PHP-FPM corre
+> como `www-data` y después no puede escribir ahí. El síntoma es escurridizo:
+> la web sigue funcionando y solo falla lo que ESCRIBE en disco — el PDF de la
+> carta (lo guarda en `storage/app/private/carta/`) empieza a dar error 500 sin
+> que nada más se rompa. Y como el PDF se sirve de caché, el fallo puede tardar
+> días en aparecer: hasta que alguien edita un producto o se limpia esa carpeta.
+
+### Si el PDF da error 500
+
+Casi siempre es lo anterior. Se arregla con el mismo `chown` de arriba y se
+comprueba con:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://api.menulameca.com/api/menu/pdf
+```
