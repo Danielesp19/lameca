@@ -143,7 +143,7 @@ function MetodoSlide({ item, canLeft, canRight, onPrev, onNext }: {
           {item.name}
         </h3>
         {item.description && (
-          <p style={{ fontSize: 13.5, fontWeight: 300, lineHeight: 1.65, margin: "10px 0 0", color: "rgba(244,238,227,0.75)" }}>
+          <p style={{ fontSize: 13.5, fontWeight: 300, lineHeight: 1.65, margin: "10px 0 0", color: "rgba(244,238,227,0.75)", whiteSpace: "pre-wrap" }}>
             {item.description}
           </p>
         )}
@@ -256,7 +256,7 @@ export default function HorizontalShowcase({ categoria, onSelect: _onSelect }: {
           {categoria.description && (
             <p style={{
               fontSize: 12.5, fontWeight: 300, lineHeight: 1.6, margin: "13px auto 0",
-              maxWidth: 380, color: "rgba(244,238,227,0.6)",
+              maxWidth: 380, color: "rgba(244,238,227,0.6)", whiteSpace: "pre-wrap",
             }}>
               {categoria.description}
             </p>

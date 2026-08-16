@@ -154,7 +154,7 @@ function Fila({ item, invertida, onSelect }: {
         {item.description && (
           <p style={{
             fontSize: 12.5, fontWeight: 300, lineHeight: 1.5, margin: "7px 0 0",
-            color: "rgba(244,238,227,0.66)",
+            color: "rgba(244,238,227,0.66)", whiteSpace: "pre-wrap",
           }}>
             {item.description}
           </p>
@@ -271,7 +271,7 @@ export default function VerticalShowcase({ categoria, onSelect }: {
           {categoria.description && (
             <p style={{
               fontSize: 12.5, fontWeight: 300, lineHeight: 1.6, margin: "13px auto 0",
-              maxWidth: 380, color: "rgba(244,238,227,0.6)",
+              maxWidth: 380, color: "rgba(244,238,227,0.6)", whiteSpace: "pre-wrap",
             }}>
               {categoria.description}
             </p>

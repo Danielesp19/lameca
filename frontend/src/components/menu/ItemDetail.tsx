@@ -201,7 +201,7 @@ export default function ItemDetail({ item }: { item: MenuItem }) {
           <motion.p
             variants={fadeUp}
             className="text-base leading-relaxed mb-10"
-            style={{ color: "#C8A97E99", lineHeight: 1.8 }}
+            style={{ color: "#C8A97E99", lineHeight: 1.8, whiteSpace: "pre-wrap" }}
           >
             {item.description}
           </motion.p>

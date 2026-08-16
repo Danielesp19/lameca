@@ -247,7 +247,11 @@ export default function ProductModal({ item, onClose }: Props) {
                   </span>
                 </div>
 
-                <p style={{ fontSize: 14.5, fontWeight: 300, lineHeight: 1.65, margin: 0, color: "rgba(62,42,28,0.78)", animation: "fadeUp 0.5s ease 0.32s both" }}>
+                {/* pre-wrap: respeta los saltos de línea y la separación que
+                    el local escribe en el panel. Sin esto, HTML colapsa saltos,
+                    tabulaciones y espacios seguidos en un único espacio, y la
+                    descripción salía toda de corrido. */}
+                <p style={{ fontSize: 14.5, fontWeight: 300, lineHeight: 1.65, margin: 0, color: "rgba(62,42,28,0.78)", animation: "fadeUp 0.5s ease 0.32s both", whiteSpace: "pre-wrap" }}>
                   {item.description ?? "Sin descripción disponible."}
                 </p>
 
