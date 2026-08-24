@@ -56,6 +56,13 @@
        Se genera con `resources/pdf/ramas.svg.py`: si hay que retocar el
        dibujo, se edita el script y se vuelve a generar, no el SVG a mano. */
     .cub-ramas { position: absolute; top: 0; left: 0; width: 794px; height: 1123px; }
+    /* La misma rama, en pequeño, para las páginas de dentro. Va en
+       `position: fixed` (así se repite en todas) y ocupa exactamente la franja
+       inferior de la hoja: la que en la página 1 se repinta para tapar el pie,
+       de modo que en la cubierta desaparece sola y no estorba a la rama
+       grande. La tira es del ancho del papel y solo lleva dibujo en los
+       extremos, porque en medio están el filete y los textos del pie. */
+    .pie-ramas { position: fixed; bottom: -88px; left: -82px; width: 794px; height: 96px; }
     /* Disco de café con el aro crema y el logo al centro. El centrado vertical
        de cada capa se hace con PADDING del contenedor, no con margin del hijo:
        sin borde ni padding propio, el margin-top del hijo se colapsa hacia
@@ -175,6 +182,10 @@
         @endif
         <div class="fina">La Meca &middot; Caf&eacute; de origen &middot; Precios en pesos colombianos &middot; Carta vigente a {{ $fecha }}</div>
     </footer>
+
+    @if (is_file($ramasPie))
+        <img class="pie-ramas" src="{{ $ramasPie }}" alt="">
+    @endif
 
     <main>
         {{-- Cubierta: hoja completa, y salto de página para que la carta

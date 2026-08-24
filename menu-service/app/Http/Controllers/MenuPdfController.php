@@ -31,7 +31,7 @@ class MenuPdfController extends Controller
      * viejo hasta que alguien editara un producto. El hash NO mira esos
      * archivos, solo esta constante.
      */
-    private const DISENO = 9;
+    private const DISENO = 10;
 
     public function __invoke(Request $request)
     {
@@ -95,6 +95,7 @@ class MenuPdfController extends Controller
                 'thumbs'     => $thumbs,
                 'logo'       => resource_path('pdf/logo.png'),
                 'ramas'      => resource_path('pdf/ramas.svg'),
+                'ramasPie'   => resource_path('pdf/ramas-pie.svg'),
                 'fecha'      => now()->timezone(config('coffee.timezone', 'America/Bogota'))
                                      ->locale('es')->isoFormat('MMMM [de] YYYY'),
             ])->setPaper('a4');

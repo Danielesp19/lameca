@@ -147,6 +147,30 @@ CHICA = rama(
     racimos=[(0.34, 1, 3, 6.4), (0.68, -1, 2, 5.8)],
 )
 
+# Ramita de las paginas interiores. Va en una tira del ancho de la hoja que se
+# coloca en la franja del pie, y solo puede ocupar los extremos: entre x=82 y
+# x=740 estan el filete y los textos del pie. La tira entera cae dentro de la
+# banda que la pagina 1 repinta, asi que en la cubierta desaparece sola y no
+# hace falta esconderla aparte.
+ALTO_PIE = 96
+RAMITA = rama(
+    (-8, 104), (10, 78), (22, 48), (46, 4),
+    hojas=[
+        (0.16, -1, 30, 8.5, 54), (0.28, 1, 25, 7.0, 60),
+        (0.54, -1, 32, 9.0, 48), (0.66, 1, 26, 7.5, 56),
+        (0.90, -1, 22, 6.0, 44),
+    ],
+    racimos=[(0.40, 1, 2, 3.4)],
+)
+
+pie = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{ALTO_PIE}" viewBox="0 0 {W} {ALTO_PIE}">
+<!-- Generado por resources/pdf/ramas.svg.py — no editar a mano. -->
+<g fill="none" stroke="{ORO}" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(0,0)">{RAMITA}</g>
+  <g transform="translate({W},0) scale(-1,1)">{RAMITA}</g>
+</g>
+</svg>'''
+
 svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
 <!-- Generado por resources/pdf/ramas.svg.py — no editar a mano. -->
 <g fill="none" stroke="{ORO}" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
@@ -157,6 +181,7 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewB
 </g>
 </svg>'''
 
-destino = sys.argv[1] if len(sys.argv) > 1 else "ramas.svg"
-open(destino, "w").write(svg)
-print(f"{len(svg)} bytes -> {destino}")
+carpeta = sys.argv[1] if len(sys.argv) > 1 else "."
+for nombre, contenido in (("ramas.svg", svg), ("ramas-pie.svg", pie)):
+    open(f"{carpeta}/{nombre}", "w").write(contenido)
+    print(f"{len(contenido):6} bytes -> {carpeta}/{nombre}")
