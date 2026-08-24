@@ -51,6 +51,11 @@
        llegar al borde de la hoja (A4 a 96dpi = 794x1123px). */
     .cubierta { position: absolute; top: -62px; left: -82px; width: 794px; height: 1123px;
                 background: #F7F1E5; text-align: center; z-index: 10; }
+    /* Ramas de cafeto enmarcando la hoja. Es un SVG (dompdf lo dibuja con
+       php-svg-lib) y no un PNG para que no pixele al imprimir y pese nada.
+       Se genera con `resources/pdf/ramas.svg.py`: si hay que retocar el
+       dibujo, se edita el script y se vuelve a generar, no el SVG a mano. */
+    .cub-ramas { position: absolute; top: 0; left: 0; width: 794px; height: 1123px; }
     /* Disco de café con el aro crema y el logo al centro. El centrado vertical
        de cada capa se hace con PADDING del contenedor, no con margin del hijo:
        sin borde ni padding propio, el margin-top del hijo se colapsa hacia
@@ -175,6 +180,9 @@
         {{-- Cubierta: hoja completa, y salto de página para que la carta
              empiece limpia en la siguiente. --}}
         <div class="cubierta">
+            @if (is_file($ramas))
+                <img class="cub-ramas" src="{{ $ramas }}" alt="">
+            @endif
             <div class="disco">
                 <div class="disco-in">
                     @if (is_file($logo))

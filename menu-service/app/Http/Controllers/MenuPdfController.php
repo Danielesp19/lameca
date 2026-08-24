@@ -25,11 +25,13 @@ class MenuPdfController extends Controller
 {
     /**
      * Versión del diseño de la carta. SÚBELA cada vez que cambies
-     * `resources/views/pdf/carta.blade.php` o las fuentes: entra en el hash del
-     * archivo cacheado, y sin eso el servidor seguiría entregando el PDF viejo
-     * hasta que alguien editara un producto.
+     * `resources/views/pdf/carta.blade.php` o cualquier archivo de
+     * `resources/pdf` (fuentes, logo, ramas de la cubierta): entra en el hash
+     * del archivo cacheado, y sin eso el servidor seguiría entregando el PDF
+     * viejo hasta que alguien editara un producto. El hash NO mira esos
+     * archivos, solo esta constante.
      */
-    private const DISENO = 8;
+    private const DISENO = 9;
 
     public function __invoke(Request $request)
     {
@@ -92,6 +94,7 @@ class MenuPdfController extends Controller
                 'sedes'      => $sedes,
                 'thumbs'     => $thumbs,
                 'logo'       => resource_path('pdf/logo.png'),
+                'ramas'      => resource_path('pdf/ramas.svg'),
                 'fecha'      => now()->timezone(config('coffee.timezone', 'America/Bogota'))
                                      ->locale('es')->isoFormat('MMMM [de] YYYY'),
             ])->setPaper('a4');
