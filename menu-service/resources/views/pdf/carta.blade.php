@@ -18,6 +18,9 @@
     /* Cada variante se registra como su propia familia: dompdf empareja pesos y
        estilos de forma caprichosa, y así se elige el archivo exacto. */
     @font-face { font-family: 'CormSB';  font-style: normal; font-weight: normal; src: url("{{ $fonts }}/CormorantGaramond-SemiBold.ttf") format('truetype'); }
+    /* La Regular solo se usa en la cubierta: el diseño que se copia pide el
+       peso 400, y con la SemiBold el título salía notablemente más grueso. */
+    @font-face { font-family: 'Corm4';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/CormorantGaramond-Regular.ttf") format('truetype'); }
     @font-face { font-family: 'CormSBI'; font-style: normal; font-weight: normal; src: url("{{ $fonts }}/CormorantGaramond-SemiBoldItalic.ttf") format('truetype'); }
     @font-face { font-family: 'Jost4';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-400-Book.ttf") format('truetype'); }
     @font-face { font-family: 'Jost5';   font-style: normal; font-weight: normal; src: url("{{ $fonts }}/Jost-500-Medium.ttf") format('truetype'); }
@@ -41,46 +44,56 @@
                     color: #a98c6a; text-transform: uppercase; margin-top: 5px; }
 
     /* ── Cubierta a página completa (1ª hoja) ──
-       Reproduce la animación de entrada de la carta digital: fondo crema, el
-       logo dentro de un disco de café, la marca espaciada y el filete terra.
-       Va en `position:absolute` con desplazamientos negativos porque @page
-       aplica márgenes a todo el contenido en flujo y aquí hace falta sangrado
-       completo, de borde a borde de la hoja (A4 a 96dpi = 794x1123px). */
-    /* Desplazamientos negativos = los márgenes de @page: dompdf resuelve
-       `absolute` contra el área de texto, así que hay que salirse de ella para
-       llegar al borde de la hoja (A4 a 96dpi = 794x1123px). */
+       Copia el diseño de la portada impresa (la pieza del QR): las ramas de
+       cafeto grabadas en las esquinas, el logo en su aro terracota y la marca
+       muy espaciada. Las medidas vienen de ese diseño, hecho en carta
+       (816x1056), reescaladas a la cubierta útil del PDF por 0,973.
+       Va en `position:absolute` con desplazamientos negativos = los márgenes
+       de @page: dompdf resuelve `absolute` contra el área de texto, así que
+       hay que salirse de ella para llegar al borde de la hoja (A4 a 96dpi =
+       794x1123px). */
     .cubierta { position: absolute; top: -62px; left: -82px; width: 794px; height: 1123px;
-                background: #F7F1E5; text-align: center; z-index: 10; }
-    /* Ramas de cafeto enmarcando la hoja. Es un SVG (dompdf lo dibuja con
-       php-svg-lib) y no un PNG para que no pixele al imprimir y pese nada.
-       Se genera con `resources/pdf/ramas.svg.py`: si hay que retocar el
-       dibujo, se edita el script y se vuelve a generar, no el SVG a mano. */
-    .cub-ramas { position: absolute; top: 0; left: 0; width: 794px; height: 1123px; }
-    /* La misma rama, en pequeño, para las páginas de dentro. Va en
-       `position: fixed` (así se repite en todas) y ocupa exactamente la franja
-       inferior de la hoja: la que en la página 1 se repinta para tapar el pie,
-       de modo que en la cubierta desaparece sola y no estorba a la rama
-       grande. La tira es del ancho del papel y solo lleva dibujo en los
-       extremos, porque en medio están el filete y los textos del pie. */
+                background: #f5efe4; text-align: center; z-index: 10; }
+    /* Las ramas, horneadas con `resources/pdf/portada.py`. Es una sola imagen
+       plana y no seis PNG colocados desde aquí porque el diseño las apoya en
+       `opacity` y `transform: rotate`, y el soporte de dompdf para ambas es
+       irregular: al hornearlas, la opacidad y el giro quedan en el píxel.
+       Mide 1027 de alto, no 1123: en la página 1 la franja inferior se repinta
+       para tapar el pie (ver el page_script de MenuPdfController), así que ESE
+       es el borde de abajo efectivo de la cubierta. Las ramas de abajo se
+       salen por ahí, que es el sangrado que pide el diseño. */
+    .cub-fondo { position: absolute; top: 0; left: 0; width: 794px; height: 1027px; }
+    /* La misma ilustración, pequeña, para las páginas de dentro. Va en
+       `position: fixed` (así se repite en todas) y ocupa la franja inferior
+       que la página 1 repinta, de modo que en la cubierta desaparece sola y no
+       estorba a las ramas grandes. La tira es del ancho del papel y solo lleva
+       dibujo en los extremos, porque en medio están el filete y los textos del
+       pie. */
     .pie-ramas { position: fixed; bottom: -88px; left: -82px; width: 794px; height: 96px; }
-    /* Disco de café con el aro crema y el logo al centro. El centrado vertical
-       de cada capa se hace con PADDING del contenedor, no con margin del hijo:
-       sin borde ni padding propio, el margin-top del hijo se colapsa hacia
-       afuera y empuja al padre en vez de separarse dentro de él (el aro crema
-       quedaba pegado al borde superior del disco). */
-    /* Los alto llevan descontado su propio padding-top (sin depender de
-       box-sizing): 213+37 = 250 y 149+27 = 176, para que sigan siendo
-       círculos exactos con su border-radius. */
-    .disco     { width: 250px; height: 213px; border-radius: 125px; background: #B9895B;
-                 margin: 330px auto 0; padding-top: 37px; }
-    .disco-in  { width: 176px; height: 149px; border-radius: 88px; background: #FFFCF5;
-                 margin: 0 auto; padding-top: 27px; }
-    .disco-lg  { display: block; width: 122px; height: 122px; margin: 0 auto; }
-    .cub-marca { font-family: 'CormSB', serif; font-size: 34px; letter-spacing: 0.3em;
-                 color: #3E2A1C; margin-top: 62px; padding-left: 0.3em; }
-    .cub-filete{ width: 40px; height: 1px; background: #BC5A32; margin: 22px auto 0; }
-    .cub-lema  { font-family: 'Jost4', sans-serif; font-size: 11px; letter-spacing: 0.34em;
-                 color: #8a7157; margin-top: 20px; padding-left: 0.34em; text-transform: uppercase; }
+    /* Aro terracota con el disco claro y el logo al centro. El centrado
+       vertical de cada capa se hace con PADDING del contenedor, no con margin
+       del hijo: sin borde ni padding propio, el margin-top del hijo se colapsa
+       hacia afuera y empuja al padre en vez de separarse dentro de él.
+       Los alto llevan descontado su propio padding-top (sin depender de
+       box-sizing): 178+28 = 206 y 120+30 = 150, para que sigan siendo círculos
+       exactos con su border-radius. */
+    .disco     { width: 206px; height: 178px; border-radius: 103px; background: #c67139;
+                 margin: 322px auto 0; padding-top: 28px; }
+    .disco-in  { width: 150px; height: 120px; border-radius: 75px; background: #fbf7ef;
+                 margin: 0 auto; padding-top: 30px; }
+    .disco-lg  { display: block; width: 90px; height: 90px; margin: 0 auto; }
+    .cub-marca { font-family: 'Corm4', serif; font-size: 60px; letter-spacing: 0.34em;
+                 line-height: 1; color: #201e1d; margin-top: 51px; padding-left: 0.34em; }
+    .cub-filete{ width: 72px; height: 2px; background: #c67139; margin: 21px auto 0; }
+    .cub-lema  { font-family: 'Corm4', serif; font-size: 18.5px; letter-spacing: 0.4em;
+                 color: #6b625a; margin-top: 21px; padding-left: 0.4em; text-transform: uppercase; }
+    /* Nota al pie de la cubierta. Va suelta en `absolute` y no en el flujo
+       porque el diseño la ancla abajo, no debajo de la marca. El filete es un
+       gris ya mezclado con el fondo: dompdf no interpreta rgba(). */
+    .cub-pie   { position: absolute; left: 0; right: 0; top: 937px; text-align: center; }
+    .cub-pie .raya { width: 146px; height: 1px; background: #b7b0a6; margin: 0 auto; }
+    .cub-pie .txt  { font-family: 'Corm4', serif; font-size: 16.5px; letter-spacing: 0.26em;
+                     color: #8a7f74; margin-top: 14px; padding-left: 0.26em; text-transform: uppercase; }
 
     /* ── Portada (solo primera página, va en el flujo) ── */
     .portada { text-align: center; padding-bottom: 2px; }
@@ -192,7 +205,7 @@
              empiece limpia en la siguiente. --}}
         <div class="cubierta">
             @if (is_file($ramas))
-                <img class="cub-ramas" src="{{ $ramas }}" alt="">
+                <img class="cub-fondo" src="{{ $ramas }}" alt="">
             @endif
             <div class="disco">
                 <div class="disco-in">
@@ -204,6 +217,10 @@
             <div class="cub-marca">LA MECA</div>
             <div class="cub-filete"></div>
             <div class="cub-lema">Caf&eacute; de origen</div>
+            <div class="cub-pie">
+                <div class="raya"></div>
+                <div class="txt">Carta</div>
+            </div>
         </div>
         <div style="page-break-after: always;"></div>
 

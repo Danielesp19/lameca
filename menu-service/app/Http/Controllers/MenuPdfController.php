@@ -31,7 +31,7 @@ class MenuPdfController extends Controller
      * viejo hasta que alguien editara un producto. El hash NO mira esos
      * archivos, solo esta constante.
      */
-    private const DISENO = 11;
+    private const DISENO = 12;
 
     public function __invoke(Request $request)
     {
@@ -94,8 +94,8 @@ class MenuPdfController extends Controller
                 'sedes'      => $sedes,
                 'thumbs'     => $thumbs,
                 'logo'       => resource_path('pdf/logo.png'),
-                'ramas'      => resource_path('pdf/ramas.svg'),
-                'ramasPie'   => resource_path('pdf/ramas-pie.svg'),
+                'ramas'      => resource_path('pdf/portada.png'),
+                'ramasPie'   => resource_path('pdf/ramas-pie.png'),
                 'fecha'      => now()->timezone(config('coffee.timezone', 'America/Bogota'))
                                      ->locale('es')->isoFormat('MMMM [de] YYYY'),
             ])->setPaper('a4');
@@ -104,13 +104,14 @@ class MenuPdfController extends Controller
             // por encima de todo — ni el z-index de la cubierta lo tapa. Como
             // en la portada no pinta nada (es una cubierta limpia), se repinta
             // la franja inferior del color del fondo solo en la página 1.
-            // Coordenadas en puntos (A4 = 595.28 x 841.89) y color #F7F1E5.
+            // Coordenadas en puntos (A4 = 595.28 x 841.89) y color #f5efe4,
+            // el fondo de la cubierta: si no coinciden se ve la costura.
             // render() va ANTES a propósito: el canvas definitivo se crea
             // durante el renderizado, así que registrar el script sobre el
             // canvas previo no tendría efecto (se pierde al reemplazarse).
             $pdf->render();
             $pdf->getDomPDF()->getCanvas()->page_script(
-                'if ($PAGE_NUM == 1) { $pdf->filled_rectangle(0, 770, 595.28, 72, array(0.969, 0.945, 0.898)); }'
+                'if ($PAGE_NUM == 1) { $pdf->filled_rectangle(0, 770, 595.28, 72, array(0.961, 0.937, 0.894)); }'
             );
 
             // Una sola versión viva POR ÁMBITO: al regenerar la carta de una
