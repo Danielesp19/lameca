@@ -31,7 +31,7 @@ class MenuPdfController extends Controller
      * viejo hasta que alguien editara un producto. El hash NO mira esos
      * archivos, solo esta constante.
      */
-    private const DISENO = 10;
+    private const DISENO = 11;
 
     public function __invoke(Request $request)
     {
